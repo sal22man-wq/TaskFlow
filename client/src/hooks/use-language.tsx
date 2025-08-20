@@ -209,11 +209,17 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [language]);
 
   const setLanguage = (lang: 'en' | 'ar') => {
+    console.log('Setting language to:', lang);
     setLanguageState(lang);
   };
 
   const t = (key: string): string => {
-    return translations[language][key as keyof typeof translations['en']] || key;
+    const translation = translations[language][key as keyof typeof translations['en']];
+    if (!translation) {
+      console.warn(`Missing translation for key: ${key} in language: ${language}`);
+      return key;
+    }
+    return translation;
   };
 
   const isRTL = language === 'ar';
