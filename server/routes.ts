@@ -929,16 +929,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Log the message action
-      await storage.createLog({
-        userId: senderId,
-        action: messageScope === "group" ? "group_message_sent" : "private_message_sent",
-        targetType: "message",
-        targetId: message.id,
-        details: `Sent ${messageScope} message: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`
-      });
+      const currentUser = await storage.getUser(senderId);
+      await storage.logUserAction(
+        messageScope === "group" ? "group_message_sent" : "private_message_sent",
+        senderId,
+        currentUser?.username || "unknown",
+        { messageId: message.id, content: content.substring(0, 50) + (content.length > 50 ? '...' : '') }
+      );
       
       res.status(201).json(message);
     } catch (error) {
+      console.error("Error sending message:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid message data", errors: error.errors });
       }
