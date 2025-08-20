@@ -7,10 +7,10 @@ interface TaskFiltersProps {
 
 export function TaskFilters({ activeFilter, onFilterChange }: TaskFiltersProps) {
   const filters = [
-    { key: "all", label: "All" },
-    { key: "pending", label: "Pending" },
-    { key: "start", label: "Started" },
-    { key: "complete", label: "Complete" },
+    { key: "all", label: "الكل" },
+    { key: "pending", label: "في الانتظار" },
+    { key: "start", label: "بدأت" },
+    { key: "complete", label: "مكتملة" },
   ];
 
   return (

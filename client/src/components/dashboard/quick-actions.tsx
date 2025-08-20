@@ -5,16 +5,18 @@ import { useState } from "react";
 import { CreateTaskForm } from "@/components/tasks/create-task-form";
 import { AddMemberForm } from "@/components/team/add-member-form.tsx";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useLanguage } from "@/hooks/use-language";
 
 export function QuickActions() {
   const [, setLocation] = useLocation();
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <>
       <div className="mb-6">
-        <h3 className="text-lg font-medium mb-3" data-testid="text-quick-actions-title">Quick Actions</h3>
+        <h3 className="text-lg font-medium mb-3" data-testid="text-quick-actions-title">إجراءات سريعة</h3>
         <div className="grid grid-cols-3 gap-3">
           <Button
             className="bg-primary text-primary-foreground p-4 rounded-lg shadow-sm flex flex-col items-center space-y-2 hover:bg-primary-dark transition-colors h-auto touch-manipulation"
@@ -22,7 +24,7 @@ export function QuickActions() {
             data-testid="button-quick-new-task"
           >
             <Plus className="h-5 w-5" />
-            <span className="text-sm font-medium">New Task</span>
+            <span className="text-sm font-medium">مهمة جديدة</span>
           </Button>
           
           <Button
@@ -31,7 +33,7 @@ export function QuickActions() {
             data-testid="button-quick-add-member"
           >
             <UserPlus className="h-5 w-5" />
-            <span className="text-sm font-medium">Add Member</span>
+            <span className="text-sm font-medium">إضافة عضو</span>
           </Button>
           
           <Button
@@ -40,7 +42,7 @@ export function QuickActions() {
             data-testid="button-quick-admin"
           >
             <Shield className="h-5 w-5" />
-            <span className="text-sm font-medium">Admin</span>
+            <span className="text-sm font-medium">إدارة</span>
           </Button>
         </div>
       </div>

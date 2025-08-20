@@ -21,11 +21,11 @@ export function TeamMemberCard({ member }: TeamMemberCardProps) {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "available":
-        return "Available";
+        return "متاح";
       case "busy":
-        return "Busy";
+        return "مشغول";
       default:
-        return "Offline";
+        return "غير متصل";
     }
   };
 
@@ -50,7 +50,7 @@ export function TeamMemberCard({ member }: TeamMemberCardProps) {
           </p>
           <div className="flex items-center space-x-4 mt-1">
             <span className="text-xs text-muted-foreground" data-testid={`member-active-tasks-${member.id}`}>
-              {member.activeTasks} active tasks
+              {member.activeTasks} مهمة نشطة
             </span>
             <div className="flex items-center space-x-1">
               <div className={`w-2 h-2 ${getStatusColor(member.status)} rounded-full`}></div>

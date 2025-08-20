@@ -22,8 +22,8 @@ export function UpcomingSchedule() {
   .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime()) || [];
 
   const getDateLabel = (date: Date) => {
-    if (isToday(date)) return "Today";
-    if (isTomorrow(date)) return "Tomorrow";
+    if (isToday(date)) return "اليوم";
+    if (isTomorrow(date)) return "غداً";
     return format(date, "MMM d, EEE");
   };
 
@@ -50,7 +50,7 @@ export function UpcomingSchedule() {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Clock className="w-5 h-5" />
-          Upcoming Schedule ({upcomingTasks.length})
+          الجدول القادم ({upcomingTasks.length})
         </CardTitle>
       </CardHeader>
       

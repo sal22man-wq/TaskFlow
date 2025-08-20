@@ -29,11 +29,11 @@ export function TaskCard({ task }: TaskCardProps) {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "pending":
-        return "Pending";
+        return "في الانتظار";
       case "start":
-        return "Started";
+        return "بدأت";
       case "complete":
-        return "Complete";
+        return "مكتملة";
       default:
         return status;
     }
