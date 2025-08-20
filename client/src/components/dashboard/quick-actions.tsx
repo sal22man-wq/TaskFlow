@@ -16,7 +16,7 @@ export function QuickActions() {
   return (
     <>
       <div className="mb-6">
-        <h3 className="text-lg font-medium mb-3" data-testid="text-quick-actions-title">إجراءات سريعة</h3>
+        <h3 className="text-lg font-medium mb-3" data-testid="text-quick-actions-title">{t('dashboard.quickActions')}</h3>
         <div className="grid grid-cols-3 gap-3">
           <Button
             className="bg-primary text-primary-foreground p-4 rounded-lg shadow-sm flex flex-col items-center space-y-2 hover:bg-primary-dark transition-colors h-auto touch-manipulation"
@@ -24,7 +24,7 @@ export function QuickActions() {
             data-testid="button-quick-new-task"
           >
             <Plus className="h-5 w-5" />
-            <span className="text-sm font-medium">مهمة جديدة</span>
+            <span className="text-sm font-medium">{t('dashboard.createTask')}</span>
           </Button>
           
           <Button
@@ -33,7 +33,7 @@ export function QuickActions() {
             data-testid="button-quick-add-member"
           >
             <UserPlus className="h-5 w-5" />
-            <span className="text-sm font-medium">إضافة عضو</span>
+            <span className="text-sm font-medium">{t('dashboard.addMember')}</span>
           </Button>
           
           <Button
@@ -42,7 +42,7 @@ export function QuickActions() {
             data-testid="button-quick-admin"
           >
             <Shield className="h-5 w-5" />
-            <span className="text-sm font-medium">إدارة</span>
+            <span className="text-sm font-medium">{t('nav.admin')}</span>
           </Button>
         </div>
       </div>

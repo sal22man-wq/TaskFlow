@@ -5,8 +5,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar, Clock, User } from "lucide-react";
 import { TaskWithAssignees } from "@shared/schema";
 import { format, isToday, isTomorrow, addDays } from "date-fns";
+import { useLanguage } from "@/hooks/use-language";
 
 export function UpcomingSchedule() {
+  const { t } = useLanguage();
   const { data: tasks } = useQuery<TaskWithAssignees[]>({
     queryKey: ["/api/tasks"],
   });
@@ -50,7 +52,7 @@ export function UpcomingSchedule() {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Clock className="w-5 h-5" />
-          الجدول القادم ({upcomingTasks.length})
+          {t('dashboard.upcomingSchedule')} ({upcomingTasks.length})
         </CardTitle>
       </CardHeader>
       
@@ -75,10 +77,10 @@ export function UpcomingSchedule() {
                       </h3>
                       <div className="flex items-center gap-2">
                         <Badge variant={getPriorityColor(task.priority)} className="text-xs">
-                          {task.priority}
+                          {task.priority === 'high' ? 'عالية' : task.priority === 'medium' ? 'متوسطة' : 'منخفضة'}
                         </Badge>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(task.status)}`}>
-                          {task.status === 'pending' ? 'Pending' : task.status === 'start' ? 'Started' : 'Complete'}
+                          {task.status === 'pending' ? 'في الانتظار' : task.status === 'start' ? 'بدأ' : 'مكتمل'}
                         </span>
                       </div>
                     </div>
@@ -105,7 +107,7 @@ export function UpcomingSchedule() {
                       )}
                       
                       <div className="flex items-center gap-1">
-                        <span>Customer: {task.customerName}</span>
+                        <span>العميل: {task.customerName}</span>
                       </div>
                     </div>
                     
@@ -125,7 +127,7 @@ export function UpcomingSchedule() {
                     {task.progress > 0 && (
                       <div className="mt-2">
                         <div className="flex justify-between text-xs mb-1">
-                          <span>Progress</span>
+                          <span>التقدم</span>
                           <span>{task.progress}%</span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-1">
@@ -142,7 +144,7 @@ export function UpcomingSchedule() {
             ) : (
               <div className="text-center py-8 text-muted-foreground" data-testid="text-no-upcoming-tasks">
                 <Calendar className="w-12 h-12 mx-auto mb-2 text-muted-foreground/50" />
-                <p>No upcoming tasks in the next 7 days</p>
+                <p>لا توجد مهام قادمة في الأيام السبعة القادمة</p>
               </div>
             )}
           </div>

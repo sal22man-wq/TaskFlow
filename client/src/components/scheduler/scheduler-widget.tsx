@@ -7,9 +7,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar, Clock, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { TaskWithAssignees } from "@shared/schema";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, addWeeks, subWeeks, isToday } from "date-fns";
+import { useLanguage } from "@/hooks/use-language";
 
 export function SchedulerWidget() {
   const [currentWeek, setCurrentWeek] = useState(new Date());
+  const { t } = useLanguage();
   
   const { data: tasks } = useQuery<TaskWithAssignees[]>({
     queryKey: ["/api/tasks"],
@@ -56,7 +58,7 @@ export function SchedulerWidget() {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Calendar className="w-5 h-5" />
-            الجدول الأسبوعي
+            {t('dashboard.weeklySchedule')}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button
