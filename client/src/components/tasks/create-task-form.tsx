@@ -63,8 +63,8 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       toast({
-        title: "Task created successfully",
-        description: "The new task has been added to your team.",
+        title: "تم إنشاء المهمة بنجاح",
+        description: "تمت إضافة المهمة الجديدة لفريقك.",
       });
       // Reset form
       setTitle("");
@@ -85,8 +85,8 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
     onError: (error: Error) => {
       console.error("Task creation error:", error);
       toast({
-        title: "Error creating task",
-        description: error.message || "There was a problem creating the task. Please try again.",
+        title: "خطأ في إنشاء المهمة",
+        description: error.message || "حدثت مشكلة في إنشاء المهمة. يرجى المحاولة مرة أخرى.",
         variant: "destructive",
       });
     },
@@ -97,8 +97,8 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
     
     if (!title.trim() || !description.trim() || !customerName.trim() || !startTime.trim() || !finishTime.trim()) {
       toast({
-        title: "Missing required fields",
-        description: "Please fill in all required fields: title, description, customer name, start time, and finish time.",
+        title: "حقول مطلوبة مفقودة",
+        description: "يرجى ملء جميع الحقول المطلوبة: العنوان، الوصف، اسم العميل، وقت البداية، ووقت الانتهاء.",
         variant: "destructive",
       });
       return;
@@ -132,29 +132,29 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       transition={{ duration: 0.3 }}
     >
       <DialogHeader>
-        <DialogTitle data-testid="modal-create-task-title">Create New Task</DialogTitle>
-        <DialogDescription>Fill in the form below to create a new task for your team.</DialogDescription>
+        <DialogTitle data-testid="modal-create-task-title">إنشاء مهمة جديدة</DialogTitle>
+        <DialogDescription>املأ النموذج أدناه لإنشاء مهمة جديدة لفريقك.</DialogDescription>
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="space-y-2 mt-3">
         <div>
-          <Label htmlFor="title">Title *</Label>
+          <Label htmlFor="title">العنوان *</Label>
           <Input
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter task title"
+            placeholder="أدخل عنوان المهمة"
             data-testid="input-task-title"
           />
         </div>
 
         <div>
-          <Label htmlFor="description">Description *</Label>
+          <Label htmlFor="description">الوصف *</Label>
           <Textarea
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Enter task description"
+            placeholder="أدخل وصف المهمة"
             rows={1}
             data-testid="textarea-task-description"
             className="text-sm min-h-[2rem] resize-none"
@@ -163,7 +163,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
 
         <div className="w-full">
           <div className="flex items-center justify-between">
-            <Label htmlFor="customerName">Customer Name *</Label>
+            <Label htmlFor="customerName">اسم العميل *</Label>
             <AddCustomerDialog
               onCustomerAdded={(customer) => {
                 setCustomerName(customer.name);
@@ -184,7 +184,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
               }
             }}>
               <SelectTrigger data-testid="select-task-customer-name" className="text-sm">
-                <SelectValue placeholder="Select or enter customer" />
+                <SelectValue placeholder="اختر أو أدخل العميل" />
               </SelectTrigger>
               <SelectContent>
                 {customers?.map((customer) => (
@@ -196,7 +196,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
               </SelectContent>
             </Select>
             <Input
-              placeholder="Or enter custom customer name"
+              placeholder="أو أدخل اسم عميل مخصص"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               data-testid="input-task-customer-name-manual"
@@ -208,7 +208,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
         <Collapsible open={isCustomerDetailsOpen} onOpenChange={setIsCustomerDetailsOpen}>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" size="sm" className="w-full justify-between p-2 h-8">
-              Customer Details (Optional)
+              تفاصيل العميل (اختياري)
               {isCustomerDetailsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </CollapsibleTrigger>
@@ -221,25 +221,25 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
               className="space-y-2 mt-2"
             >
               <div>
-                <Label htmlFor="customer-phone" className="text-sm">Customer Phone</Label>
+                <Label htmlFor="customer-phone" className="text-sm">هاتف العميل</Label>
                 <Input
                   id="customer-phone"
                   type="tel"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="Enter customer phone number"
+                  placeholder="أدخل رقم هاتف العميل"
                   data-testid="input-customer-phone-create"
                   className="text-sm"
                 />
               </div>
 
               <div>
-                <Label htmlFor="customer-address" className="text-sm">Customer Address</Label>
+                <Label htmlFor="customer-address" className="text-sm">عنوان العميل</Label>
                 <Input
                   id="customer-address"
                   value={customerAddress}
                   onChange={(e) => setCustomerAddress(e.target.value)}
-                  placeholder="Enter customer address"
+                  placeholder="أدخل عنوان العميل"
                   data-testid="input-customer-address-create"
                   className="text-sm"
                 />
@@ -249,11 +249,11 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
         </Collapsible>
 
         <div>
-          <Label>Time/Schedule *</Label>
+          <Label>الوقت/الجدول *</Label>
           <div className="grid grid-cols-2 gap-3">
             {/* Start Time */}
             <div>
-              <Label htmlFor="start-time" className="text-xs text-muted-foreground">Start Time</Label>
+              <Label htmlFor="start-time" className="text-xs text-muted-foreground">وقت البداية</Label>
               <div className="flex gap-1">
                 <Input
                   id="start-time"
@@ -277,7 +277,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
             
             {/* Finish Time */}
             <div>
-              <Label htmlFor="finish-time" className="text-xs text-muted-foreground">Finish Time</Label>
+              <Label htmlFor="finish-time" className="text-xs text-muted-foreground">وقت الانتهاء</Label>
               <div className="flex gap-1">
                 <Input
                   id="finish-time"
@@ -303,15 +303,15 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="priority" className="text-sm">Priority</Label>
+            <Label htmlFor="priority" className="text-sm">الأولوية</Label>
             <Select value={priority} onValueChange={setPriority}>
               <SelectTrigger data-testid="select-task-priority-create" className="text-sm h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="low">منخفضة</SelectItem>
+                <SelectItem value="medium">متوسطة</SelectItem>
+                <SelectItem value="high">عالية</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -348,7 +348,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
         <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" size="sm" className="w-full justify-between p-2 h-8">
-              Advanced Options
+              خيارات متقدمة
               {isAdvancedOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </CollapsibleTrigger>
@@ -361,7 +361,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
               className="space-y-2 mt-2"
             >
               <div>
-                <Label htmlFor="assignees" className="text-sm">Assignees (Multiple Selection)</Label>
+                <Label htmlFor="assignees" className="text-sm">المكلفون (تحديد متعدد)</Label>
                 <div className="mt-2 space-y-1 max-h-20 overflow-y-auto border rounded-md p-2 bg-muted/30">
                   {teamMembers?.map((member) => (
                     <div key={member.id} className="flex items-center space-x-2">
@@ -383,21 +383,21 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
                     </div>
                   ))}
                   {(!teamMembers || teamMembers.length === 0) && (
-                    <p className="text-xs text-muted-foreground">No team members available</p>
+                    <p className="text-xs text-muted-foreground">لا يوجد أعضاء فريق متاحون</p>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Selected: {assigneeIds.length} member(s)
+                  المحدد: {assigneeIds.length} عضو
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="notes" className="text-sm">Notes</Label>
+                <Label htmlFor="notes" className="text-sm">ملاحظات</Label>
                 <Textarea
                   id="notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Additional notes (optional)"
+                  placeholder="ملاحظات إضافية (اختياري)"
                   rows={1}
                   data-testid="textarea-task-notes"
                   className="text-sm min-h-[2rem] resize-none"
@@ -414,7 +414,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
             disabled={createTaskMutation.isPending}
             data-testid="button-submit-task"
           >
-            {createTaskMutation.isPending ? "Creating..." : "Create Task"}
+            {createTaskMutation.isPending ? "جاري الإنشاء..." : "إنشاء المهمة"}
           </Button>
           <Button
             type="button"
@@ -422,7 +422,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
             onClick={onSuccess}
             data-testid="button-cancel-create-task"
           >
-            Cancel
+            إلغاء
           </Button>
         </div>
       </form>
