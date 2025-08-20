@@ -36,6 +36,15 @@ export function UpcomingSchedule() {
     }
   };
 
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case "complete": return "bg-green-100 text-green-800 border-green-300";
+      case "start": return "bg-blue-100 text-blue-800 border-blue-300";
+      case "pending": return "bg-orange-100 text-orange-800 border-orange-300";
+      default: return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -64,9 +73,14 @@ export function UpcomingSchedule() {
                       <h3 className="font-medium text-sm truncate" data-testid={`upcoming-task-title-${task.id}`}>
                         {task.title}
                       </h3>
-                      <Badge variant={getPriorityColor(task.priority)} className="text-xs">
-                        {task.priority}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={getPriorityColor(task.priority)} className="text-xs">
+                          {task.priority}
+                        </Badge>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(task.status)}`}>
+                          {task.status === 'pending' ? 'Pending' : task.status === 'start' ? 'Started' : 'Complete'}
+                        </span>
+                      </div>
                     </div>
                     
                     <p className="text-xs text-muted-foreground mb-2 line-clamp-2">

@@ -140,24 +140,20 @@
     @apply px-2 py-1 rounded text-xs font-medium;
   }
 
-  .status-to_be_completed {
-    @apply bg-surface-variant text-on-surface;
+  .status-pending {
+    @apply bg-orange-100 text-orange-800 border-orange-300;
   }
 
-  .status-started {
-    @apply bg-warning text-warning-foreground;
+  .status-start {
+    @apply bg-blue-100 text-blue-800 border-blue-300;
   }
 
-  .status-in_progress {
-    @apply bg-warning text-warning-foreground;
-  }
-
-  .status-completed {
-    @apply bg-success text-success-foreground;
+  .status-complete {
+    @apply bg-green-100 text-green-800 border-green-300;
   }
 
   .status-overdue {
-    @apply bg-error text-error-foreground;
+    @apply bg-red-100 text-red-800 border-red-300;
   }
 
   .priority-low {

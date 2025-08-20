@@ -49,10 +49,10 @@ export default function MyTasksPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "complete": return "text-green-600";
-      case "start": return "text-blue-600";
-      case "pending": return "text-orange-600";
-      default: return "text-gray-600";
+      case "complete": return "text-green-600 bg-green-50 px-2 py-1 rounded-full text-xs font-medium";
+      case "start": return "text-blue-600 bg-blue-50 px-2 py-1 rounded-full text-xs font-medium";
+      case "pending": return "text-orange-600 bg-orange-50 px-2 py-1 rounded-full text-xs font-medium";
+      default: return "text-gray-600 bg-gray-50 px-2 py-1 rounded-full text-xs font-medium";
     }
   };
 

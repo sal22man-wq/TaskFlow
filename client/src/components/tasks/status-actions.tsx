@@ -47,11 +47,11 @@ export function StatusActions({ taskId, currentStatus, onStatusChange }: StatusA
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): "secondary" | "destructive" | "default" | "outline" => {
     switch (status) {
-      case "pending": return "secondary";
-      case "start": return "default";
-      case "complete": return "outline";
+      case "pending": return "secondary";     // Gray for waiting
+      case "start": return "destructive";     // Blue for in progress  
+      case "complete": return "default";      // Green for completed
       default: return "outline";
     }
   };

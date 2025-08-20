@@ -16,12 +16,12 @@ export function TaskCard({ task }: TaskCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "complete":
-        return "status-completed";
+        return "bg-green-100 text-green-800 border-green-300";
       case "start":
-        return "status-in_progress";
+        return "bg-blue-100 text-blue-800 border-blue-300";
       case "pending":
       default:
-        return "status-to_be_completed";
+        return "bg-orange-100 text-orange-800 border-orange-300";
     }
   };
 
@@ -51,7 +51,7 @@ export function TaskCard({ task }: TaskCardProps) {
             </p>
           </div>
           <span 
-            className={`status-chip ${getStatusColor(task.status)} ml-3`}
+            className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(task.status)} ml-3`}
             data-testid={`task-status-${task.id}`}
           >
             {getStatusLabel(task.status)}

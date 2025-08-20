@@ -43,10 +43,10 @@ export function SchedulerWidget() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "complete": return "bg-green-50 border-green-200";
-      case "start": return "bg-blue-50 border-blue-200";
-      case "pending": return "bg-orange-50 border-orange-200";
-      default: return "bg-gray-50 border-gray-200";
+      case "complete": return "bg-green-50 border-green-300 shadow-green-100";
+      case "start": return "bg-blue-50 border-blue-300 shadow-blue-100";
+      case "pending": return "bg-orange-50 border-orange-300 shadow-orange-100";
+      default: return "bg-gray-50 border-gray-200 shadow-gray-100";
     }
   };
 
