@@ -22,7 +22,6 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
-  const [staffName, setStaffName] = useState("");
   const [time, setTime] = useState("");
   const [notes, setNotes] = useState("");
   const [priority, setPriority] = useState("medium");
@@ -64,7 +63,6 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       setCustomerName("");
       setCustomerPhone("");
       setCustomerAddress("");
-      setStaffName("");
       setTime("");
       setNotes("");
       setPriority("medium");
@@ -84,10 +82,10 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim() || !description.trim() || !customerName.trim() || !staffName.trim() || !time.trim()) {
+    if (!title.trim() || !description.trim() || !customerName.trim() || !time.trim()) {
       toast({
         title: "Missing required fields",
-        description: "Please fill in all required fields: title, description, customer name, staff name, and time.",
+        description: "Please fill in all required fields: title, description, customer name, and time.",
         variant: "destructive",
       });
       return;
@@ -99,7 +97,6 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim() || undefined,
       customerAddress: customerAddress.trim() || undefined,
-      staffName: staffName.trim(),
       time: time.trim(),
       notes: notes.trim() || undefined,
       priority,
@@ -142,8 +139,8 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
+        <div className="space-y-4">
+          <div className="w-full">
             <div className="flex items-center justify-between">
               <Label htmlFor="customerName">Customer Name *</Label>
               <AddCustomerDialog
@@ -207,24 +204,10 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
               onChange={(e) => setCustomerAddress(e.target.value)}
               placeholder="Enter customer address"
               data-testid="input-customer-address-create"
+              className="w-full"
             />
           </div>
 
-          <div>
-            <Label htmlFor="staffName">Staff Name *</Label>
-            <Select value={staffName} onValueChange={setStaffName}>
-              <SelectTrigger data-testid="select-task-staff-name">
-                <SelectValue placeholder="Select staff member" />
-              </SelectTrigger>
-              <SelectContent>
-                {teamMembers?.map((member) => (
-                  <SelectItem key={member.id} value={member.name}>
-                    {member.name} - {member.role}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
         <div>

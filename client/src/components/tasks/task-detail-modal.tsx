@@ -88,10 +88,10 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           </div>
 
           {/* Task Details */}
-          <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+          <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
             <div>
               <Label className="text-sm font-medium text-muted-foreground">Customer Information</Label>
-              <p className="font-medium" data-testid="modal-task-customer">{task.customerName}</p>
+              <p className="font-medium text-lg" data-testid="modal-task-customer">{task.customerName}</p>
               {task.customerPhone && (
                 <p className="text-sm text-muted-foreground" data-testid="modal-customer-phone">
                   📞 {task.customerPhone}
@@ -103,11 +103,8 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 </p>
               )}
             </div>
+
             <div>
-              <Label className="text-sm font-medium text-muted-foreground">Staff Name</Label>
-              <p className="font-medium" data-testid="modal-task-staff">{task.staffName}</p>
-            </div>
-            <div className="col-span-2">
               <Label className="text-sm font-medium text-muted-foreground">Time/Schedule</Label>
               <p className="font-medium" data-testid="modal-task-time">{task.time}</p>
             </div>

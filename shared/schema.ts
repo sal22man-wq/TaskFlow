@@ -35,7 +35,6 @@ export const tasks = pgTable("tasks", {
   customerName: text("customer_name").notNull(),
   customerPhone: text("customer_phone"),
   customerAddress: text("customer_address"),
-  staffName: text("staff_name").notNull(),
   time: text("time").notNull(), // estimated time or schedule
   notes: text("notes"), // additional notes
   status: text("status").notNull().default("to_be_completed"), // to_be_completed, started, in_progress, completed, overdue
