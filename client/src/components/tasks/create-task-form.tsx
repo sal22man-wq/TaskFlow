@@ -8,8 +8,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { InsertTask, TeamMember } from "@shared/schema";
+import { InsertTask, TeamMember, Customer } from "@shared/schema";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AddCustomerDialog } from "@/components/customers/add-customer-dialog";
 
 interface CreateTaskFormProps {
   onSuccess: () => void;
@@ -19,6 +20,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [staffName, setStaffName] = useState("");
   const [time, setTime] = useState("");
   const [notes, setNotes] = useState("");
@@ -26,10 +28,15 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState("");
 
-  // Common customers for quick selection
-  const commonCustomers = [
-    "ABC Company", "XYZ Corporation", "Tech Solutions Inc", "Global Services Ltd", "Innovation Partners"
-  ];
+  // Fetch customers from API
+  const { data: customers, isLoading: customersLoading } = useQuery({
+    queryKey: ["/api/customers"],
+    queryFn: async () => {
+      const response = await fetch("/api/customers");
+      if (!response.ok) throw new Error("Failed to fetch customers");
+      return response.json() as Customer[];
+    }
+  });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -54,6 +61,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       setTitle("");
       setDescription("");
       setCustomerName("");
+      setCustomerPhone("");
       setStaffName("");
       setTime("");
       setNotes("");
@@ -87,6 +95,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       title: title.trim(),
       description: description.trim(),
       customerName: customerName.trim(),
+      customerPhone: customerPhone.trim() || undefined,
       staffName: staffName.trim(),
       time: time.trim(),
       notes: notes.trim() || undefined,
@@ -132,16 +141,34 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="customerName">Customer Name *</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="customerName">Customer Name *</Label>
+              <AddCustomerDialog
+                onCustomerAdded={(customer) => {
+                  setCustomerName(customer.name);
+                  if (customer.phone) {
+                    setCustomerPhone(customer.phone);
+                  }
+                }}
+              />
+            </div>
             <div className="space-y-2">
-              <Select value={customerName} onValueChange={setCustomerName}>
+              <Select value={customerName} onValueChange={(value) => {
+                setCustomerName(value);
+                // Auto-fill phone if customer exists
+                const customer = customers?.find(c => c.name === value);
+                if (customer?.phone) {
+                  setCustomerPhone(customer.phone);
+                }
+              }}>
                 <SelectTrigger data-testid="select-task-customer-name">
                   <SelectValue placeholder="Select or enter customer" />
                 </SelectTrigger>
                 <SelectContent>
-                  {commonCustomers.map((customer) => (
-                    <SelectItem key={customer} value={customer}>
-                      {customer}
+                  {customers?.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.name}>
+                      {customer.name}
+                      {customer.phone && ` (${customer.phone})`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -154,6 +181,18 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
                 className="text-sm"
               />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="customer-phone">Customer Phone</Label>
+            <Input
+              id="customer-phone"
+              type="tel"
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value)}
+              placeholder="Enter customer phone number"
+              data-testid="input-customer-phone-create"
+            />
           </div>
 
           <div>

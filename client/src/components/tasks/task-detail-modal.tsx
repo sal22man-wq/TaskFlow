@@ -92,6 +92,11 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             <div>
               <Label className="text-sm font-medium text-muted-foreground">Customer Name</Label>
               <p className="font-medium" data-testid="modal-task-customer">{task.customerName}</p>
+              {task.customerPhone && (
+                <p className="text-sm text-muted-foreground" data-testid="modal-customer-phone">
+                  📞 {task.customerPhone}
+                </p>
+              )}
             </div>
             <div>
               <Label className="text-sm font-medium text-muted-foreground">Staff Name</Label>

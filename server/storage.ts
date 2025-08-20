@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type TeamMember, type InsertTeamMember, type Task, type InsertTask, type UpdateTask, type TaskWithAssignees } from "@shared/schema";
+import { type User, type InsertUser, type TeamMember, type InsertTeamMember, type Task, type InsertTask, type UpdateTask, type TaskWithAssignees, type Customer, type InsertCustomer } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -13,6 +13,14 @@ export interface IStorage {
   createTeamMember(member: InsertTeamMember): Promise<TeamMember>;
   updateTeamMember(id: string, updates: Partial<TeamMember>): Promise<TeamMember | undefined>;
   deleteTeamMember(id: string): Promise<boolean>;
+
+  // Customer methods
+  getCustomers(): Promise<Customer[]>;
+  getCustomer(id: string): Promise<Customer | undefined>;
+  getCustomerByName(name: string): Promise<Customer | undefined>;
+  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  updateCustomer(id: string, updates: Partial<Customer>): Promise<Customer | undefined>;
+  deleteCustomer(id: string): Promise<boolean>;
 
   // Task methods
   getTasks(): Promise<TaskWithAssignees[]>;
@@ -36,11 +44,13 @@ export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private teamMembers: Map<string, TeamMember>;
   private tasks: Map<string, Task>;
+  private customers: Map<string, Customer>;
 
   constructor() {
     this.users = new Map();
     this.teamMembers = new Map();
     this.tasks = new Map();
+    this.customers = new Map();
     
     // Initialize with some default team members
     this.seedData();
@@ -141,6 +151,46 @@ export class MemStorage implements IStorage {
     return this.teamMembers.delete(id);
   }
 
+  // Customer methods
+  async getCustomers(): Promise<Customer[]> {
+    return Array.from(this.customers.values());
+  }
+
+  async getCustomer(id: string): Promise<Customer | undefined> {
+    return this.customers.get(id);
+  }
+
+  async getCustomerByName(name: string): Promise<Customer | undefined> {
+    return Array.from(this.customers.values()).find(customer => customer.name.toLowerCase() === name.toLowerCase());
+  }
+
+  async createCustomer(customerData: InsertCustomer): Promise<Customer> {
+    const customer: Customer = {
+      id: randomUUID(),
+      ...customerData,
+      phone: customerData.phone || null,
+      email: customerData.email || null,
+      address: customerData.address || null,
+      createdAt: new Date(),
+    };
+    
+    this.customers.set(customer.id, customer);
+    return customer;
+  }
+
+  async updateCustomer(id: string, updates: Partial<Customer>): Promise<Customer | undefined> {
+    const customer = this.customers.get(id);
+    if (!customer) return undefined;
+
+    const updatedCustomer = { ...customer, ...updates };
+    this.customers.set(id, updatedCustomer);
+    return updatedCustomer;
+  }
+
+  async deleteCustomer(id: string): Promise<boolean> {
+    return this.customers.delete(id);
+  }
+
   // Task methods
   async getTasks(): Promise<TaskWithAssignees[]> {
     const tasks = Array.from(this.tasks.values());
@@ -186,6 +236,7 @@ export class MemStorage implements IStorage {
       assigneeIds: task.assigneeIds || [],
       dueDate: task.dueDate || null,
       notes: task.notes || null,
+      customerPhone: task.customerPhone || null,
       createdAt: now,
       updatedAt: now
     };

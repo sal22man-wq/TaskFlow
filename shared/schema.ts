@@ -19,11 +19,21 @@ export const teamMembers = pgTable("team_members", {
   avatar: text("avatar"), // optional avatar URL or initials
 });
 
+export const customers = pgTable("customers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  email: text("email"),
+  address: text("address"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
 export const tasks = pgTable("tasks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   description: text("description").notNull(),
   customerName: text("customer_name").notNull(),
+  customerPhone: text("customer_phone"),
   staffName: text("staff_name").notNull(),
   time: text("time").notNull(), // estimated time or schedule
   notes: text("notes"), // additional notes
@@ -57,6 +67,11 @@ export const updateTaskSchema = createInsertSchema(tasks).omit({
   createdAt: true,
 }).partial();
 
+export const insertCustomerSchema = createInsertSchema(customers).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -66,6 +81,9 @@ export type TeamMember = typeof teamMembers.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type UpdateTask = z.infer<typeof updateTaskSchema>;
 export type Task = typeof tasks.$inferSelect;
+
+export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
+export type Customer = typeof customers.$inferSelect;
 
 export type TaskWithAssignees = Task & {
   assignees?: TeamMember[];
