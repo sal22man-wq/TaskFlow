@@ -12,6 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { TeamMember } from "@shared/schema";
 import { format } from "date-fns";
+import { ChatButton } from "@/components/chat/chat-button";
 
 interface TaskDetailModalProps {
   task: TaskWithAssignees;
@@ -239,6 +240,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             >
               {updateTaskMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
+            <ChatButton taskId={task.id} taskTitle={task.title} />
             <Button
               variant="outline"
               className="px-6"

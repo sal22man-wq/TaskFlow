@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { useState } from "react";
 import { TaskDetailModal } from "./task-detail-modal";
 import { StatusActions } from "./status-actions";
+import { ChatButton } from "@/components/chat/chat-button";
 
 interface TaskCardProps {
   task: TaskWithAssignees;
@@ -90,11 +91,14 @@ export function TaskCard({ task }: TaskCardProps) {
             </Button>
           </div>
           
-          {/* Status Actions */}
-          <StatusActions
-            taskId={task.id}
-            currentStatus={task.status}
-          />
+          {/* Status Actions and Chat */}
+          <div className="flex items-center justify-between">
+            <StatusActions
+              taskId={task.id}
+              currentStatus={task.status}
+            />
+            <ChatButton taskId={task.id} taskTitle={task.title} />
+          </div>
         </div>
       </div>
 

@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 import { CreateTaskForm } from "@/components/tasks/create-task-form";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ChatButton } from "@/components/chat/chat-button";
 
 interface MobileLayoutProps {
   children: React.ReactNode;
@@ -23,7 +24,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       
       <BottomNavigation />
       
-      {/* Floating Action Button */}
+      {/* Floating Action Buttons */}
       <Button
         className="fixed bottom-20 right-4 w-14 h-14 rounded-full shadow-lg z-10 touch-manipulation"
         size="icon"
@@ -32,6 +33,9 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       >
         <Plus className="h-6 w-6" />
       </Button>
+
+      {/* Floating Chat Button */}
+      <ChatButton variant="floating" />
 
       <Dialog open={showCreateTask} onOpenChange={setShowCreateTask}>
         <DialogContent className="sm:max-w-md">

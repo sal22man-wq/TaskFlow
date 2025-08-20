@@ -92,6 +92,13 @@ const translations = {
     'lang.english': 'English',
     'lang.arabic': 'العربية',
     'lang.switch': 'Switch Language',
+
+    // Chat
+    'chat.title': 'Team Chat',
+    'chat.taskChat': 'Task Chat',
+    'chat.typeMessage': 'Type a message...',
+    'chat.send': 'Send',
+    'chat.close': 'Close',
   },
   ar: {
     // Navigation
@@ -175,6 +182,13 @@ const translations = {
     'lang.english': 'English',
     'lang.arabic': 'العربية',
     'lang.switch': 'تبديل اللغة',
+
+    // Chat
+    'chat.title': 'دردشة الفريق',
+    'chat.taskChat': 'دردشة المهمة',
+    'chat.typeMessage': 'اكتب رسالة...',
+    'chat.send': 'إرسال',
+    'chat.close': 'إغلاق',
   },
 };
 
