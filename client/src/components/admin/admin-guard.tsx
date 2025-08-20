@@ -5,41 +5,49 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shield, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface AdminGuardProps {
   children: React.ReactNode;
 }
 
-// Simple admin authentication - in production use proper authentication
-const ADMIN_PASSWORD = "admin123"; // This would be handled by your auth system
-
 export function AdminGuard({ children }: AdminGuardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  const verifyPasswordMutation = useMutation({
+    mutationFn: async (password: string) => {
+      await apiRequest("POST", "/api/admin/verify-password", { password });
+    },
+    onSuccess: () => {
+      setIsAuthenticated(true);
+      toast({
+        title: "تم منح الوصول",
+        description: "أهلاً بك في لوحة الإدارة",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "تم رفض الوصول",
+        description: "كلمة مرور المدير غير صحيحة",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate API call delay
-    setTimeout(() => {
-      if (password === ADMIN_PASSWORD) {
-        setIsAuthenticated(true);
-        toast({
-          title: "Access granted",
-          description: "Welcome to the admin panel",
-        });
-      } else {
-        toast({
-          title: "Access denied",
-          description: "Invalid administrator password",
-          variant: "destructive",
-        });
-      }
-      setIsLoading(false);
-    }, 1000);
+    if (!password.trim()) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال كلمة المرور",
+        variant: "destructive",
+      });
+      return;
+    }
+    verifyPasswordMutation.mutate(password);
   };
 
   if (isAuthenticated) {
@@ -54,22 +62,22 @@ export function AdminGuard({ children }: AdminGuardProps) {
             <Shield className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-xl" data-testid="text-admin-login-title">
-            Administrator Access
+            دخول المدير
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Enter administrator password to access system logs
+            أدخل كلمة مرور المدير للوصول إلى سجلات النظام
           </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="admin-password">Password</Label>
+              <Label htmlFor="admin-password">كلمة المرور</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="admin-password"
                   type="password"
-                  placeholder="Enter admin password"
+                  placeholder="أدخل كلمة مرور المدير"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10"
@@ -82,14 +90,14 @@ export function AdminGuard({ children }: AdminGuardProps) {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading || !password}
+              disabled={verifyPasswordMutation.isPending || !password}
               data-testid="button-admin-login"
             >
-              {isLoading ? "Verifying..." : "Access Admin Panel"}
+              {verifyPasswordMutation.isPending ? "جارٍ التحقق..." : "دخول لوحة الإدارة"}
             </Button>
             
             <div className="text-xs text-center text-muted-foreground">
-              Demo password: admin123
+              استخدم نفس كلمة مرور حساب المدير
             </div>
           </form>
         </CardContent>

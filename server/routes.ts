@@ -1056,6 +1056,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin password verification endpoint
+  app.post("/api/admin/verify-password", requireAuth, async (req, res) => {
+    try {
+      const { password } = req.body;
+      const userId = req.session.userId!;
+
+      if (!password) {
+        return res.status(400).json({ message: "Password is required" });
+      }
+
+      // Get current user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Check if user is admin
+      if (user.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      // Verify password
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        await storage.logUserAction(
+          "admin_access_denied",
+          userId,
+          req.session.username!,
+          { message: "فشل في الوصول للوحة الإدارة - كلمة مرور خاطئة" },
+          req.ip,
+          req.get('User-Agent')
+        );
+        return res.status(401).json({ message: "Invalid password" });
+      }
+
+      // Log successful admin access
+      await storage.logUserAction(
+        "admin_access_granted",
+        userId,
+        req.session.username!,
+        { message: "تم منح الوصول للوحة الإدارة بنجاح" },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json({ message: "Password verified successfully" });
+    } catch (error) {
+      console.error("Error verifying admin password:", error);
+      res.status(500).json({ message: "Failed to verify password" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
