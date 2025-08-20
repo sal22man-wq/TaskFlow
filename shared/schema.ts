@@ -17,6 +17,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   role: text("role").notNull().default("user"), // user, supervisor, admin
   isApproved: text("is_approved").notNull().default("pending"), // pending, approved, rejected
+  isActive: text("is_active").notNull().default("true"), // true, false
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 

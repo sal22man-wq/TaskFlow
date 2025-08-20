@@ -240,6 +240,42 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async toggleUserStatus(userId: string): Promise<User | undefined> {
+    // Get current user status
+    const [currentUser] = await db
+      .select({ isActive: users.isActive })
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    if (!currentUser) return undefined;
+    
+    // Toggle status
+    const newStatus = currentUser.isActive === "true" ? "false" : "true";
+    
+    const [user] = await db
+      .update(users)
+      .set({ isActive: newStatus })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    return user;
+  }
+
+  async deleteUser(userId: string): Promise<boolean> {
+    try {
+      // Delete user's team member record first
+      await db.delete(teamMembers).where(eq(teamMembers.userId, userId));
+      
+      // Delete user
+      await db.delete(users).where(eq(users.id, userId));
+      
+      return true;
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      return false;
+    }
+  }
+
   // Team Member by User
   async getTeamMemberByUserId(userId: string): Promise<TeamMember | undefined> {
     const [member] = await db.select().from(teamMembers).where(eq(teamMembers.userId, userId));

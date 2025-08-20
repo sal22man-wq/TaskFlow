@@ -5,9 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { UserCheck, UserX, Users, Clock, UserPlus, Shield } from "lucide-react";
+import { UserCheck, UserX, Users, Clock, UserPlus, Shield, Power, Trash2 } from "lucide-react";
 import { AddUserForm } from "@/components/admin/add-user-form";
 
 interface User {
@@ -15,6 +26,7 @@ interface User {
   username: string;
   role: string;
   isApproved: string;
+  isActive: string;
   createdAt: string;
 }
 
@@ -68,6 +80,46 @@ export default function AdminUsers() {
     },
   });
 
+  const toggleStatusMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      await apiRequest("PATCH", `/api/admin/users/${userId}/toggle`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "تم تغيير حالة المستخدم",
+        description: "تم تحديث حالة المستخدم بنجاح",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    },
+    onError: () => {
+      toast({
+        title: "خطأ في تغيير الحالة",
+        description: "حدث خطأ أثناء تغيير حالة المستخدم",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      await apiRequest("DELETE", `/api/admin/users/${userId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "تم حذف المستخدم",
+        description: "تم حذف المستخدم بنجاح من النظام",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    },
+    onError: () => {
+      toast({
+        title: "خطأ في الحذف",
+        description: "حدث خطأ أثناء حذف المستخدم",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleApprove = (userId: string) => {
     approveMutation.mutate({ userId, action: "approved" });
   };
@@ -75,6 +127,8 @@ export default function AdminUsers() {
   const handleReject = (userId: string) => {
     approveMutation.mutate({ userId, action: "rejected" });
   };
+
+
 
   const getStatusBadge = (isApproved: string) => {
     switch (isApproved) {
@@ -115,8 +169,8 @@ export default function AdminUsers() {
     }
   };
 
-  const handleRoleChange = (userId: string, newRole: string) => {
-    roleUpdateMutation.mutate({ userId, role: newRole });
+  const handleRoleChange = (userId: string, role: string) => {
+    roleUpdateMutation.mutate({ userId, role });
   };
 
   const pendingUsers = users.filter(user => user.isApproved === "pending");
@@ -311,6 +365,82 @@ export default function AdminUsers() {
                           <UserX className="h-4 w-4 mr-1" />
                           رفض
                         </Button>
+                      </div>
+                    )}
+
+                    {/* User Management Actions for approved users */}
+                    {user.isApproved === "approved" && (
+                      <div className="flex items-center space-x-2 space-x-reverse mt-2 pt-2 border-t">
+                        <span className="text-xs text-muted-foreground mr-2">حالة الحساب:</span>
+                        <Badge variant={user.isActive === "true" ? "default" : "destructive"} className="text-xs">
+                          {user.isActive === "true" ? "نشط" : "معطل"}
+                        </Badge>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant={user.isActive === "true" ? "outline" : "default"}
+                              className="text-xs h-7"
+                              data-testid={`button-toggle-${user.id}`}
+                            >
+                              <Power className="h-3 w-3 mr-1" />
+                              {user.isActive === "true" ? "تعطيل" : "تفعيل"}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                {user.isActive === "true" ? "تعطيل المستخدم" : "تفعيل المستخدم"}
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                هل أنت متأكد من {user.isActive === "true" ? "تعطيل" : "تفعيل"} المستخدم "{user.username}"؟
+                                {user.isActive === "true" && " لن يتمكن من الدخول للنظام بعد التعطيل."}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => toggleStatusMutation.mutate(user.id)}
+                                className={user.isActive === "true" ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
+                              >
+                                تأكيد
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="text-xs h-7"
+                              data-testid={`button-delete-${user.id}`}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              حذف
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>حذف المستخدم</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                هل أنت متأكد من حذف المستخدم "{user.username}"؟ هذا الإجراء لا يمكن التراجع عنه.
+                                سيتم حذف جميع بيانات المستخدم نهائياً.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteMutation.mutate(user.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                حذف نهائي
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     )}
                   </div>

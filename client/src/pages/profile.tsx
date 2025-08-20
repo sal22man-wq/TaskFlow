@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { User, Settings, Bell, Shield, HelpCircle, LogOut, UserCheck } from "lucide-react";
+import { User, Settings, Bell, Shield, HelpCircle, LogOut, UserCheck, Activity } from "lucide-react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
 
