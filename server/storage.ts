@@ -181,6 +181,7 @@ export class MemStorage implements IStorage {
       progress: task.progress || 0,
       assigneeId: task.assigneeId || null,
       dueDate: task.dueDate || null,
+      notes: task.notes || null,
       createdAt: now,
       updatedAt: now
     };

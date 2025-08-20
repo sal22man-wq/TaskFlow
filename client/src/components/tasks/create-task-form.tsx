@@ -17,6 +17,10 @@ interface CreateTaskFormProps {
 export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [staffName, setStaffName] = useState("");
+  const [time, setTime] = useState("");
+  const [notes, setNotes] = useState("");
   const [priority, setPriority] = useState("medium");
   const [assigneeId, setAssigneeId] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -40,6 +44,16 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
         title: "Task created successfully",
         description: "The new task has been added to your team.",
       });
+      // Reset form
+      setTitle("");
+      setDescription("");
+      setCustomerName("");
+      setStaffName("");
+      setTime("");
+      setNotes("");
+      setPriority("medium");
+      setAssigneeId("");
+      setDueDate("");
       onSuccess();
     },
     onError: () => {
@@ -54,10 +68,10 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim() || !description.trim()) {
+    if (!title.trim() || !description.trim() || !customerName.trim() || !staffName.trim() || !time.trim()) {
       toast({
         title: "Missing required fields",
-        description: "Please fill in all required fields.",
+        description: "Please fill in all required fields: title, description, customer name, staff name, and time.",
         variant: "destructive",
       });
       return;
@@ -66,8 +80,12 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
     const task: InsertTask = {
       title: title.trim(),
       description: description.trim(),
+      customerName: customerName.trim(),
+      staffName: staffName.trim(),
+      time: time.trim(),
+      notes: notes.trim() || undefined,
       priority,
-      assigneeId: assigneeId || undefined,
+      assigneeId: assigneeId === "unassigned" ? undefined : assigneeId || undefined,
       dueDate: dueDate ? new Date(dueDate) : undefined,
       status: "to_be_completed",
       progress: 0,
@@ -108,6 +126,53 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
+            <Label htmlFor="customerName">Customer Name *</Label>
+            <Input
+              id="customerName"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder="Enter customer name"
+              data-testid="input-task-customer-name"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="staffName">Staff Name *</Label>
+            <Input
+              id="staffName"
+              value={staffName}
+              onChange={(e) => setStaffName(e.target.value)}
+              placeholder="Enter staff name"
+              data-testid="input-task-staff-name"
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="time">Time/Schedule *</Label>
+          <Input
+            id="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            placeholder="e.g., 2 hours, 9:00 AM - 12:00 PM"
+            data-testid="input-task-time"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="notes">Notes</Label>
+          <Textarea
+            id="notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Additional notes (optional)"
+            rows={2}
+            data-testid="textarea-task-notes"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
             <Label htmlFor="priority">Priority</Label>
             <Select value={priority} onValueChange={setPriority}>
               <SelectTrigger data-testid="select-task-priority-create">
@@ -128,7 +193,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
                 <SelectValue placeholder="Select member" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Unassigned</SelectItem>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
                 {teamMembers?.map((member) => (
                   <SelectItem key={member.id} value={member.id}>
                     {member.name}

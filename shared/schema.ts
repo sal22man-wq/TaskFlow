@@ -23,6 +23,10 @@ export const tasks = pgTable("tasks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   description: text("description").notNull(),
+  customerName: text("customer_name").notNull(),
+  staffName: text("staff_name").notNull(),
+  time: text("time").notNull(), // estimated time or schedule
+  notes: text("notes"), // additional notes
   status: text("status").notNull().default("to_be_completed"), // to_be_completed, started, in_progress, completed, overdue
   priority: text("priority").notNull().default("medium"), // low, medium, high
   assigneeId: varchar("assignee_id").references(() => teamMembers.id),

@@ -81,9 +81,31 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             <h4 className="font-medium text-lg mb-2" data-testid="modal-task-title">
               {task.title}
             </h4>
-            <p className="text-muted-foreground" data-testid="modal-task-description">
+            <p className="text-muted-foreground mb-4" data-testid="modal-task-description">
               {task.description}
             </p>
+          </div>
+
+          {/* Task Details */}
+          <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">Customer Name</Label>
+              <p className="font-medium" data-testid="modal-task-customer">{task.customerName}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">Staff Name</Label>
+              <p className="font-medium" data-testid="modal-task-staff">{task.staffName}</p>
+            </div>
+            <div className="col-span-2">
+              <Label className="text-sm font-medium text-muted-foreground">Time/Schedule</Label>
+              <p className="font-medium" data-testid="modal-task-time">{task.time}</p>
+            </div>
+            {task.notes && (
+              <div className="col-span-2">
+                <Label className="text-sm font-medium text-muted-foreground">Notes</Label>
+                <p className="text-sm" data-testid="modal-task-notes">{task.notes}</p>
+              </div>
+            )}
           </div>
           
           <div className="grid grid-cols-2 gap-4">
@@ -130,7 +152,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                 <SelectValue placeholder="Select team member" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Unassigned</SelectItem>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
                 {teamMembers?.map((member) => (
                   <SelectItem key={member.id} value={member.id}>
                     {member.name} - {member.role}
