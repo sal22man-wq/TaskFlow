@@ -106,6 +106,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       >
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
+            <div className="mb-4">
+              <h1 className="text-base font-semibold text-primary mb-3 leading-relaxed" data-testid="text-company-welcome">
+                اهلا بكم في برنامج تتبع العمل في شركة اشراق الودق لتكنولوجيا المعلومات
+              </h1>
+            </div>
             <CardTitle className="text-2xl font-bold" data-testid="text-login-title">
               {showRegister ? "إنشاء حساب جديد" : "تسجيل الدخول"}
             </CardTitle>
