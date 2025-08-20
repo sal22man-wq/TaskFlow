@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,12 +52,24 @@ export default function Profile() {
   const profileForm = useForm({
     resolver: zodResolver(profileUpdateSchema),
     defaultValues: {
-      firstName: (user as any)?.firstName || '',
-      lastName: (user as any)?.lastName || '',
-      email: (user as any)?.email || '',
-      phone: (user as any)?.phone || '',
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
     },
   });
+
+  // Update form when user data changes
+  useEffect(() => {
+    if (user) {
+      profileForm.reset({
+        firstName: (user as any)?.firstName || '',
+        lastName: (user as any)?.lastName || '',
+        email: (user as any)?.email || '',
+        phone: (user as any)?.phone || '',
+      });
+    }
+  }, [user, profileForm]);
 
   // Password change form
   const passwordForm = useForm({
@@ -72,9 +84,11 @@ export default function Profile() {
   // Profile update mutation
   const profileUpdateMutation = useMutation({
     mutationFn: async (data: z.infer<typeof profileUpdateSchema>) => {
+      console.log("Updating profile with data:", data);
       return await apiRequest("/api/auth/profile", "PUT", data);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      console.log("Profile update success:", response);
       toast({
         title: "تم التحديث بنجاح",
         description: "تم تحديث معلومات الملف الشخصي",
@@ -82,7 +96,8 @@ export default function Profile() {
       setIsEditingProfile(false);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Profile update error:", error);
       toast({
         title: "خطأ في التحديث",
         description: "فشل في تحديث معلومات الملف الشخصي",
@@ -295,7 +310,9 @@ export default function Profile() {
               <div>
                 <Label className="text-sm font-medium">الاسم الكامل</Label>
                 <p className="text-sm text-muted-foreground">
-                  {(user as any)?.firstName || ''} {(user as any)?.lastName || 'غير محدد'}
+                  {((user as any)?.firstName && (user as any)?.lastName) 
+                    ? `${(user as any)?.firstName} ${(user as any)?.lastName}` 
+                    : 'غير محدد'}
                 </p>
               </div>
               <div>
