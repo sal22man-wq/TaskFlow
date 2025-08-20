@@ -4,7 +4,7 @@ import { QuickActions } from "@/components/dashboard/quick-actions";
 import { TaskCard } from "@/components/tasks/task-card";
 import { TeamMemberCard } from "@/components/team/team-member-card";
 import { Button } from "@/components/ui/button";
-import { TaskWithAssignee, TeamMember } from "@shared/schema";
+import { TaskWithAssignees, TeamMember } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 
@@ -13,7 +13,7 @@ export default function Dashboard() {
     queryKey: ["/api/stats"],
   });
 
-  const { data: tasks, isLoading: tasksLoading } = useQuery<TaskWithAssignee[]>({
+  const { data: tasks, isLoading: tasksLoading } = useQuery<TaskWithAssignees[]>({
     queryKey: ["/api/tasks"],
   });
 
