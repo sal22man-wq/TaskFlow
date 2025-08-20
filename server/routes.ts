@@ -54,13 +54,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid username or password" });
       }
 
+      // Check if account is approved (except for admin)
+      if (user.role !== "admin" && user.isApproved !== "approved") {
+        return res.status(403).json({ message: "Account pending approval" });
+      }
+
       // Set session
       req.session.userId = user.id;
       req.session.username = user.username;
 
       res.json({ 
         message: "Login successful",
-        user: { id: user.id, username: user.username }
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          role: user.role,
+          isApproved: user.isApproved
+        }
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -83,7 +93,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      res.json({ id: user.id, username: user.username });
+      res.json({ 
+        id: user.id, 
+        username: user.username,
+        role: user.role,
+        isApproved: user.isApproved
+      });
     } catch (error) {
       res.status(500).json({ message: "Failed to get user info" });
     }
@@ -338,6 +353,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch statistics" });
+    }
+  });
+
+  // Admin routes - User management
+  app.get("/api/admin/users", requireAuth, async (req, res) => {
+    try {
+      // Check if user is admin
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser || currentUser.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      const users = await storage.getAllUsers();
+      res.json(users.map(user => ({
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        isApproved: user.isApproved,
+        createdAt: user.createdAt
+      })));
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id/approval", requireAuth, async (req, res) => {
+    try {
+      // Check if user is admin
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser || currentUser.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      const { isApproved } = req.body;
+      const updatedUser = await storage.updateUserApproval(req.params.id, isApproved);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({
+        message: `User ${isApproved === 'approved' ? 'approved' : 'rejected'} successfully`,
+        user: {
+          id: updatedUser.id,
+          username: updatedUser.username,
+          isApproved: updatedUser.isApproved
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user approval" });
     }
   });
 

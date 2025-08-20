@@ -8,6 +8,9 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  updateUserApproval(id: string, isApproved: string): Promise<User | undefined>;
+  createAdminUser(): Promise<User>;
 
   // Team member methods
   getTeamMembers(): Promise<TeamMember[]>;
@@ -54,7 +57,7 @@ export class MemStorage implements IStorage {
     this.tasks = new Map();
     this.customers = new Map();
     
-    // Initialize with some default team members
+    // Initialize with some default team members and admin user
     this.seedData();
   }
 
@@ -98,6 +101,12 @@ export class MemStorage implements IStorage {
     for (const member of defaultMembers) {
       await this.createTeamMember(member);
     }
+    
+    // Create admin user if doesn't exist
+    const adminExists = await this.getUserByUsername("administrator");
+    if (!adminExists) {
+      await this.createAdminUser();
+    }
   }
 
   // User methods
@@ -113,9 +122,40 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      role: insertUser.role || "user",
+      isApproved: insertUser.isApproved || "pending",
+      createdAt: new Date()
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async updateUserApproval(id: string, isApproved: string): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, isApproved };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async createAdminUser(): Promise<User> {
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash("wdq@#$", 10);
+    
+    return await this.createUser({
+      username: "administrator",
+      password: hashedPassword,
+      role: "admin",
+      isApproved: "approved"
+    });
   }
 
   // Team member methods
@@ -431,6 +471,12 @@ export class DatabaseStorage implements IStorage {
     for (const member of defaultMembers) {
       await this.createTeamMember(member);
     }
+    
+    // Create admin user if doesn't exist
+    const adminExists = await this.getUserByUsername("administrator");
+    if (!adminExists) {
+      await this.createAdminUser();
+    }
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -446,6 +492,31 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async updateUserApproval(id: string, isApproved: string): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ isApproved })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser || undefined;
+  }
+
+  async createAdminUser(): Promise<User> {
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash("wdq@#$", 10);
+    
+    return await this.createUser({
+      username: "administrator",
+      password: hashedPassword,
+      role: "admin",
+      isApproved: "approved"
+    });
   }
 
   // Team member methods
