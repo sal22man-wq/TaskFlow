@@ -11,6 +11,9 @@ import { useToast } from "@/hooks/use-toast";
 import { InsertTask, TeamMember, Customer } from "@shared/schema";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AddCustomerDialog } from "@/components/customers/add-customer-dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface CreateTaskFormProps {
   onSuccess: () => void;
@@ -27,6 +30,10 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const [priority, setPriority] = useState("medium");
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState("");
+  
+  // Collapsible sections state
+  const [isCustomerDetailsOpen, setIsCustomerDetailsOpen] = useState(false);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
   // Fetch customers from API
   const { data: customers, isLoading: customersLoading } = useQuery<Customer[]>({
@@ -110,12 +117,16 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   };
 
   return (
-    <div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       <DialogHeader>
         <DialogTitle data-testid="modal-create-task-title">Create New Task</DialogTitle>
       </DialogHeader>
 
-      <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+      <form onSubmit={handleSubmit} className="space-y-3 mt-4">
         <div>
           <Label htmlFor="title">Title *</Label>
           <Input
@@ -134,81 +145,98 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Enter task description"
-            rows={3}
+            rows={2}
             data-testid="textarea-task-description"
+            className="text-sm"
           />
         </div>
 
-        <div className="space-y-4">
-          <div className="w-full">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="customerName">Customer Name *</Label>
-              <AddCustomerDialog
-                onCustomerAdded={(customer) => {
-                  setCustomerName(customer.name);
-                  if (customer.phone) {
-                    setCustomerPhone(customer.phone);
-                  }
-                }}
-              />
-            </div>
-            <div className="space-y-2">
-              <Select value={customerName} onValueChange={(value) => {
-                setCustomerName(value);
-                // Auto-fill phone and address if customer exists
-                const customer = customers?.find(c => c.name === value);
-                if (customer) {
-                  if (customer.phone) setCustomerPhone(customer.phone);
-                  if (customer.address) setCustomerAddress(customer.address);
+        <div className="w-full">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="customerName">Customer Name *</Label>
+            <AddCustomerDialog
+              onCustomerAdded={(customer) => {
+                setCustomerName(customer.name);
+                if (customer.phone) {
+                  setCustomerPhone(customer.phone);
                 }
-              }}>
-                <SelectTrigger data-testid="select-task-customer-name">
-                  <SelectValue placeholder="Select or enter customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers?.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.name}>
-                      {customer.name}
-                      {customer.phone && ` (${customer.phone})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                placeholder="Or enter custom customer name"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                data-testid="input-task-customer-name-manual"
-                className="text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="customer-phone">Customer Phone</Label>
-            <Input
-              id="customer-phone"
-              type="tel"
-              value={customerPhone}
-              onChange={(e) => setCustomerPhone(e.target.value)}
-              placeholder="Enter customer phone number"
-              data-testid="input-customer-phone-create"
+              }}
             />
           </div>
-
-          <div>
-            <Label htmlFor="customer-address">Customer Address</Label>
+          <div className="space-y-2">
+            <Select value={customerName} onValueChange={(value) => {
+              setCustomerName(value);
+              // Auto-fill phone and address if customer exists
+              const customer = customers?.find(c => c.name === value);
+              if (customer) {
+                if (customer.phone) setCustomerPhone(customer.phone);
+                if (customer.address) setCustomerAddress(customer.address);
+              }
+            }}>
+              <SelectTrigger data-testid="select-task-customer-name" className="text-sm">
+                <SelectValue placeholder="Select or enter customer" />
+              </SelectTrigger>
+              <SelectContent>
+                {customers?.map((customer) => (
+                  <SelectItem key={customer.id} value={customer.name}>
+                    {customer.name}
+                    {customer.phone && ` (${customer.phone})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Input
-              id="customer-address"
-              value={customerAddress}
-              onChange={(e) => setCustomerAddress(e.target.value)}
-              placeholder="Enter customer address"
-              data-testid="input-customer-address-create"
-              className="w-full"
+              placeholder="Or enter custom customer name"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              data-testid="input-task-customer-name-manual"
+              className="text-sm"
             />
           </div>
-
         </div>
+
+        <Collapsible open={isCustomerDetailsOpen} onOpenChange={setIsCustomerDetailsOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="w-full justify-between p-2 h-8">
+              Customer Details (Optional)
+              {isCustomerDetailsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-2 mt-2"
+            >
+              <div>
+                <Label htmlFor="customer-phone" className="text-sm">Customer Phone</Label>
+                <Input
+                  id="customer-phone"
+                  type="tel"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="Enter customer phone number"
+                  data-testid="input-customer-phone-create"
+                  className="text-sm"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="customer-address" className="text-sm">Customer Address</Label>
+                <Input
+                  id="customer-address"
+                  value={customerAddress}
+                  onChange={(e) => setCustomerAddress(e.target.value)}
+                  placeholder="Enter customer address"
+                  data-testid="input-customer-address-create"
+                  className="text-sm"
+                />
+              </div>
+            </motion.div>
+          </CollapsibleContent>
+        </Collapsible>
 
         <div>
           <Label htmlFor="time">Time/Schedule *</Label>
@@ -221,23 +249,11 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
           />
         </div>
 
-        <div>
-          <Label htmlFor="notes">Notes</Label>
-          <Textarea
-            id="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Additional notes (optional)"
-            rows={2}
-            data-testid="textarea-task-notes"
-          />
-        </div>
-
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="priority">Priority</Label>
+            <Label htmlFor="priority" className="text-sm">Priority</Label>
             <Select value={priority} onValueChange={setPriority}>
-              <SelectTrigger data-testid="select-task-priority-create">
+              <SelectTrigger data-testid="select-task-priority-create" className="text-sm h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -249,49 +265,81 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
           </div>
 
           <div>
-            <Label htmlFor="assignees">Assignees (Multiple Selection)</Label>
-            <div className="mt-2 space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
-              {teamMembers?.map((member) => (
-                <div key={member.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`assignee-${member.id}`}
-                    checked={assigneeIds.includes(member.id)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setAssigneeIds([...assigneeIds, member.id]);
-                      } else {
-                        setAssigneeIds(assigneeIds.filter(id => id !== member.id));
-                      }
-                    }}
-                    data-testid={`checkbox-assignee-${member.id}`}
-                  />
-                  <Label htmlFor={`assignee-${member.id}`} className="text-sm font-normal">
-                    {member.name} - {member.role}
-                  </Label>
-                </div>
-              ))}
-              {(!teamMembers || teamMembers.length === 0) && (
-                <p className="text-sm text-muted-foreground">No team members available</p>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Selected: {assigneeIds.length} member(s)
-            </p>
+            <Label htmlFor="dueDate" className="text-sm">Due Date</Label>
+            <Input
+              id="dueDate"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              data-testid="input-task-due-date-create"
+              className="text-sm h-9"
+            />
           </div>
         </div>
 
-        <div>
-          <Label htmlFor="dueDate">Due Date</Label>
-          <Input
-            id="dueDate"
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            data-testid="input-task-due-date-create"
-          />
-        </div>
+        <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="w-full justify-between p-2 h-8">
+              Advanced Options
+              {isAdvancedOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-3 mt-2"
+            >
+              <div>
+                <Label htmlFor="assignees" className="text-sm">Assignees (Multiple Selection)</Label>
+                <div className="mt-2 space-y-2 max-h-24 overflow-y-auto border rounded-md p-2 bg-muted/30">
+                  {teamMembers?.map((member) => (
+                    <div key={member.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`assignee-${member.id}`}
+                        checked={assigneeIds.includes(member.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setAssigneeIds([...assigneeIds, member.id]);
+                          } else {
+                            setAssigneeIds(assigneeIds.filter(id => id !== member.id));
+                          }
+                        }}
+                        data-testid={`checkbox-assignee-${member.id}`}
+                      />
+                      <Label htmlFor={`assignee-${member.id}`} className="text-xs font-normal">
+                        {member.name} - {member.role}
+                      </Label>
+                    </div>
+                  ))}
+                  {(!teamMembers || teamMembers.length === 0) && (
+                    <p className="text-xs text-muted-foreground">No team members available</p>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Selected: {assigneeIds.length} member(s)
+                </p>
+              </div>
 
-        <div className="flex space-x-3 pt-4">
+              <div>
+                <Label htmlFor="notes" className="text-sm">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Additional notes (optional)"
+                  rows={2}
+                  data-testid="textarea-task-notes"
+                  className="text-sm"
+                />
+              </div>
+            </motion.div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <div className="flex space-x-3 pt-2">
           <Button
             type="submit"
             className="flex-1"
@@ -310,6 +358,6 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
           </Button>
         </div>
       </form>
-    </div>
+    </motion.div>
   );
 }
