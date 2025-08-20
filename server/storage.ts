@@ -237,6 +237,7 @@ export class MemStorage implements IStorage {
       dueDate: task.dueDate || null,
       notes: task.notes || null,
       customerPhone: task.customerPhone || null,
+      customerAddress: task.customerAddress || null,
       createdAt: now,
       updatedAt: now
     };

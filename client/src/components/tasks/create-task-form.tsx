@@ -21,6 +21,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const [description, setDescription] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
   const [staffName, setStaffName] = useState("");
   const [time, setTime] = useState("");
   const [notes, setNotes] = useState("");
@@ -29,12 +30,12 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const [dueDate, setDueDate] = useState("");
 
   // Fetch customers from API
-  const { data: customers, isLoading: customersLoading } = useQuery({
+  const { data: customers, isLoading: customersLoading } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
     queryFn: async () => {
       const response = await fetch("/api/customers");
       if (!response.ok) throw new Error("Failed to fetch customers");
-      return response.json() as Customer[];
+      return response.json();
     }
   });
 
@@ -62,6 +63,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       setDescription("");
       setCustomerName("");
       setCustomerPhone("");
+      setCustomerAddress("");
       setStaffName("");
       setTime("");
       setNotes("");
@@ -96,6 +98,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       description: description.trim(),
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim() || undefined,
+      customerAddress: customerAddress.trim() || undefined,
       staffName: staffName.trim(),
       time: time.trim(),
       notes: notes.trim() || undefined,
@@ -155,10 +158,11 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
             <div className="space-y-2">
               <Select value={customerName} onValueChange={(value) => {
                 setCustomerName(value);
-                // Auto-fill phone if customer exists
+                // Auto-fill phone and address if customer exists
                 const customer = customers?.find(c => c.name === value);
-                if (customer?.phone) {
-                  setCustomerPhone(customer.phone);
+                if (customer) {
+                  if (customer.phone) setCustomerPhone(customer.phone);
+                  if (customer.address) setCustomerAddress(customer.address);
                 }
               }}>
                 <SelectTrigger data-testid="select-task-customer-name">
@@ -192,6 +196,17 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
               onChange={(e) => setCustomerPhone(e.target.value)}
               placeholder="Enter customer phone number"
               data-testid="input-customer-phone-create"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="customer-address">Customer Address</Label>
+            <Input
+              id="customer-address"
+              value={customerAddress}
+              onChange={(e) => setCustomerAddress(e.target.value)}
+              placeholder="Enter customer address"
+              data-testid="input-customer-address-create"
             />
           </div>
 
