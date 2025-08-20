@@ -1,6 +1,6 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Home, ListTodo, Users, User, UserCheck } from "lucide-react";
+import { Home, ListTodo, CheckSquare, Users, User, UserCheck } from "lucide-react";
 
 export function BottomNavigation() {
   const [location, setLocation] = useLocation();
@@ -8,6 +8,7 @@ export function BottomNavigation() {
   const navItems = [
     { path: "/", icon: Home, label: "Dashboard", testId: "nav-dashboard" },
     { path: "/tasks", icon: ListTodo, label: "Tasks", testId: "nav-tasks" },
+    { path: "/my-tasks", icon: CheckSquare, label: "My Tasks", testId: "nav-my-tasks" },
     { path: "/customers", icon: UserCheck, label: "Customers", testId: "nav-customers" },
     { path: "/team", icon: Users, label: "Team", testId: "nav-team" },
     { path: "/profile", icon: User, label: "Profile", testId: "nav-profile" },
@@ -15,7 +16,7 @@ export function BottomNavigation() {
 
   return (
     <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-surface border-t border-surface-variant">
-      <div className="grid grid-cols-5 h-16">
+      <div className="grid grid-cols-6 h-16">
         {navItems.map(({ path, icon: Icon, label, testId }) => (
           <Button
             key={path}
