@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Plus, UserPlus, Calendar } from "lucide-react";
+import { Plus, UserPlus, Shield } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
 import { CreateTaskForm } from "@/components/tasks/create-task-form";
@@ -35,12 +35,12 @@ export function QuickActions() {
           </Button>
           
           <Button
-            className="bg-warning text-warning-foreground p-4 rounded-lg shadow-sm flex flex-col items-center space-y-2 hover:opacity-90 transition-opacity h-auto touch-manipulation"
-            onClick={() => setLocation("/tasks")}
-            data-testid="button-quick-schedule"
+            className="bg-secondary text-secondary-foreground p-4 rounded-lg shadow-sm flex flex-col items-center space-y-2 hover:opacity-90 transition-opacity h-auto touch-manipulation"
+            onClick={() => setLocation("/admin/logs")}
+            data-testid="button-quick-admin"
           >
-            <Calendar className="h-5 w-5" />
-            <span className="text-sm font-medium">Schedule</span>
+            <Shield className="h-5 w-5" />
+            <span className="text-sm font-medium">Admin</span>
           </Button>
         </div>
       </div>

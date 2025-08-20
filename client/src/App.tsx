@@ -10,7 +10,9 @@ import MyTasks from "@/pages/my-tasks";
 import Team from "@/pages/team.tsx";
 import Profile from "@/pages/profile.tsx";
 import Customers from "@/pages/customers";
+import AdminLogs from "@/pages/admin-logs";
 import NotFound from "@/pages/not-found";
+import { AdminGuard } from "@/components/admin/admin-guard";
 
 function Router() {
   return (
@@ -22,6 +24,7 @@ function Router() {
         <Route path="/team" component={Team} />
         <Route path="/customers" component={Customers} />
         <Route path="/profile" component={Profile} />
+        <Route path="/admin/logs" component={() => <AdminGuard><AdminLogs /></AdminGuard>} />
         <Route component={NotFound} />
       </Switch>
     </MobileLayout>
