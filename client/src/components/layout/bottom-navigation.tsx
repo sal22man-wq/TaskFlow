@@ -1,6 +1,6 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Home, ListTodo, CheckSquare, Users, User, UserCheck } from "lucide-react";
+import { Home, ListTodo, CheckSquare, Users, User, UserCheck, MessageCircle, Bell } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
 
 export function BottomNavigation() {
@@ -8,12 +8,12 @@ export function BottomNavigation() {
   const { t } = useLanguage();
 
   const navItems = [
-    { path: "/", icon: Home, label: t('nav.dashboard'), testId: "nav-dashboard" },
-    { path: "/tasks", icon: ListTodo, label: t('nav.tasks'), testId: "nav-tasks" },
-    { path: "/my-tasks", icon: CheckSquare, label: t('nav.myTasks'), testId: "nav-my-tasks" },
-    { path: "/customers", icon: UserCheck, label: t('nav.customers'), testId: "nav-customers" },
-    { path: "/team", icon: Users, label: t('nav.team'), testId: "nav-team" },
-    { path: "/profile", icon: User, label: t('nav.profile'), testId: "nav-profile" },
+    { path: "/", icon: Home, label: "الرئيسية", testId: "nav-dashboard" },
+    { path: "/tasks", icon: ListTodo, label: "المهام", testId: "nav-tasks" },
+    { path: "/messages", icon: MessageCircle, label: "الرسائل", testId: "nav-messages" },
+    { path: "/notifications", icon: Bell, label: "الإشعارات", testId: "nav-notifications" },
+    { path: "/team", icon: Users, label: "الفريق", testId: "nav-team" },
+    { path: "/profile", icon: User, label: "الملف الشخصي", testId: "nav-profile" },
   ];
 
   return (

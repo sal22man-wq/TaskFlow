@@ -57,6 +57,28 @@ export const tasks = pgTable("tasks", {
   updatedAt: timestamp("updated_at").default(sql`now()`),
 });
 
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  senderId: varchar("sender_id").notNull(),
+  receiverId: varchar("receiver_id"), // null for group messages
+  content: text("content").notNull(),
+  messageType: text("message_type").notNull().default("text"), // text, task, system
+  taskId: varchar("task_id"), // reference to task if message is task-related
+  isRead: text("is_read").notNull().default("false"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").notNull(), // task_assigned, task_completed, new_message, task_overdue
+  relatedId: varchar("related_id"), // task id, message id, etc.
+  isRead: text("is_read").notNull().default("false"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -85,6 +107,16 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   createdAt: true,
 });
 
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -98,6 +130,16 @@ export type Task = typeof tasks.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 export type Customer = typeof customers.$inferSelect;
 
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
+
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
+
 export type TaskWithAssignees = Task & {
   assignees?: TeamMember[];
+};
+
+export type MessageWithSender = Message & {
+  sender?: TeamMember | User;
 };

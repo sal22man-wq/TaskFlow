@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTeamMemberSchema, insertTaskSchema, updateTaskSchema, insertCustomerSchema, insertUserSchema } from "@shared/schema";
+import { insertTeamMemberSchema, insertTaskSchema, updateTaskSchema, insertCustomerSchema, insertUserSchema, insertMessageSchema, insertNotificationSchema } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import session from "express-session";
@@ -376,6 +376,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertTaskSchema.parse(taskData);
       console.log("Validated task data:", JSON.stringify(validatedData, null, 2));
       const task = await storage.createTask(validatedData);
+      
+      // Create notifications for assigned team members
+      await storage.createTaskNotifications(task, "task_assigned");
+      
       res.status(201).json(task);
     } catch (error) {
       console.error("Task creation error:", error);
@@ -394,6 +398,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!task) {
         return res.status(404).json({ message: "Task not found" });
       }
+      
+      // Create notifications for assigned team members when task is updated
+      await storage.createTaskNotifications(task, "task_updated");
+      
       res.json(task);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -487,6 +495,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to update user approval" });
+    }
+  });
+
+  // Messages routes
+  app.get("/api/messages", requireAuth, async (req, res) => {
+    try {
+      const { userId1, userId2 } = req.query;
+      const messages = await storage.getMessages(userId1 as string, userId2 as string);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/messages", requireAuth, async (req, res) => {
+    try {
+      const messageData = {
+        ...req.body,
+        senderId: req.session.userId!
+      };
+      const validatedData = insertMessageSchema.parse(messageData);
+      const message = await storage.createMessage(validatedData);
+      res.status(201).json(message);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid message data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  app.patch("/api/messages/:id/read", requireAuth, async (req, res) => {
+    try {
+      const message = await storage.markMessageAsRead(req.params.id);
+      if (!message) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      res.json(message);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark message as read" });
+    }
+  });
+
+  app.get("/api/messages/unread-count", requireAuth, async (req, res) => {
+    try {
+      const count = await storage.getUnreadMessagesCount(req.session.userId!);
+      res.json({ count });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch unread messages count" });
+    }
+  });
+
+  // Notifications routes
+  app.get("/api/notifications", requireAuth, async (req, res) => {
+    try {
+      const notifications = await storage.getNotifications(req.session.userId!);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", requireAuth, async (req, res) => {
+    try {
+      const notification = await storage.markNotificationAsRead(req.params.id);
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      res.json(notification);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  app.get("/api/notifications/unread-count", requireAuth, async (req, res) => {
+    try {
+      const count = await storage.getUnreadNotificationsCount(req.session.userId!);
+      res.json({ count });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch unread notifications count" });
     }
   });
 

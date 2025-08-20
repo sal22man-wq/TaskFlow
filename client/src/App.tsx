@@ -13,6 +13,8 @@ import MyTasks from "@/pages/my-tasks";
 import Team from "@/pages/team.tsx";
 import Profile from "@/pages/profile.tsx";
 import Customers from "@/pages/customers";
+import Messages from "@/pages/messages";
+import Notifications from "@/pages/notifications";
 import AdminLogs from "@/pages/admin-logs";
 import AdminUsers from "@/pages/admin-users";
 import NotFound from "@/pages/not-found";
@@ -48,6 +50,8 @@ function ProtectedRouter() {
           <Route path="/my-tasks" component={MyTasks} />
           <Route path="/team" component={Team} />
           <Route path="/customers" component={Customers} />
+          <Route path="/messages" component={Messages} />
+          <Route path="/notifications" component={Notifications} />
           <Route path="/profile" component={Profile} />
           <Route path="/admin/logs" component={() => <AdminGuard><AdminLogs /></AdminGuard>} />
           <Route path="/admin/users" component={() => <AdminGuard><AdminUsers /></AdminGuard>} />
