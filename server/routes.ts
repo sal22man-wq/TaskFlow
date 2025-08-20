@@ -5,6 +5,8 @@ import { insertTeamMemberSchema, insertTaskSchema, updateTaskSchema, insertCusto
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./db";
 
 // Extend Express session interface
 declare module 'express-session' {
@@ -41,14 +43,24 @@ const requireAdmin = async (req: Request, res: Response, next: NextFunction) => 
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configure session store with PostgreSQL
+  const PgSession = connectPgSimple(session);
+  const sessionStore = new PgSession({
+    pool: pool,
+    tableName: 'sessions',
+    createTableIfMissing: true
+  });
+
   // Configure session middleware
   app.use(session({
-    secret: 'your-secret-key-change-this-in-production',
+    store: sessionStore,
+    secret: 'wdq-task-management-secret-2025',
     resave: false,
     saveUninitialized: false,
+    rolling: true,
     cookie: {
       secure: false, // Set to true in production with HTTPS
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     }
   }));
 

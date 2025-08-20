@@ -3,6 +3,13 @@ import { pgTable, text, varchar, timestamp, integer } from "drizzle-orm/pg-core"
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Session storage table for persistence across deployments
+export const sessions = pgTable("sessions", {
+  sid: varchar("sid", { length: 128 }).primaryKey(),
+  sess: text("sess").notNull(),
+  expire: timestamp("expire").notNull(),
+});
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
