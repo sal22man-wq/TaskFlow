@@ -29,7 +29,10 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
-  const [time, setTime] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [startPeriod, setStartPeriod] = useState("AM");
+  const [finishTime, setFinishTime] = useState("");
+  const [finishPeriod, setFinishPeriod] = useState("PM");
   const [notes, setNotes] = useState("");
   const [priority, setPriority] = useState("medium");
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
@@ -69,7 +72,10 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       setCustomerName("");
       setCustomerPhone("");
       setCustomerAddress("");
-      setTime("");
+      setStartTime("");
+      setStartPeriod("AM");
+      setFinishTime("");
+      setFinishPeriod("PM");
       setNotes("");
       setPriority("medium");
       setAssigneeIds([]);
@@ -89,22 +95,24 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim() || !description.trim() || !customerName.trim() || !time.trim()) {
+    if (!title.trim() || !description.trim() || !customerName.trim() || !startTime.trim() || !finishTime.trim()) {
       toast({
         title: "Missing required fields",
-        description: "Please fill in all required fields: title, description, customer name, and time.",
+        description: "Please fill in all required fields: title, description, customer name, start time, and finish time.",
         variant: "destructive",
       });
       return;
     }
 
+    const timeSchedule = `${startTime.trim()} ${startPeriod} - ${finishTime.trim()} ${finishPeriod}`;
+    
     const task: InsertTask = {
       title: title.trim(),
       description: description.trim(),
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim() || undefined,
       customerAddress: customerAddress.trim() || undefined,
-      time: time.trim(),
+      time: timeSchedule,
       notes: notes.trim() || undefined,
       priority,
       assigneeIds: assigneeIds.length > 0 ? assigneeIds : undefined,
@@ -241,79 +249,55 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
         </Collapsible>
 
         <div>
-          <Label htmlFor="time">Time/Schedule *</Label>
-          <div className="space-y-2">
-            {/* Quick Time Choices */}
-            <div className="grid grid-cols-3 gap-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-xs h-7"
-                onClick={() => setTime("1 ساعة")}
-                data-testid="button-time-1hour"
-              >
-                1 ساعة
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-xs h-7"
-                onClick={() => setTime("2 ساعة")}
-                data-testid="button-time-2hours"
-              >
-                2 ساعة
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-xs h-7"
-                onClick={() => setTime("نصف يوم")}
-                data-testid="button-time-halfday"
-              >
-                نصف يوم
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-xs h-7"
-                onClick={() => setTime("يوم كامل")}
-                data-testid="button-time-fullday"
-              >
-                يوم كامل
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-xs h-7"
-                onClick={() => setTime("صباحاً")}
-                data-testid="button-time-morning"
-              >
-                صباحاً
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-xs h-7"
-                onClick={() => setTime("مساءً")}
-                data-testid="button-time-evening"
-              >
-                مساءً
-              </Button>
+          <Label>Time/Schedule *</Label>
+          <div className="grid grid-cols-2 gap-3">
+            {/* Start Time */}
+            <div>
+              <Label htmlFor="start-time" className="text-xs text-muted-foreground">Start Time</Label>
+              <div className="flex gap-1">
+                <Input
+                  id="start-time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  placeholder="9:00"
+                  className="text-sm"
+                  data-testid="input-start-time"
+                />
+                <Select value={startPeriod} onValueChange={setStartPeriod}>
+                  <SelectTrigger className="w-16 text-sm" data-testid="select-start-period">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AM">AM</SelectItem>
+                    <SelectItem value="PM">PM</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
-            <Input
-              id="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              placeholder="أو أدخل وقت مخصص"
-              data-testid="input-task-time"
-            />
+            {/* Finish Time */}
+            <div>
+              <Label htmlFor="finish-time" className="text-xs text-muted-foreground">Finish Time</Label>
+              <div className="flex gap-1">
+                <Input
+                  id="finish-time"
+                  value={finishTime}
+                  onChange={(e) => setFinishTime(e.target.value)}
+                  placeholder="5:00"
+                  className="text-sm"
+                  data-testid="input-finish-time"
+                />
+                <Select value={finishPeriod} onValueChange={setFinishPeriod}>
+                  <SelectTrigger className="w-16 text-sm" data-testid="select-finish-period">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AM">AM</SelectItem>
+                    <SelectItem value="PM">PM</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </div>
 
