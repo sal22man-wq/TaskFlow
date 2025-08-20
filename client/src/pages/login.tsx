@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { CompanyLogo } from "@/components/ui/company-logo";
 
 interface LoginPageProps {
   onLoginSuccess: (user: { id: string; username: string }) => void;
@@ -106,7 +107,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       >
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="mb-4">
+            <div className="mb-6">
+              <div className="flex justify-center mb-4">
+                <CompanyLogo size="lg" data-testid="company-logo" />
+              </div>
               <h1 className="text-base font-semibold text-primary mb-3 leading-relaxed" data-testid="text-company-welcome">
                 اهلا بكم في برنامج تتبع العمل في شركة اشراق الودق لتكنولوجيا المعلومات
               </h1>
