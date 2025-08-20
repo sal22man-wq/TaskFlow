@@ -1,23 +1,116 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { User, Settings, Bell, Shield, HelpCircle, LogOut, UserCheck, Activity } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { User, Settings, Bell, Shield, HelpCircle, LogOut, UserCheck, Activity, Edit, Save, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
+
+// Profile update schema
+const profileUpdateSchema = z.object({
+  firstName: z.string().min(1, "الاسم الأول مطلوب"),
+  lastName: z.string().min(1, "الاسم الأخير مطلوب"),
+  email: z.string().email("البريد الإلكتروني غير صالح"),
+  phone: z.string().optional(),
+});
+
+// Password change schema
+const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1, "كلمة المرور الحالية مطلوبة"),
+  newPassword: z.string().min(6, "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل"),
+  confirmPassword: z.string().min(1, "تأكيد كلمة المرور مطلوب"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "كلمات المرور غير متطابقة",
+  path: ["confirmPassword"],
+});
 
 export default function Profile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Get current user data
   const { data: user } = useQuery({
     queryKey: ["/api/auth/user"],
     retry: false,
+  });
+
+  // Profile update form
+  const profileForm = useForm({
+    resolver: zodResolver(profileUpdateSchema),
+    defaultValues: {
+      firstName: (user as any)?.firstName || '',
+      lastName: (user as any)?.lastName || '',
+      email: (user as any)?.email || '',
+      phone: (user as any)?.phone || '',
+    },
+  });
+
+  // Password change form
+  const passwordForm = useForm({
+    resolver: zodResolver(passwordChangeSchema),
+    defaultValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
+  });
+
+  // Profile update mutation
+  const profileUpdateMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof profileUpdateSchema>) => {
+      return await apiRequest("/api/auth/profile", "PUT", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "تم التحديث بنجاح",
+        description: "تم تحديث معلومات الملف الشخصي",
+      });
+      setIsEditingProfile(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    },
+    onError: () => {
+      toast({
+        title: "خطأ في التحديث",
+        description: "فشل في تحديث معلومات الملف الشخصي",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Password change mutation
+  const passwordChangeMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof passwordChangeSchema>) => {
+      return await apiRequest("/api/auth/change-password", "PUT", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "تم تغيير كلمة المرور",
+        description: "تم تغيير كلمة المرور بنجاح",
+      });
+      setIsChangingPassword(false);
+      passwordForm.reset();
+    },
+    onError: () => {
+      toast({
+        title: "خطأ في تغيير كلمة المرور",
+        description: "فشل في تغيير كلمة المرور. تأكد من كلمة المرور الحالية",
+        variant: "destructive",
+      });
+    },
   });
 
   const logoutMutation = useMutation({
@@ -45,6 +138,7 @@ export default function Profile() {
   const handleLogout = () => {
     logoutMutation.mutate();
   };
+
   return (
     <div className="p-4 space-y-4">
       <div className="text-center mb-6">
@@ -88,140 +182,314 @@ export default function Profile() {
                   <Badge className="bg-gray-100 text-gray-800">مستخدم عادي</Badge>
                 )}
               </div>
-              <div className="mt-2">
-                <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                  (user as any)?.teamMember?.status === 'available' ? 'bg-green-100 text-green-800' : 
-                  (user as any)?.teamMember?.status === 'busy' ? 'bg-red-100 text-red-800' : 
-                  'bg-gray-100 text-gray-800'
-                }`} data-testid="text-user-status">
-                  {(user as any)?.teamMember?.status === 'available' ? 'متاح' : 
-                   (user as any)?.teamMember?.status === 'busy' ? 'مشغول' : 
-                   (user as any)?.teamMember?.status === 'offline' ? 'غير متصل' : 'غير محدد'}
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Permission Details */}
-          <div className="mt-4 pt-4 border-t">
-            <h4 className="font-medium mb-2">الصلاحيات المتاحة:</h4>
-            <div className="space-y-1 text-sm">
-              {(user as any)?.role === 'admin' && (
-                <div className="text-red-700">
-                  • إدارة كاملة للنظام والمستخدمين
-                  <br />• إنشاء وإدارة جميع المهام
-                  <br />• تغيير صلاحيات المستخدمين
-                  <br />• الوصول لسجل أحداث النظام
-                </div>
-              )}
-              {(user as any)?.role === 'supervisor' && (
-                <div className="text-blue-700">
-                  • إنشاء وإدارة المهام
-                  <br />• عرض جميع المهام في النظام
-                  <br />• إدارة فريق العمل
-                </div>
-              )}
-              {((user as any)?.role === 'user' || !(user as any)?.role) && (
-                <div className="text-gray-700">
-                  • عرض المهام المُسندة لك فقط
-                  <br />• تحديث حالة وتقدم المهام
-                  <br />• إضافة ملاحظات على المهام
-                </div>
-              )}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Settings Options */}
-      <div className="space-y-2">
-        <Button
-          variant="ghost"
-          className="w-full justify-start h-12 text-left"
-          data-testid="button-settings"
-        >
-          <Settings className="h-5 w-5 mr-3" />
-          الإعدادات
-        </Button>
+      {/* Personal Information Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Settings className="h-5 w-5" />
+              <span>إعدادات المعلومات الشخصية</span>
+            </div>
+            {!isEditingProfile && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsEditingProfile(true)}
+                data-testid="button-edit-profile"
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                تعديل
+              </Button>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isEditingProfile ? (
+            <Form {...profileForm}>
+              <form onSubmit={profileForm.handleSubmit((data) => profileUpdateMutation.mutate(data))} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={profileForm.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>الاسم الأول</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-first-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={profileForm.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>الاسم الأخير</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-last-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={profileForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>البريد الإلكتروني</FormLabel>
+                      <FormControl>
+                        <Input type="email" {...field} data-testid="input-email" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={profileForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>رقم الهاتف (اختياري)</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-phone" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex space-x-2 space-x-reverse">
+                  <Button 
+                    type="submit" 
+                    disabled={profileUpdateMutation.isPending}
+                    data-testid="button-save-profile"
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    {profileUpdateMutation.isPending ? "جاري الحفظ..." : "حفظ"}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsEditingProfile(false);
+                      profileForm.reset();
+                    }}
+                    data-testid="button-cancel-profile"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    إلغاء
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium">الاسم الكامل</Label>
+                <p className="text-sm text-muted-foreground">
+                  {(user as any)?.firstName || ''} {(user as any)?.lastName || 'غير محدد'}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">البريد الإلكتروني</Label>
+                <p className="text-sm text-muted-foreground">{(user as any)?.email || 'غير محدد'}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">رقم الهاتف</Label>
+                <p className="text-sm text-muted-foreground">{(user as any)?.phone || 'غير محدد'}</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        <Button
-          variant="ghost"
-          className="w-full justify-start h-12 text-left"
-          data-testid="button-notifications"
-        >
-          <Bell className="h-5 w-5 mr-3" />
-          الإشعارات
-        </Button>
+      {/* Password Change */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Shield className="h-5 w-5" />
+              <span>تغيير كلمة المرور</span>
+            </div>
+            {!isChangingPassword && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsChangingPassword(true)}
+                data-testid="button-change-password"
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                تغيير
+              </Button>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isChangingPassword ? (
+            <Form {...passwordForm}>
+              <form onSubmit={passwordForm.handleSubmit((data) => passwordChangeMutation.mutate(data))} className="space-y-4">
+                <FormField
+                  control={passwordForm.control}
+                  name="currentPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>كلمة المرور الحالية</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} data-testid="input-current-password" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={passwordForm.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>كلمة المرور الجديدة</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} data-testid="input-new-password" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={passwordForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>تأكيد كلمة المرور الجديدة</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} data-testid="input-confirm-password" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex space-x-2 space-x-reverse">
+                  <Button 
+                    type="submit" 
+                    disabled={passwordChangeMutation.isPending}
+                    data-testid="button-save-password"
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    {passwordChangeMutation.isPending ? "جاري الحفظ..." : "حفظ"}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsChangingPassword(false);
+                      passwordForm.reset();
+                    }}
+                    data-testid="button-cancel-password"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    إلغاء
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                انقر على "تغيير" لتحديث كلمة المرور الخاصة بك
+              </p>
+              <div className="flex items-center space-x-2">
+                <Shield className="h-4 w-4 text-green-600" />
+                <span className="text-sm text-green-600">كلمة المرور محمية بتشفير قوي</span>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        <Button
-          variant="ghost"
-          className="w-full justify-start h-12 text-left"
-          data-testid="button-privacy"
-        >
-          <Shield className="h-5 w-5 mr-3" />
-          الخصوصية والأمان
-        </Button>
-
-        <Button
-          variant="ghost"
-          className="w-full justify-start h-12 text-left"
-          data-testid="button-help"
-        >
-          <HelpCircle className="h-5 w-5 mr-3" />
-          المساعدة والدعم
-        </Button>
-
-        {/* Admin-only options */}
-        {(user as any)?.role === "admin" && (
-          <div className="pt-4 border-t border-border">
-            <h4 className="text-sm font-medium text-muted-foreground mb-2 px-3">
-              خيارات المدير
-            </h4>
-            <Button
-              variant="ghost"
-              className="w-full justify-start h-12 text-left text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+      {/* Admin Functions - Only show for admin users */}
+      {(user as any)?.role === "admin" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Shield className="h-5 w-5" />
+              <span>وظائف المدير</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button 
+              className="w-full" 
               onClick={() => setLocation("/admin/users")}
               data-testid="button-admin-users"
             >
-              <UserCheck className="h-5 w-5 mr-3" />
+              <UserCheck className="h-4 w-4 mr-2" />
               إدارة المستخدمين
             </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start h-12 text-left text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+            <Button 
+              className="w-full" 
+              variant="outline"
               onClick={() => setLocation("/admin/logs")}
               data-testid="button-admin-logs"
             >
-              <Activity className="h-5 w-5 mr-3" />
+              <Activity className="h-4 w-4 mr-2" />
               سجل أحداث النظام
             </Button>
-          </div>
-        )}
+          </CardContent>
+        </Card>
+      )}
 
-        <div className="pt-4 border-t border-border">
-          <Button
-            variant="ghost"
-            className="w-full justify-start h-12 text-left text-destructive hover:text-destructive hover:bg-destructive/10"
+      {/* Other Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Settings className="h-5 w-5" />
+            <span>إعدادات أخرى</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Notification Settings */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Bell className="h-4 w-4" />
+              <span>إعدادات الإشعارات</span>
+            </div>
+            <Button variant="outline" size="sm" disabled>
+              قريباً
+            </Button>
+          </div>
+          
+          {/* Help */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <HelpCircle className="h-4 w-4" />
+              <span>المساعدة والدعم</span>
+            </div>
+            <Button variant="outline" size="sm" disabled>
+              قريباً
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Logout Button */}
+      <Card>
+        <CardContent className="pt-6">
+          <Button 
+            variant="destructive" 
+            className="w-full" 
             onClick={handleLogout}
             disabled={logoutMutation.isPending}
             data-testid="button-logout"
           >
-            <LogOut className="h-5 w-5 mr-3" />
+            <LogOut className="h-4 w-4 mr-2" />
             {logoutMutation.isPending ? "جاري تسجيل الخروج..." : "تسجيل الخروج"}
           </Button>
-        </div>
-      </div>
-
-      {/* App Info */}
-      <Card className="mt-8">
-        <CardContent className="pt-6">
-          <div className="text-center text-muted-foreground">
-            <h4 className="font-medium" data-testid="text-app-name">TaskFlow</h4>
-            <p className="text-sm" data-testid="text-app-version">Version 1.0.0</p>
-            <p className="text-xs mt-2" data-testid="text-app-description">
-              Team task management made simple
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>

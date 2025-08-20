@@ -18,6 +18,10 @@ export const users = pgTable("users", {
   role: text("role").notNull().default("user"), // user, supervisor, admin
   isApproved: text("is_approved").notNull().default("pending"), // pending, approved, rejected
   isActive: text("is_active").notNull().default("true"), // true, false
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  email: text("email"),
+  phone: text("phone"),
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 

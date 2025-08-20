@@ -169,10 +169,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: userWithTeamMember.username,
         role: userWithTeamMember.role,
         isApproved: userWithTeamMember.isApproved,
+        firstName: userWithTeamMember.firstName,
+        lastName: userWithTeamMember.lastName,
+        email: userWithTeamMember.email,
+        phone: userWithTeamMember.phone,
         teamMember: userWithTeamMember.teamMember
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to get user info" });
+    }
+  });
+
+  // Profile update schema
+  const profileUpdateSchema = z.object({
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"), 
+    email: z.string().email("Invalid email"),
+    phone: z.string().optional(),
+  });
+
+  // Password change schema
+  const passwordChangeSchema = z.object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z.string().min(6, "New password must be at least 6 characters"),
+    confirmPassword: z.string().min(1, "Password confirmation is required"),
+  });
+
+  // Update user profile
+  app.put("/api/auth/profile", requireAuth, async (req, res) => {
+    try {
+      const validatedData = profileUpdateSchema.parse(req.body);
+      const userId = req.session.userId!;
+      
+      // Update user
+      const updatedUser = await storage.updateUser(userId, {
+        firstName: validatedData.firstName,
+        lastName: validatedData.lastName,
+        email: validatedData.email,
+        phone: validatedData.phone,
+      });
+
+      // Update corresponding team member name
+      const teamMember = await storage.getTeamMemberByUserId(userId);
+      if (teamMember) {
+        await storage.updateTeamMember(teamMember.id, {
+          name: `${validatedData.firstName} ${validatedData.lastName}`,
+          email: validatedData.email,
+        });
+      }
+
+      // Log the profile update
+      await storage.logUserAction(
+        "profile_updated",
+        userId,
+        req.session.username!,
+        {
+          firstName: validatedData.firstName,
+          lastName: validatedData.lastName,
+          email: validatedData.email,
+          phone: validatedData.phone,
+        },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  // Change password
+  app.put("/api/auth/change-password", requireAuth, async (req, res) => {
+    try {
+      const validatedData = passwordChangeSchema.parse(req.body);
+      const userId = req.session.userId!;
+
+      // Verify passwords match
+      if (validatedData.newPassword !== validatedData.confirmPassword) {
+        return res.status(400).json({ message: "Passwords do not match" });
+      }
+
+      // Get current user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Verify current password
+      const isCurrentPasswordValid = await bcrypt.compare(validatedData.currentPassword, user.password);
+      if (!isCurrentPasswordValid) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+
+      // Hash new password
+      const saltRounds = 10;
+      const hashedNewPassword = await bcrypt.hash(validatedData.newPassword, saltRounds);
+
+      // Update password
+      await storage.updateUser(userId, {
+        password: hashedNewPassword,
+      });
+
+      // Log the password change
+      await storage.logUserAction(
+        "password_changed",
+        userId,
+        req.session.username!,
+        { message: "تم تغيير كلمة المرور بنجاح" },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json({ message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to change password" });
     }
   });
 
