@@ -87,6 +87,40 @@ const translations = {
     'admin.access': 'Administrator Access',
     'admin.password': 'Enter admin password',
     'admin.login': 'Access Admin Panel',
+    'admin.userManagement': 'User Management',
+    'admin.addUser': 'Add User',
+    'admin.approveUsers': 'Approve Users',
+
+    // Team
+    'team.title': 'Team',
+    'team.addMember': 'Add Member',
+    'team.memberName': 'Member Name',
+    'team.memberRole': 'Member Role',
+    'team.memberEmail': 'Member Email',
+    'team.memberStatus': 'Member Status',
+    'team.available': 'Available',
+    'team.busy': 'Busy',
+    'team.offline': 'Offline',
+
+    // Users
+    'user.username': 'Username',
+    'user.password': 'Password',
+    'user.role': 'Role',
+    'user.admin': 'Administrator',
+    'user.regular': 'Regular User',
+    'user.approve': 'Approve',
+    'user.reject': 'Reject',
+    'user.pending': 'Pending',
+    'user.approved': 'Approved',
+    'user.rejected': 'Rejected',
+
+    // Auth
+    'auth.login': 'Login',
+    'auth.logout': 'Logout',
+    'auth.username': 'Username',
+    'auth.password': 'Password',
+    'auth.loginBtn': 'Login',
+    'auth.logoutConfirm': 'Are you sure you want to logout?',
 
     // Language
     'lang.english': 'English',
@@ -99,6 +133,18 @@ const translations = {
     'chat.typeMessage': 'Type a message...',
     'chat.send': 'Send',
     'chat.close': 'Close',
+
+    // Profile
+    'profile.title': 'Profile',
+    'profile.settings': 'Settings',
+    'profile.helpSupport': 'Help & Support',
+    'profile.adminOptions': 'Admin Options',
+
+    // Statistics
+    'stats.activeTasks': 'Active Tasks',
+    'stats.completed': 'Completed',
+    'stats.overdue': 'Overdue',
+    'stats.total': 'Total',
   },
   ar: {
     // Navigation
@@ -112,7 +158,7 @@ const translations = {
 
     // Dashboard
     'dashboard.title': 'لوحة التحكم',
-    'dashboard.welcome': 'أهلاً بك في تدفق المهام',
+    'dashboard.welcome': 'أهلاً بك في نظام إدارة المهام',
     'dashboard.quickActions': 'إجراءات سريعة',
     'dashboard.createTask': 'إنشاء مهمة',
     'dashboard.addMember': 'إضافة عضو',
@@ -177,6 +223,40 @@ const translations = {
     'admin.access': 'وصول المدير',
     'admin.password': 'أدخل كلمة مرور المدير',
     'admin.login': 'الوصول إلى لوحة المدير',
+    'admin.userManagement': 'إدارة المستخدمين',
+    'admin.addUser': 'إضافة مستخدم',
+    'admin.approveUsers': 'موافقة المستخدمين',
+
+    // Team
+    'team.title': 'الفريق',
+    'team.addMember': 'إضافة عضو',
+    'team.memberName': 'اسم العضو',
+    'team.memberRole': 'دور العضو',
+    'team.memberEmail': 'بريد العضو الإلكتروني',
+    'team.memberStatus': 'حالة العضو',
+    'team.available': 'متوفر',
+    'team.busy': 'مشغول',
+    'team.offline': 'غير متصل',
+
+    // Users
+    'user.username': 'اسم المستخدم',
+    'user.password': 'كلمة المرور',
+    'user.role': 'الدور',
+    'user.admin': 'مدير',
+    'user.regular': 'مستخدم عادي',
+    'user.approve': 'موافقة',
+    'user.reject': 'رفض',
+    'user.pending': 'في الانتظار',
+    'user.approved': 'مقبول',
+    'user.rejected': 'مرفوض',
+
+    // Auth
+    'auth.login': 'تسجيل الدخول',
+    'auth.logout': 'تسجيل الخروج',
+    'auth.username': 'اسم المستخدم',
+    'auth.password': 'كلمة المرور',
+    'auth.loginBtn': 'دخول',
+    'auth.logoutConfirm': 'هل أنت متأكد من تسجيل الخروج؟',
 
     // Language
     'lang.english': 'English',
@@ -189,11 +269,23 @@ const translations = {
     'chat.typeMessage': 'اكتب رسالة...',
     'chat.send': 'إرسال',
     'chat.close': 'إغلاق',
+
+    // Profile
+    'profile.title': 'الملف الشخصي',
+    'profile.settings': 'الإعدادات',
+    'profile.helpSupport': 'المساعدة والدعم',
+    'profile.adminOptions': 'خيارات المدير',
+
+    // Statistics
+    'stats.activeTasks': 'المهام النشطة',
+    'stats.completed': 'مكتملة',
+    'stats.overdue': 'متأخرة',
+    'stats.total': 'الإجمالي',
   },
 };
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<'en' | 'ar'>('en');
+  const [language, setLanguageState] = useState<'en' | 'ar'>('ar');
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem('language') as 'en' | 'ar' | null;

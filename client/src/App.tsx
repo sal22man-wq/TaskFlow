@@ -32,7 +32,11 @@ function ProtectedRouter() {
   }
 
   if (!user) {
-    return <LoginPage onLoginSuccess={login} />;
+    return (
+      <LanguageProvider>
+        <LoginPage onLoginSuccess={login} />
+      </LanguageProvider>
+    );
   }
 
   return (

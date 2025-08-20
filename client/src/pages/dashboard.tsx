@@ -48,28 +48,28 @@ export default function Dashboard() {
           ) : (
             <>
               <StatsCard
-                title="Active Tasks"
+                title={t('stats.activeTasks')}
                 value={(stats as any)?.activeTasks || 0}
                 icon="📋"
                 color="primary"
                 testId="stat-active-tasks"
               />
               <StatsCard
-                title="Team Members"
+                title="أعضاء الفريق"
                 value={(stats as any)?.teamMembers || 0}
                 icon="👥"
                 color="secondary"
                 testId="stat-team-members"
               />
               <StatsCard
-                title="Completed"
+                title={t('stats.completed')}
                 value={(stats as any)?.completed || 0}
                 icon="✅"
                 color="success"
                 testId="stat-completed"
               />
               <StatsCard
-                title="Overdue"
+                title={t('stats.overdue')}
                 value={(stats as any)?.overdue || 0}
                 icon="⚠️"
                 color="error"
@@ -95,10 +95,10 @@ export default function Dashboard() {
       {/* Recent Tasks */}
       <section className="px-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium" data-testid="text-recent-tasks-title">Recent Tasks</h3>
+          <h3 className="text-lg font-medium" data-testid="text-recent-tasks-title">{t('dashboard.recentTasks')}</h3>
           <Link href="/tasks">
             <Button variant="ghost" size="sm" className="text-primary" data-testid="link-view-all-tasks">
-              View All
+              عرض الكل
             </Button>
           </Link>
         </div>
@@ -116,7 +116,7 @@ export default function Dashboard() {
             ))
           ) : (
             <div className="text-center py-8 text-muted-foreground" data-testid="text-no-tasks">
-              No recent tasks
+              {t('msg.noTasks')}
             </div>
           )}
         </div>
@@ -125,10 +125,10 @@ export default function Dashboard() {
       {/* Team Members */}
       <section className="p-4 mt-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium" data-testid="text-team-members-title">Team Members</h3>
+          <h3 className="text-lg font-medium" data-testid="text-team-members-title">{t('team.title')}</h3>
           <Link href="/team">
             <Button variant="ghost" size="sm" className="text-primary" data-testid="link-view-all-team">
-              View All
+              عرض الكل
             </Button>
           </Link>
         </div>
@@ -146,7 +146,7 @@ export default function Dashboard() {
             ))
           ) : (
             <div className="text-center py-8 text-muted-foreground" data-testid="text-no-team-members">
-              No team members found
+              لا يوجد أعضاء فريق
             </div>
           )}
         </div>

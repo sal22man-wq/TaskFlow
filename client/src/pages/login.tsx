@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { CompanyLogo } from "@/components/ui/company-logo";
+import { useLanguage } from "@/hooks/use-language";
 
 interface LoginPageProps {
   onLoginSuccess: (user: { id: string; username: string }) => void;

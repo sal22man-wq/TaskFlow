@@ -9,9 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { AddCustomerDialog } from "@/components/customers/add-customer-dialog";
 import { Plus, Phone, MapPin, Mail, Search } from "lucide-react";
 import type { Customer } from "@shared/schema";
+import { useLanguage } from "@/hooks/use-language";
 
 export default function CustomersPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const { t } = useLanguage();
 
   const { data: customers, isLoading } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
@@ -27,7 +29,7 @@ export default function CustomersPage() {
     return (
       <div className="p-4 space-y-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Customer Management</h1>
+          <h1 className="text-2xl font-bold">{t('nav.customers')}</h1>
         </div>
         <div className="grid gap-4">
           {[...Array(3)].map((_, i) => (
@@ -47,17 +49,17 @@ export default function CustomersPage() {
     <div className="p-4 space-y-4">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold" data-testid="page-customers-title">Customer Management</h1>
+        <h1 className="text-2xl font-bold" data-testid="page-customers-title">{t('nav.customers')}</h1>
         <Dialog>
           <DialogTrigger asChild>
             <Button data-testid="button-add-customer">
               <Plus className="w-4 h-4 mr-2" />
-              Add Customer
+              إضافة عميل
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Customer</DialogTitle>
+              <DialogTitle>إضافة عميل جديد</DialogTitle>
             </DialogHeader>
             <AddCustomerDialog />
           </DialogContent>
@@ -68,7 +70,7 @@ export default function CustomersPage() {
       <div className="flex items-center space-x-2">
         <Search className="w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="Search customers..."
+          placeholder="البحث عن العملاء..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-md"

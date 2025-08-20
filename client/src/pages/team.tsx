@@ -7,9 +7,11 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { TeamMember } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserPlus } from "lucide-react";
+import { useLanguage } from "@/hooks/use-language";
 
 export default function Team() {
   const [showAddMember, setShowAddMember] = useState(false);
+  const { t } = useLanguage();
 
   const { data: teamMembers, isLoading } = useQuery<TeamMember[]>({
     queryKey: ["/api/team-members"],
@@ -19,7 +21,7 @@ export default function Team() {
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-medium" data-testid="text-team-title">
-          Team Members
+          {t('team.title')}
         </h2>
         <Button
           onClick={() => setShowAddMember(true)}
@@ -27,7 +29,7 @@ export default function Team() {
           data-testid="button-add-member"
         >
           <UserPlus className="h-4 w-4 mr-2" />
-          Add Member
+          {t('team.addMember')}
         </Button>
       </div>
 
@@ -44,7 +46,7 @@ export default function Team() {
           ))
         ) : (
           <div className="text-center py-12 text-muted-foreground" data-testid="text-no-team-members">
-            No team members found. Add your first team member to get started.
+            لا يوجد أعضاء فريق. أضف عضو الفريق الأول للبدء.
           </div>
         )}
       </div>

@@ -5,11 +5,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { User, Settings, Bell, Shield, HelpCircle, LogOut, UserCheck } from "lucide-react";
 import { useLocation } from "wouter";
+import { useLanguage } from "@/hooks/use-language";
 
 export default function Profile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const { t } = useLanguage();
 
   // Get current user data
   const { data: user } = useQuery({
@@ -51,7 +53,7 @@ export default function Profile() {
       </div>
       
       <h2 className="text-xl font-medium mb-4" data-testid="text-profile-title">
-        Profile
+        {t('nav.profile')}
       </h2>
 
       {/* User Info Card */}
@@ -59,7 +61,7 @@ export default function Profile() {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <User className="h-5 w-5" />
-            <span>User Information</span>
+            <span>معلومات المستخدم</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -83,7 +85,7 @@ export default function Profile() {
           data-testid="button-settings"
         >
           <Settings className="h-5 w-5 mr-3" />
-          Settings
+          الإعدادات
         </Button>
 
         <Button
@@ -92,7 +94,7 @@ export default function Profile() {
           data-testid="button-notifications"
         >
           <Bell className="h-5 w-5 mr-3" />
-          Notifications
+          الإشعارات
         </Button>
 
         <Button
@@ -101,7 +103,7 @@ export default function Profile() {
           data-testid="button-privacy"
         >
           <Shield className="h-5 w-5 mr-3" />
-          Privacy & Security
+          الخصوصية والأمان
         </Button>
 
         <Button
@@ -110,7 +112,7 @@ export default function Profile() {
           data-testid="button-help"
         >
           <HelpCircle className="h-5 w-5 mr-3" />
-          Help & Support
+          المساعدة والدعم
         </Button>
 
         {/* Admin-only options */}

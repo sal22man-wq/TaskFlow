@@ -4,9 +4,11 @@ import { TaskFilters } from "@/components/tasks/task-filters";
 import { TaskCard } from "@/components/tasks/task-card";
 import { TaskWithAssignees } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLanguage } from "@/hooks/use-language";
 
 export default function Tasks() {
   const [activeFilter, setActiveFilter] = useState("all");
+  const { t } = useLanguage();
 
   const { data: tasks, isLoading } = useQuery<TaskWithAssignees[]>({
     queryKey: ["/api/tasks"],
@@ -20,7 +22,7 @@ export default function Tasks() {
   return (
     <div className="p-4">
       <h2 className="text-xl font-medium mb-4" data-testid="text-tasks-title">
-        All Tasks
+        {t('nav.tasks')}
       </h2>
 
       <TaskFilters 
@@ -42,8 +44,8 @@ export default function Tasks() {
         ) : (
           <div className="text-center py-12 text-muted-foreground" data-testid="text-no-filtered-tasks">
             {activeFilter === "all" 
-              ? "No tasks found. Create your first task to get started."
-              : `No ${activeFilter.replace('_', ' ')} tasks found.`
+              ? "لا توجد مهام. أنشئ مهمتك الأولى للبدء."
+              : `لا توجد مهام ${activeFilter === 'pending' ? 'في الانتظار' : activeFilter === 'in_progress' ? 'قيد التنفيذ' : 'مكتملة'}.`
             }
           </div>
         )}
