@@ -85,7 +85,7 @@ export default function Profile() {
   const profileUpdateMutation = useMutation({
     mutationFn: async (data: z.infer<typeof profileUpdateSchema>) => {
       console.log("Updating profile with data:", data);
-      return await apiRequest("/api/auth/profile", "PUT", data);
+      return await apiRequest("PUT", "/api/auth/profile", data);
     },
     onSuccess: (response) => {
       console.log("Profile update success:", response);
@@ -109,7 +109,7 @@ export default function Profile() {
   // Password change mutation
   const passwordChangeMutation = useMutation({
     mutationFn: async (data: z.infer<typeof passwordChangeSchema>) => {
-      return await apiRequest("/api/auth/change-password", "PUT", data);
+      return await apiRequest("PUT", "/api/auth/change-password", data);
     },
     onSuccess: () => {
       toast({
