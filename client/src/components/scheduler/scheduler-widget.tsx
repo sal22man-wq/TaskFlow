@@ -161,7 +161,7 @@ export function SchedulerWidget() {
                     
                     {dayTasks.length === 0 && (
                       <div className="text-xs text-muted-foreground text-center py-4">
-                        No tasks
+                        {t('msg.noTasks')}
                       </div>
                     )}
                   </div>

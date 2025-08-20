@@ -77,10 +77,10 @@ export function UpcomingSchedule() {
                       </h3>
                       <div className="flex items-center gap-2">
                         <Badge variant={getPriorityColor(task.priority)} className="text-xs">
-                          {task.priority === 'high' ? 'عالية' : task.priority === 'medium' ? 'متوسطة' : 'منخفضة'}
+                          {t(`priority.${task.priority}`)}
                         </Badge>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(task.status)}`}>
-                          {task.status === 'pending' ? 'في الانتظار' : task.status === 'start' ? 'بدأ' : 'مكتمل'}
+                          {t(`status.${task.status}`)}
                         </span>
                       </div>
                     </div>
@@ -144,7 +144,7 @@ export function UpcomingSchedule() {
             ) : (
               <div className="text-center py-8 text-muted-foreground" data-testid="text-no-upcoming-tasks">
                 <Calendar className="w-12 h-12 mx-auto mb-2 text-muted-foreground/50" />
-                <p>لا توجد مهام قادمة في الأيام السبعة القادمة</p>
+                <p>{t('msg.noUpcomingTasks')}</p>
               </div>
             )}
           </div>

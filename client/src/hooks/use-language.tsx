@@ -71,6 +71,8 @@ const translations = {
 
     // Messages
     'msg.noTasks': 'No tasks found',
+    'msg.noTeamMembers': 'No team members found',
+    'msg.noUpcomingTasks': 'No upcoming tasks in the next 7 days',
     'msg.taskCreated': 'Task created successfully',
     'msg.taskUpdated': 'Task updated successfully',
     'msg.loading': 'Loading...',
@@ -210,12 +212,13 @@ const translations = {
 
     // Messages
     'msg.noTasks': 'لا توجد مهام',
+    'msg.noTeamMembers': 'لا يوجد أعضاء في الفريق',
+    'msg.noUpcomingTasks': 'لا توجد مهام قادمة في الأيام السبعة القادمة',
     'msg.taskCreated': 'تم إنشاء المهمة بنجاح',
     'msg.taskUpdated': 'تم تحديث المهمة بنجاح',
     'msg.loading': 'جاري التحميل...',
     'msg.saving': 'جاري الحفظ...',
     'msg.updating': 'جاري التحديث...',
-    'msg.noTeamMembers': 'لا يوجد أعضاء فريق',
 
     // My Tasks
     'myTasks.title': 'مهامي',
