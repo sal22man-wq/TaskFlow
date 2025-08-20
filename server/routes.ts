@@ -23,6 +23,23 @@ const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
+// Admin middleware
+const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+  
+  try {
+    const user = await storage.getUser(req.session.userId);
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    return next();
+  } catch (error) {
+    return res.status(500).json({ message: "Authorization check failed" });
+  }
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure session middleware
   app.use(session({
@@ -137,6 +154,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Registration failed" });
     }
   });
+
+  // Admin routes (protected)
+  app.get("/api/admin/users", requireAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Admin get users error:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id/approve", requireAdmin, async (req, res) => {
+    try {
+      const { isApproved } = req.body;
+      const userId = req.params.id;
+
+      if (!["approved", "rejected"].includes(isApproved)) {
+        return res.status(400).json({ message: "Invalid approval status" });
+      }
+
+      const user = await storage.updateUserApproval(userId, isApproved);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({
+        message: `User ${isApproved} successfully`,
+        user: { 
+          id: user.id, 
+          username: user.username,
+          isApproved: user.isApproved
+        }
+      });
+    } catch (error) {
+      console.error("Admin approval error:", error);
+      res.status(500).json({ message: "Failed to update user approval" });
+    }
+  });
+
   // Team member routes (protected)
   app.get("/api/team-members", requireAuth, async (req, res) => {
     try {

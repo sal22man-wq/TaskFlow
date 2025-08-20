@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { User, Settings, Bell, Shield, HelpCircle, LogOut } from "lucide-react";
+import { User, Settings, Bell, Shield, HelpCircle, LogOut, UserCheck } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Profile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   // Get current user data
   const { data: user } = useQuery({
@@ -110,6 +112,24 @@ export default function Profile() {
           <HelpCircle className="h-5 w-5 mr-3" />
           Help & Support
         </Button>
+
+        {/* Admin-only options */}
+        {user?.role === "admin" && (
+          <div className="pt-4 border-t border-border">
+            <h4 className="text-sm font-medium text-muted-foreground mb-2 px-3">
+              خيارات المدير
+            </h4>
+            <Button
+              variant="ghost"
+              className="w-full justify-start h-12 text-left text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              onClick={() => setLocation("/admin/users")}
+              data-testid="button-admin-users"
+            >
+              <UserCheck className="h-5 w-5 mr-3" />
+              إدارة المستخدمين
+            </Button>
+          </div>
+        )}
 
         <div className="pt-4 border-t border-border">
           <Button

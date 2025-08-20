@@ -14,6 +14,7 @@ import Team from "@/pages/team.tsx";
 import Profile from "@/pages/profile.tsx";
 import Customers from "@/pages/customers";
 import AdminLogs from "@/pages/admin-logs";
+import AdminUsers from "@/pages/admin-users";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 import { AdminGuard } from "@/components/admin/admin-guard";
@@ -45,6 +46,7 @@ function ProtectedRouter() {
           <Route path="/customers" component={Customers} />
           <Route path="/profile" component={Profile} />
           <Route path="/admin/logs" component={() => <AdminGuard><AdminLogs /></AdminGuard>} />
+          <Route path="/admin/users" component={() => <AdminGuard><AdminUsers /></AdminGuard>} />
           <Route component={NotFound} />
         </Switch>
       </MobileLayout>
