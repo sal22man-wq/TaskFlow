@@ -166,7 +166,7 @@ const translations = {
     'dashboard.title': 'لوحة التحكم',
     'dashboard.welcome': 'أهلاً بك في نظام إدارة المهام',
     'dashboard.quickActions': 'إجراءات سريعة',
-    'dashboard.createTask': 'إنشاء مهمة',
+    'dashboard.createTask': 'انشاء مهمة',
     'dashboard.addMember': 'إضافة عضو',
     'dashboard.admin': 'المدير',
     'dashboard.weeklySchedule': 'الجدول الأسبوعي',
