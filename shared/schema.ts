@@ -29,7 +29,7 @@ export const tasks = pgTable("tasks", {
   notes: text("notes"), // additional notes
   status: text("status").notNull().default("to_be_completed"), // to_be_completed, started, in_progress, completed, overdue
   priority: text("priority").notNull().default("medium"), // low, medium, high
-  assigneeId: varchar("assignee_id").references(() => teamMembers.id),
+  assigneeIds: text("assignee_ids").array(), // Array of team member IDs
   dueDate: timestamp("due_date"),
   progress: integer("progress").notNull().default(0), // 0-100
   createdAt: timestamp("created_at").default(sql`now()`),
@@ -67,6 +67,6 @@ export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type UpdateTask = z.infer<typeof updateTaskSchema>;
 export type Task = typeof tasks.$inferSelect;
 
-export type TaskWithAssignee = Task & {
-  assignee?: TeamMember;
+export type TaskWithAssignees = Task & {
+  assignees?: TeamMember[];
 };

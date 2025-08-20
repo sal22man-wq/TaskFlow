@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +23,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const [time, setTime] = useState("");
   const [notes, setNotes] = useState("");
   const [priority, setPriority] = useState("medium");
-  const [assigneeId, setAssigneeId] = useState("");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState("");
 
   // Common customers for quick selection
@@ -57,7 +58,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       setTime("");
       setNotes("");
       setPriority("medium");
-      setAssigneeId("");
+      setAssigneeIds([]);
       setDueDate("");
       onSuccess();
     },
@@ -90,7 +91,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       time: time.trim(),
       notes: notes.trim() || undefined,
       priority,
-      assigneeId: assigneeId === "unassigned" ? undefined : assigneeId || undefined,
+      assigneeIds: assigneeIds.length > 0 ? assigneeIds : undefined,
       dueDate: dueDate ? new Date(dueDate) : undefined,
       status: "to_be_completed",
       progress: 0,
@@ -211,20 +212,34 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
           </div>
 
           <div>
-            <Label htmlFor="assignee">Assignee</Label>
-            <Select value={assigneeId} onValueChange={setAssigneeId}>
-              <SelectTrigger data-testid="select-task-assignee-create">
-                <SelectValue placeholder="Select member" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="unassigned">Unassigned</SelectItem>
-                {teamMembers?.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="assignees">Assignees (Multiple Selection)</Label>
+            <div className="mt-2 space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
+              {teamMembers?.map((member) => (
+                <div key={member.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`assignee-${member.id}`}
+                    checked={assigneeIds.includes(member.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setAssigneeIds([...assigneeIds, member.id]);
+                      } else {
+                        setAssigneeIds(assigneeIds.filter(id => id !== member.id));
+                      }
+                    }}
+                    data-testid={`checkbox-assignee-${member.id}`}
+                  />
+                  <Label htmlFor={`assignee-${member.id}`} className="text-sm font-normal">
+                    {member.name} - {member.role}
+                  </Label>
+                </div>
+              ))}
+              {(!teamMembers || teamMembers.length === 0) && (
+                <p className="text-sm text-muted-foreground">No team members available</p>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Selected: {assigneeIds.length} member(s)
+            </p>
           </div>
         </div>
 

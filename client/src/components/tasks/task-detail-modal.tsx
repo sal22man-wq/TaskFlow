@@ -1,10 +1,11 @@
-import { TaskWithAssignee, UpdateTask } from "@shared/schema";
+import { TaskWithAssignees, UpdateTask } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -13,7 +14,7 @@ import { TeamMember } from "@shared/schema";
 import { format } from "date-fns";
 
 interface TaskDetailModalProps {
-  task: TaskWithAssignee;
+  task: TaskWithAssignees;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -21,7 +22,7 @@ interface TaskDetailModalProps {
 export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalProps) {
   const [status, setStatus] = useState(task.status);
   const [priority, setPriority] = useState(task.priority);
-  const [assigneeId, setAssigneeId] = useState(task.assigneeId || "");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>(task.assigneeIds || []);
   const [dueDate, setDueDate] = useState(
     task.dueDate ? format(new Date(task.dueDate), "yyyy-MM-dd") : ""
   );
@@ -61,7 +62,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
     const updates: UpdateTask = {
       status,
       priority,
-      assigneeId: assigneeId || undefined,
+      assigneeIds: assigneeIds.length > 0 ? assigneeIds : undefined,
       dueDate: dueDate ? new Date(dueDate) : undefined,
       progress,
     };
@@ -144,33 +145,47 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           </div>
           
           <div>
-            <Label htmlFor="assignee" className="text-sm font-medium text-muted-foreground">
-              Assigned to
+            <Label htmlFor="assignees" className="text-sm font-medium text-muted-foreground">
+              Assign to Team Members (Multiple Selection)
             </Label>
-            <Select value={assigneeId === null ? "unassigned" : assigneeId} onValueChange={(value) => setAssigneeId(value === "unassigned" ? "" : value)}>
-              <SelectTrigger className="mt-1" data-testid="select-task-assignee">
-                <SelectValue placeholder="Select team member" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="unassigned">Unassigned</SelectItem>
-                {teamMembers?.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.name} - {member.role}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             
-            {task.assignee && (
-              <div className="flex items-center space-x-3 mt-2">
-                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-medium">
-                  {task.assignee.avatar || task.assignee.name.split(' ').map(n => n[0]).join('')}
+            <div className="mt-2 space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
+              {teamMembers?.map((member) => (
+                <div key={member.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`assignee-edit-${member.id}`}
+                    checked={assigneeIds.includes(member.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setAssigneeIds([...assigneeIds, member.id]);
+                      } else {
+                        setAssigneeIds(assigneeIds.filter(id => id !== member.id));
+                      }
+                    }}
+                    data-testid={`checkbox-assignee-edit-${member.id}`}
+                  />
+                  <Label htmlFor={`assignee-edit-${member.id}`} className="text-sm font-normal">
+                    {member.name} - {member.role}
+                  </Label>
                 </div>
-                <div>
-                  <p className="font-medium" data-testid="modal-assignee-name">{task.assignee.name}</p>
-                  <p className="text-sm text-muted-foreground" data-testid="modal-assignee-role">
-                    {task.assignee.role}
-                  </p>
+              ))}
+            </div>
+            
+            {/* Display current assignees */}
+            {task.assignees && task.assignees.length > 0 && (
+              <div className="mt-3">
+                <Label className="text-sm font-medium text-muted-foreground">Currently Assigned:</Label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {task.assignees.map((assignee) => (
+                    <div key={assignee.id} className="flex items-center space-x-2 bg-muted rounded-md px-2 py-1">
+                      <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-medium">
+                        {assignee.avatar || assignee.name.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <span className="text-sm" data-testid={`current-assignee-${assignee.id}`}>
+                        {assignee.name}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

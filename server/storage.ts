@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type TeamMember, type InsertTeamMember, type Task, type InsertTask, type UpdateTask, type TaskWithAssignee } from "@shared/schema";
+import { type User, type InsertUser, type TeamMember, type InsertTeamMember, type Task, type InsertTask, type UpdateTask, type TaskWithAssignees } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -15,12 +15,12 @@ export interface IStorage {
   deleteTeamMember(id: string): Promise<boolean>;
 
   // Task methods
-  getTasks(): Promise<TaskWithAssignee[]>;
-  getTask(id: string): Promise<TaskWithAssignee | undefined>;
-  getTasksByStatus(status: string): Promise<TaskWithAssignee[]>;
-  getTasksByAssignee(assigneeId: string): Promise<TaskWithAssignee[]>;
-  createTask(task: InsertTask): Promise<TaskWithAssignee>;
-  updateTask(id: string, updates: UpdateTask): Promise<TaskWithAssignee | undefined>;
+  getTasks(): Promise<TaskWithAssignees[]>;
+  getTask(id: string): Promise<TaskWithAssignees | undefined>;
+  getTasksByStatus(status: string): Promise<TaskWithAssignees[]>;
+  getTasksByAssignee(assigneeId: string): Promise<TaskWithAssignees[]>;
+  createTask(task: InsertTask): Promise<TaskWithAssignees>;
+  updateTask(id: string, updates: UpdateTask): Promise<TaskWithAssignees | undefined>;
   deleteTask(id: string): Promise<boolean>;
 
   // Statistics
@@ -142,35 +142,39 @@ export class MemStorage implements IStorage {
   }
 
   // Task methods
-  async getTasks(): Promise<TaskWithAssignee[]> {
+  async getTasks(): Promise<TaskWithAssignees[]> {
     const tasks = Array.from(this.tasks.values());
     return await Promise.all(
       tasks.map(async (task) => {
-        const assignee = task.assigneeId ? await this.getTeamMember(task.assigneeId) : undefined;
-        return { ...task, assignee };
+        const assignees = task.assigneeIds && task.assigneeIds.length > 0 
+          ? await Promise.all(task.assigneeIds.map(id => this.getTeamMember(id)).filter(Boolean)) 
+          : [];
+        return { ...task, assignees: assignees.filter(a => a !== undefined) as TeamMember[] };
       })
     );
   }
 
-  async getTask(id: string): Promise<TaskWithAssignee | undefined> {
+  async getTask(id: string): Promise<TaskWithAssignees | undefined> {
     const task = this.tasks.get(id);
     if (!task) return undefined;
     
-    const assignee = task.assigneeId ? await this.getTeamMember(task.assigneeId) : undefined;
-    return { ...task, assignee };
+    const assignees = task.assigneeIds && task.assigneeIds.length > 0 
+      ? await Promise.all(task.assigneeIds.map(id => this.getTeamMember(id)).filter(Boolean)) 
+      : [];
+    return { ...task, assignees: assignees.filter(a => a !== undefined) as TeamMember[] };
   }
 
-  async getTasksByStatus(status: string): Promise<TaskWithAssignee[]> {
+  async getTasksByStatus(status: string): Promise<TaskWithAssignees[]> {
     const allTasks = await this.getTasks();
     return allTasks.filter(task => task.status === status);
   }
 
-  async getTasksByAssignee(assigneeId: string): Promise<TaskWithAssignee[]> {
+  async getTasksByAssignee(assigneeId: string): Promise<TaskWithAssignees[]> {
     const allTasks = await this.getTasks();
-    return allTasks.filter(task => task.assigneeId === assigneeId);
+    return allTasks.filter(task => task.assigneeIds && task.assigneeIds.includes(assigneeId));
   }
 
-  async createTask(task: InsertTask): Promise<TaskWithAssignee> {
+  async createTask(task: InsertTask): Promise<TaskWithAssignees> {
     const id = randomUUID();
     const now = new Date();
     const newTask: Task = { 
@@ -179,7 +183,7 @@ export class MemStorage implements IStorage {
       status: task.status || "to_be_completed",
       priority: task.priority || "medium",
       progress: task.progress || 0,
-      assigneeId: task.assigneeId || null,
+      assigneeIds: task.assigneeIds || [],
       dueDate: task.dueDate || null,
       notes: task.notes || null,
       createdAt: now,
@@ -187,25 +191,27 @@ export class MemStorage implements IStorage {
     };
     this.tasks.set(id, newTask);
 
-    // Update assignee's active task count
-    if (task.assigneeId && task.status !== 'completed') {
-      const assignee = await this.getTeamMember(task.assigneeId);
-      if (assignee) {
-        await this.updateTeamMember(task.assigneeId, {
-          activeTasks: assignee.activeTasks + 1
-        });
+    // Update assignees' active task counts
+    if (task.assigneeIds && task.assigneeIds.length > 0 && task.status !== 'completed') {
+      for (const assigneeId of task.assigneeIds) {
+        const assignee = await this.getTeamMember(assigneeId);
+        if (assignee) {
+          await this.updateTeamMember(assigneeId, {
+            activeTasks: assignee.activeTasks + 1
+          });
+        }
       }
     }
 
-    return await this.getTask(id) as TaskWithAssignee;
+    return await this.getTask(id) as TaskWithAssignees;
   }
 
-  async updateTask(id: string, updates: UpdateTask): Promise<TaskWithAssignee | undefined> {
+  async updateTask(id: string, updates: UpdateTask): Promise<TaskWithAssignees | undefined> {
     const task = this.tasks.get(id);
     if (!task) return undefined;
 
     const previousStatus = task.status;
-    const previousAssigneeId = task.assigneeId;
+    const previousAssigneeIds = task.assigneeIds || [];
     
     const updatedTask = { 
       ...task, 
@@ -214,46 +220,60 @@ export class MemStorage implements IStorage {
     };
     this.tasks.set(id, updatedTask);
 
-    // Update assignee active task counts if status or assignee changed
+    // Update assignees' active task counts if status changed
     if (updates.status && updates.status !== previousStatus) {
-      // If task completed, decrease previous assignee's count
-      if (updates.status === 'completed' && previousAssigneeId) {
-        const previousAssignee = await this.getTeamMember(previousAssigneeId);
-        if (previousAssignee && previousAssignee.activeTasks > 0) {
-          await this.updateTeamMember(previousAssigneeId, {
-            activeTasks: previousAssignee.activeTasks - 1
-          });
+      const currentAssigneeIds = updatedTask.assigneeIds || [];
+      
+      // If task completed, decrease all assignees' counts
+      if (updates.status === 'completed') {
+        for (const assigneeId of currentAssigneeIds) {
+          const assignee = await this.getTeamMember(assigneeId);
+          if (assignee && assignee.activeTasks > 0) {
+            await this.updateTeamMember(assigneeId, {
+              activeTasks: assignee.activeTasks - 1
+            });
+          }
         }
       }
-      // If task reactivated, increase assignee's count
-      if (previousStatus === 'completed' && updates.status !== 'completed' && updatedTask.assigneeId) {
-        const assignee = await this.getTeamMember(updatedTask.assigneeId);
-        if (assignee) {
-          await this.updateTeamMember(updatedTask.assigneeId, {
-            activeTasks: assignee.activeTasks + 1
-          });
+      
+      // If task reactivated from completed, increase assignees' counts
+      if (previousStatus === 'completed' && updates.status !== 'completed') {
+        for (const assigneeId of currentAssigneeIds) {
+          const assignee = await this.getTeamMember(assigneeId);
+          if (assignee) {
+            await this.updateTeamMember(assigneeId, {
+              activeTasks: assignee.activeTasks + 1
+            });
+          }
         }
       }
     }
 
     // Handle assignee changes
-    if (updates.assigneeId && updates.assigneeId !== previousAssigneeId) {
-      // Decrease previous assignee's count
-      if (previousAssigneeId && updatedTask.status !== 'completed') {
-        const previousAssignee = await this.getTeamMember(previousAssigneeId);
-        if (previousAssignee && previousAssignee.activeTasks > 0) {
-          await this.updateTeamMember(previousAssigneeId, {
-            activeTasks: previousAssignee.activeTasks - 1
-          });
+    if (updates.assigneeIds) {
+      const newAssigneeIds = updates.assigneeIds;
+      
+      // Decrease counts for removed assignees
+      for (const prevId of previousAssigneeIds) {
+        if (!newAssigneeIds.includes(prevId) && updatedTask.status !== 'completed') {
+          const assignee = await this.getTeamMember(prevId);
+          if (assignee && assignee.activeTasks > 0) {
+            await this.updateTeamMember(prevId, {
+              activeTasks: assignee.activeTasks - 1
+            });
+          }
         }
       }
-      // Increase new assignee's count
-      if (updatedTask.status !== 'completed') {
-        const newAssignee = await this.getTeamMember(updates.assigneeId);
-        if (newAssignee) {
-          await this.updateTeamMember(updates.assigneeId, {
-            activeTasks: newAssignee.activeTasks + 1
-          });
+      
+      // Increase counts for new assignees
+      for (const newId of newAssigneeIds) {
+        if (!previousAssigneeIds.includes(newId) && updatedTask.status !== 'completed') {
+          const assignee = await this.getTeamMember(newId);
+          if (assignee) {
+            await this.updateTeamMember(newId, {
+              activeTasks: assignee.activeTasks + 1
+            });
+          }
         }
       }
     }
@@ -265,13 +285,15 @@ export class MemStorage implements IStorage {
     const task = this.tasks.get(id);
     if (!task) return false;
 
-    // Decrease assignee's active task count if task was active
-    if (task.assigneeId && task.status !== 'completed') {
-      const assignee = await this.getTeamMember(task.assigneeId);
-      if (assignee && assignee.activeTasks > 0) {
-        await this.updateTeamMember(task.assigneeId, {
-          activeTasks: assignee.activeTasks - 1
-        });
+    // Decrease assignees' active task counts if task was active
+    if (task.assigneeIds && task.assigneeIds.length > 0 && task.status !== 'completed') {
+      for (const assigneeId of task.assigneeIds) {
+        const assignee = await this.getTeamMember(assigneeId);
+        if (assignee && assignee.activeTasks > 0) {
+          await this.updateTeamMember(assigneeId, {
+            activeTasks: assignee.activeTasks - 1
+          });
+        }
       }
     }
 
