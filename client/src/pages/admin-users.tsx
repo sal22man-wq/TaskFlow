@@ -3,9 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { UserCheck, UserX, Users, Clock } from "lucide-react";
+import { UserCheck, UserX, Users, Clock, UserPlus } from "lucide-react";
+import { AddUserForm } from "@/components/admin/add-user-form";
 
 interface User {
   id: string;
@@ -18,6 +20,7 @@ interface User {
 export default function AdminUsers() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [showAddUser, setShowAddUser] = useState(false);
 
   // Get all users
   const { data: users = [], isLoading } = useQuery<User[]>({
@@ -99,9 +102,19 @@ export default function AdminUsers() {
         </h1>
       </div>
 
-      <h1 className="text-xl font-medium mb-4" data-testid="text-admin-users-title">
-        إدارة المستخدمين
-      </h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-medium" data-testid="text-admin-users-title">
+          إدارة المستخدمين
+        </h1>
+        <Button
+          onClick={() => setShowAddUser(true)}
+          className="bg-green-600 hover:bg-green-700 text-white"
+          data-testid="button-add-user"
+        >
+          <UserPlus className="h-4 w-4 mr-2" />
+          إضافة مستخدم
+        </Button>
+      </div>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-3 gap-4 mb-6">
@@ -244,6 +257,13 @@ export default function AdminUsers() {
           </CardContent>
         </Card>
       )}
+
+      {/* Add User Dialog */}
+      <Dialog open={showAddUser} onOpenChange={setShowAddUser}>
+        <DialogContent className="sm:max-w-md">
+          <AddUserForm onSuccess={() => setShowAddUser(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -65,10 +65,10 @@ export default function Profile() {
         <CardContent>
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-xl">
-              {user?.username?.charAt(0).toUpperCase() || "U"}
+              {(user as any)?.username?.charAt(0).toUpperCase() || "U"}
             </div>
             <div>
-              <h3 className="font-medium text-lg" data-testid="text-user-name">{user?.username || "مستخدم"}</h3>
+              <h3 className="font-medium text-lg" data-testid="text-user-name">{(user as any)?.username || "مستخدم"}</h3>
               <p className="text-sm text-muted-foreground" data-testid="text-user-role">عضو فريق - شركة اشراق الودق</p>
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function Profile() {
         </Button>
 
         {/* Admin-only options */}
-        {user?.role === "admin" && (
+        {(user as any)?.role === "admin" && (
           <div className="pt-4 border-t border-border">
             <h4 className="text-sm font-medium text-muted-foreground mb-2 px-3">
               خيارات المدير
