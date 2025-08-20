@@ -3,6 +3,8 @@ import { StatsCard } from "@/components/dashboard/stats-card";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { TaskCard } from "@/components/tasks/task-card";
 import { TeamMemberCard } from "@/components/team/team-member-card";
+import { SchedulerWidget } from "@/components/scheduler/scheduler-widget";
+import { UpcomingSchedule } from "@/components/scheduler/upcoming-schedule";
 import { Button } from "@/components/ui/button";
 import { TaskWithAssignees, TeamMember } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -75,6 +77,16 @@ export default function Dashboard() {
         </div>
 
         <QuickActions />
+      </section>
+
+      {/* Scheduler Section */}
+      <section className="px-4">
+        <SchedulerWidget />
+      </section>
+
+      {/* Upcoming Schedule */}
+      <section className="px-4">
+        <UpcomingSchedule />
       </section>
 
       {/* Recent Tasks */}
