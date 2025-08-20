@@ -1,0 +1,192 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(215 8% 13%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(215 8% 13%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(215 8% 13%);
+  --primary: hsl(207 90% 42%);
+  --primary-foreground: hsl(0 0% 100%);
+  --primary-dark: hsl(207 90% 38%);
+  --secondary: hsl(174 100% 29%);
+  --secondary-foreground: hsl(0 0% 100%);
+  --muted: hsl(210 40% 98%);
+  --muted-foreground: hsl(215 16% 47%);
+  --accent: hsl(210 40% 96%);
+  --accent-foreground: hsl(215 8% 13%);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --success: hsl(122 39% 49%);
+  --success-foreground: hsl(0 0% 100%);
+  --warning: hsl(36 100% 50%);
+  --warning-foreground: hsl(0 0% 100%);
+  --error: hsl(4 90% 58%);
+  --error-foreground: hsl(0 0% 100%);
+  --border: hsl(214 32% 91%);
+  --input: hsl(214 32% 91%);
+  --ring: hsl(207 90% 42%);
+  --surface: hsl(0 0% 100%);
+  --on-surface: hsl(215 8% 13%);
+  --surface-variant: hsl(0 0% 88%);
+  --chart-1: hsl(207 90% 42%);
+  --chart-2: hsl(174 100% 29%);
+  --chart-3: hsl(36 100% 50%);
+  --chart-4: hsl(122 39% 49%);
+  --chart-5: hsl(4 90% 58%);
+  --sidebar: hsl(0 0% 100%);
+  --sidebar-foreground: hsl(215 8% 13%);
+  --sidebar-primary: hsl(207 90% 42%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(210 40% 96%);
+  --sidebar-accent-foreground: hsl(215 8% 13%);
+  --sidebar-border: hsl(214 32% 91%);
+  --sidebar-ring: hsl(207 90% 42%);
+  --font-sans: 'Roboto', 'Open Sans', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: hsl(222 84% 5%);
+  --foreground: hsl(210 40% 98%);
+  --card: hsl(222 84% 5%);
+  --card-foreground: hsl(210 40% 98%);
+  --popover: hsl(222 84% 5%);
+  --popover-foreground: hsl(210 40% 98%);
+  --primary: hsl(207 90% 54%);
+  --primary-foreground: hsl(222 84% 5%);
+  --primary-dark: hsl(207 90% 50%);
+  --secondary: hsl(174 100% 35%);
+  --secondary-foreground: hsl(222 84% 5%);
+  --muted: hsl(217 32% 17%);
+  --muted-foreground: hsl(215 20% 65%);
+  --accent: hsl(217 32% 17%);
+  --accent-foreground: hsl(210 40% 98%);
+  --destructive: hsl(0 62% 30%);
+  --destructive-foreground: hsl(210 40% 98%);
+  --success: hsl(122 39% 35%);
+  --success-foreground: hsl(210 40% 98%);
+  --warning: hsl(36 100% 40%);
+  --warning-foreground: hsl(210 40% 98%);
+  --error: hsl(4 90% 48%);
+  --error-foreground: hsl(210 40% 98%);
+  --border: hsl(217 32% 17%);
+  --input: hsl(217 32% 17%);
+  --ring: hsl(207 90% 54%);
+  --surface: hsl(222 84% 5%);
+  --on-surface: hsl(210 40% 98%);
+  --surface-variant: hsl(217 32% 17%);
+  --chart-1: hsl(207 90% 54%);
+  --chart-2: hsl(174 100% 35%);
+  --chart-3: hsl(36 100% 40%);
+  --chart-4: hsl(122 39% 35%);
+  --chart-5: hsl(4 90% 48%);
+  --sidebar: hsl(222 84% 5%);
+  --sidebar-foreground: hsl(210 40% 98%);
+  --sidebar-primary: hsl(207 90% 54%);
+  --sidebar-primary-foreground: hsl(222 84% 5%);
+  --sidebar-accent: hsl(217 32% 17%);
+  --sidebar-accent-foreground: hsl(210 40% 98%);
+  --sidebar-border: hsl(217 32% 17%);
+  --sidebar-ring: hsl(207 90% 54%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Roboto', var(--font-sans);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    body {
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+  }
+}
+
+@layer components {
+  .mobile-container {
+    @apply min-h-screen flex flex-col max-w-md mx-auto bg-surface shadow-xl;
+  }
+
+  .stat-card {
+    @apply bg-surface rounded-lg p-4 shadow-sm border hover:shadow-md transition-shadow;
+    border-color: hsl(var(--surface-variant) / 0.5);
+  }
+
+  .task-card {
+    @apply bg-surface rounded-lg p-4 shadow-sm border hover:shadow-md transition-shadow;
+    border-color: hsl(var(--surface-variant) / 0.5);
+  }
+
+  .status-chip {
+    @apply px-2 py-1 rounded text-xs font-medium;
+  }
+
+  .status-to_be_completed {
+    @apply bg-surface-variant text-on-surface;
+  }
+
+  .status-started {
+    @apply bg-warning text-warning-foreground;
+  }
+
+  .status-in_progress {
+    @apply bg-warning text-warning-foreground;
+  }
+
+  .status-completed {
+    @apply bg-success text-success-foreground;
+  }
+
+  .status-overdue {
+    @apply bg-error text-error-foreground;
+  }
+
+  .priority-low {
+    @apply text-green-600;
+  }
+
+  .priority-medium {
+    @apply text-yellow-600;
+  }
+
+  .priority-high {
+    @apply text-red-600;
+  }
+
+  .availability-available {
+    @apply bg-success;
+  }
+
+  .availability-busy {
+    @apply bg-warning;
+  }
+
+  .availability-offline {
+    @apply bg-surface-variant;
+  }
+}
+
+@layer utilities {
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+}

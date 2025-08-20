@@ -1,0 +1,174 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { InsertTask, TeamMember } from "@shared/schema";
+import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+interface CreateTaskFormProps {
+  onSuccess: () => void;
+}
+
+export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("medium");
+  const [assigneeId, setAssigneeId] = useState("");
+  const [dueDate, setDueDate] = useState("");
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: teamMembers } = useQuery<TeamMember[]>({
+    queryKey: ["/api/team-members"],
+  });
+
+  const createTaskMutation = useMutation({
+    mutationFn: async (task: InsertTask) => {
+      const response = await apiRequest("POST", "/api/tasks", task);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "Task created successfully",
+        description: "The new task has been added to your team.",
+      });
+      onSuccess();
+    },
+    onError: () => {
+      toast({
+        title: "Error creating task",
+        description: "There was a problem creating the task. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title.trim() || !description.trim()) {
+      toast({
+        title: "Missing required fields",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const task: InsertTask = {
+      title: title.trim(),
+      description: description.trim(),
+      priority,
+      assigneeId: assigneeId || undefined,
+      dueDate: dueDate ? new Date(dueDate) : undefined,
+      status: "to_be_completed",
+      progress: 0,
+    };
+
+    createTaskMutation.mutate(task);
+  };
+
+  return (
+    <div>
+      <DialogHeader>
+        <DialogTitle data-testid="modal-create-task-title">Create New Task</DialogTitle>
+      </DialogHeader>
+
+      <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+        <div>
+          <Label htmlFor="title">Title *</Label>
+          <Input
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter task title"
+            data-testid="input-task-title"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="description">Description *</Label>
+          <Textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter task description"
+            rows={3}
+            data-testid="textarea-task-description"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="priority">Priority</Label>
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger data-testid="select-task-priority-create">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="assignee">Assignee</Label>
+            <Select value={assigneeId} onValueChange={setAssigneeId}>
+              <SelectTrigger data-testid="select-task-assignee-create">
+                <SelectValue placeholder="Select member" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Unassigned</SelectItem>
+                {teamMembers?.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="dueDate">Due Date</Label>
+          <Input
+            id="dueDate"
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            data-testid="input-task-due-date-create"
+          />
+        </div>
+
+        <div className="flex space-x-3 pt-4">
+          <Button
+            type="submit"
+            className="flex-1"
+            disabled={createTaskMutation.isPending}
+            data-testid="button-submit-task"
+          >
+            {createTaskMutation.isPending ? "Creating..." : "Create Task"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onSuccess}
+            data-testid="button-cancel-create-task"
+          >
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
