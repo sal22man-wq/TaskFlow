@@ -331,13 +331,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { status, assigneeId } = req.query;
       
-      let tasks;
+      let tasks = await storage.getAllTasks();
+      
+      // Filter tasks by status if provided
       if (status) {
-        tasks = await storage.getTasksByStatus(status as string);
-      } else if (assigneeId) {
-        tasks = await storage.getTasksByAssignee(assigneeId as string);
-      } else {
-        tasks = await storage.getTasks();
+        tasks = tasks.filter(task => task.status === status);
+      }
+      
+      // Filter tasks by assignee if provided
+      if (assigneeId) {
+        tasks = tasks.filter(task => 
+          task.assigneeIds && task.assigneeIds.includes(assigneeId as string)
+        );
       }
       
       res.json(tasks);
@@ -413,7 +418,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Statistics route (protected)
   app.get("/api/stats", requireAuth, async (req, res) => {
     try {
-      const stats = await storage.getTaskStats();
+      const allTasks = await storage.getAllTasks();
+      
+      const stats = {
+        activeTasks: allTasks.filter(task => task.status !== "complete").length,
+        completed: allTasks.filter(task => task.status === "complete").length,
+        overdue: allTasks.filter(task => {
+          if (!task.dueDate) return false;
+          return new Date(task.dueDate) < new Date() && task.status !== "complete";
+        }).length,
+        total: allTasks.length
+      };
       const teamMembers = await storage.getTeamMembers();
       
       res.json({
