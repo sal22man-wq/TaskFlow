@@ -166,7 +166,7 @@ const translations = {
     'dashboard.title': 'لوحة التحكم',
     'dashboard.welcome': 'أهلاً بك في نظام إدارة المهام',
     'dashboard.quickActions': 'إجراءات سريعة',
-    'dashboard.createTask': 'انشاء مهمة',
+    'dashboard.createTask': 'إنشاء مهمة',
     'dashboard.addMember': 'إضافة عضو',
     'dashboard.admin': 'المدير',
     'dashboard.weeklySchedule': 'الجدول الأسبوعي',
@@ -300,10 +300,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<'en' | 'ar'>('ar');
 
   useEffect(() => {
-    // Clear any existing language setting and force Arabic
-    localStorage.clear();
-    localStorage.setItem('language', 'ar');
-    setLanguageState('ar');
+    const savedLanguage = localStorage.getItem('language') as 'en' | 'ar' | null;
+    if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'ar')) {
+      setLanguageState(savedLanguage);
+    }
   }, []);
 
   useEffect(() => {

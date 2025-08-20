@@ -4,31 +4,45 @@ import { Globe } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
 
 export function LanguageSwitcher() {
-  const { t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   return (
     <div className="flex items-center gap-2">
       <Globe className="w-4 h-4 text-muted-foreground" />
-      <div className="w-32 text-sm text-muted-foreground">
-        {t('lang.arabic')}
-      </div>
+      <Select value={language} onValueChange={(value: 'en' | 'ar') => setLanguage(value)}>
+        <SelectTrigger className="w-32" data-testid="language-switcher">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="en" data-testid="lang-en">
+            {t('lang.english')}
+          </SelectItem>
+          <SelectItem value="ar" data-testid="lang-ar">
+            {t('lang.arabic')}
+          </SelectItem>
+        </SelectContent>
+      </Select>
     </div>
   );
 }
 
 export function LanguageToggleButton() {
-  const { t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'ar' : 'en');
+  };
 
   return (
     <Button
       variant="outline"
       size="sm"
-      className="flex items-center gap-2 opacity-50 cursor-not-allowed"
+      onClick={toggleLanguage}
+      className="flex items-center gap-2"
       data-testid="language-toggle"
-      disabled
     >
       <Globe className="w-4 h-4" />
-      {t('lang.arabic')}
+      {language === 'en' ? t('lang.arabic') : t('lang.english')}
     </Button>
   );
 }
