@@ -10,7 +10,11 @@ export function TopAppBar() {
     <header className="bg-primary text-primary-foreground px-4 py-3 shadow-md">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3 rtl:space-x-reverse">
-          <div className="text-xl">📋</div>
+          <img 
+            src="/attached_assets/319159472_2787094371424406_3593723820726937846_n_1755704545593.jpg" 
+            alt="TaskFlow Logo" 
+            className="w-8 h-8 rounded-full object-cover shadow-sm border-2 border-white/20"
+          />
           <h1 className="text-lg font-medium" data-testid="text-app-title">TaskFlow</h1>
         </div>
         <div className="flex items-center space-x-2 rtl:space-x-reverse">
