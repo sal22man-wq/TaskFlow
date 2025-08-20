@@ -18,8 +18,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { UserCheck, UserX, Users, Clock, UserPlus, Shield, Power, Trash2 } from "lucide-react";
+import { UserCheck, UserX, Users, Clock, UserPlus, Shield, Power, Trash2, Key } from "lucide-react";
 import { AddUserForm } from "@/components/admin/add-user-form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface User {
   id: string;
@@ -34,6 +36,8 @@ export default function AdminUsers() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showAddUser, setShowAddUser] = useState(false);
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState("");
 
   // Get all users
   const { data: users = [], isLoading } = useQuery<User[]>({
@@ -120,6 +124,27 @@ export default function AdminUsers() {
     },
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ userId, newPassword }: { userId: string; newPassword: string }) => {
+      await apiRequest("PATCH", `/api/admin/users/${userId}/reset-password`, { newPassword });
+    },
+    onSuccess: () => {
+      toast({
+        title: "تم إعادة تعيين كلمة المرور",
+        description: "تم إعادة تعيين كلمة مرور المستخدم بنجاح",
+      });
+      setResetPasswordUser(null);
+      setNewPassword("");
+    },
+    onError: () => {
+      toast({
+        title: "خطأ في إعادة تعيين كلمة المرور",
+        description: "حدث خطأ أثناء إعادة تعيين كلمة المرور",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleApprove = (userId: string) => {
     approveMutation.mutate({ userId, action: "approved" });
   };
@@ -171,6 +196,18 @@ export default function AdminUsers() {
 
   const handleRoleChange = (userId: string, role: string) => {
     roleUpdateMutation.mutate({ userId, role });
+  };
+
+  const handleResetPassword = () => {
+    if (!resetPasswordUser || !newPassword || newPassword.length < 6) {
+      toast({
+        title: "خطأ",
+        description: "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
+        variant: "destructive",
+      });
+      return;
+    }
+    resetPasswordMutation.mutate({ userId: resetPasswordUser.id, newPassword });
   };
 
   const pendingUsers = users.filter(user => user.isApproved === "pending");
@@ -410,6 +447,17 @@ export default function AdminUsers() {
                           </AlertDialogContent>
                         </AlertDialog>
 
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setResetPasswordUser(user)}
+                          className="text-xs h-7 text-blue-600 border-blue-600"
+                          data-testid={`button-reset-password-${user.id}`}
+                        >
+                          <Key className="h-3 w-3 mr-1" />
+                          إعادة تعيين كلمة المرور
+                        </Button>
+
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
@@ -465,6 +513,61 @@ export default function AdminUsers() {
       <Dialog open={showAddUser} onOpenChange={setShowAddUser}>
         <DialogContent className="sm:max-w-md">
           <AddUserForm onSuccess={() => setShowAddUser(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={!!resetPasswordUser} onOpenChange={() => {
+        setResetPasswordUser(null);
+        setNewPassword("");
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <div className="space-y-4">
+            <div className="text-center">
+              <Key className="h-12 w-12 mx-auto mb-4 text-blue-600" />
+              <h2 className="text-lg font-semibold">إعادة تعيين كلمة المرور</h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                إعادة تعيين كلمة مرور المستخدم: <span className="font-medium">{resetPasswordUser?.username}</span>
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">كلمة المرور الجديدة</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                placeholder="أدخل كلمة المرور الجديدة (6 أحرف على الأقل)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                data-testid="input-new-password"
+              />
+              <p className="text-xs text-muted-foreground">
+                يجب أن تكون كلمة المرور 6 أحرف على الأقل
+              </p>
+            </div>
+            
+            <div className="flex space-x-2 space-x-reverse pt-4">
+              <Button
+                onClick={handleResetPassword}
+                disabled={resetPasswordMutation.isPending || !newPassword || newPassword.length < 6}
+                className="flex-1"
+                data-testid="button-confirm-reset"
+              >
+                {resetPasswordMutation.isPending ? "جارٍ التحديث..." : "تأكيد إعادة التعيين"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setResetPasswordUser(null);
+                  setNewPassword("");
+                }}
+                className="flex-1"
+                data-testid="button-cancel-reset"
+              >
+                إلغاء
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

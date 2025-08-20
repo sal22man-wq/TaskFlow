@@ -452,6 +452,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin reset user password (admin only)
+  app.patch("/api/admin/users/:id/reset-password", requireAdmin, async (req, res) => {
+    try {
+      const { newPassword } = req.body;
+      const userId = req.params.id;
+
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ message: "New password must be at least 6 characters" });
+      }
+
+      // Check if target user exists
+      const targetUser = await storage.getUser(userId);
+      if (!targetUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Prevent admin from resetting their own password this way
+      if (userId === req.session.userId) {
+        return res.status(400).json({ message: "Cannot reset your own password. Use profile settings instead." });
+      }
+
+      // Hash new password
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+      // Update password
+      await storage.updateUser(userId, {
+        password: hashedPassword,
+      });
+
+      // Log the password reset action
+      await storage.logUserAction(
+        "admin_password_reset",
+        req.session.userId!,
+        req.session.username!,
+        { 
+          targetUserId: userId, 
+          targetUsername: targetUser.username,
+          message: `تم إعادة تعيين كلمة مرور المستخدم ${targetUser.username}`
+        },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json({ 
+        message: "Password reset successfully",
+        targetUser: {
+          id: targetUser.id,
+          username: targetUser.username
+        }
+      });
+    } catch (error) {
+      console.error("Error resetting user password:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
+  });
+
   // Delete user (admin only)
   app.delete("/api/admin/users/:id", requireAdmin, async (req, res) => {
     try {
