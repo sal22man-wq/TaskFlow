@@ -38,7 +38,7 @@ export function QuickActions() {
           
           <Button
             className="bg-secondary text-secondary-foreground p-4 rounded-lg shadow-sm flex flex-col items-center space-y-2 hover:opacity-90 transition-opacity h-auto touch-manipulation"
-            onClick={() => setLocation("/admin/logs")}
+            onClick={() => setLocation("/admin/users")}
             data-testid="button-quick-admin"
           >
             <Shield className="h-5 w-5" />
