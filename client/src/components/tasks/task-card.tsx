@@ -42,7 +42,7 @@ export function TaskCard({ task }: TaskCardProps) {
   return (
     <>
       <div className="task-card" data-testid={`task-card-${task.id}`}>
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start justify-between mb-3 rtl:flex-row-reverse">
           <div className="flex-1">
             <h4 className="font-medium text-base text-on-surface" data-testid={`task-title-${task.id}`}>
               {task.title}
@@ -52,7 +52,7 @@ export function TaskCard({ task }: TaskCardProps) {
             </p>
           </div>
           <span 
-            className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(task.status)} ml-3`}
+            className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(task.status)} ml-3 rtl:mr-3 rtl:ml-0`}
             data-testid={`task-status-${task.id}`}
           >
             {getStatusLabel(task.status)}
@@ -60,10 +60,10 @@ export function TaskCard({ task }: TaskCardProps) {
         </div>
         
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between text-sm text-muted-foreground rtl:flex-row-reverse">
+            <div className="flex items-center space-x-4 rtl:space-x-reverse">
               {task.assignees && task.assignees.length > 0 && (
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-1 rtl:space-x-reverse">
                   <User className="h-3 w-3" />
                   <span data-testid={`task-assignee-${task.id}`}>
                     {task.assignees[0].name}
@@ -72,7 +72,7 @@ export function TaskCard({ task }: TaskCardProps) {
                 </div>
               )}
               {task.dueDate && (
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-1 rtl:space-x-reverse">
                   <Calendar className="h-3 w-3" />
                   <span data-testid={`task-due-date-${task.id}`}>
                     {format(new Date(task.dueDate), "MMM dd")}

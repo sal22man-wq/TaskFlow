@@ -122,7 +122,7 @@ export function ChatWindow({ isOpen, onClose, taskId, taskTitle }: ChatWindowPro
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex gap-3 ${message.sender === 'You' ? 'flex-row-reverse' : ''}`}
+                  className={`flex gap-3 ${message.sender === 'You' ? 'flex-row-reverse rtl:flex-row' : 'rtl:flex-row-reverse'}`}
                 >
                   <Avatar className="w-8 h-8 flex-shrink-0">
                     <AvatarFallback className={`text-xs ${getSenderColor(message.sender)}`}>

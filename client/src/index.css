@@ -107,32 +107,35 @@
     font-family: 'Roboto', var(--font-sans);
   }
 
-  /* Arabic text styling */
+  /* Arabic RTL styling */
   [dir="rtl"] {
     text-align: right;
   }
   
-  [dir="rtl"] .flex {
-    flex-direction: row-reverse;
-  }
-  
-  [dir="rtl"] .space-x-1 > :not([hidden]) ~ :not([hidden]) {
-    --tw-space-x-reverse: 1;
-  }
-  
-  [dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) {
-    --tw-space-x-reverse: 1;
-  }
-  
-  [dir="rtl"] .space-x-3 > :not([hidden]) ~ :not([hidden]) {
-    --tw-space-x-reverse: 1;
-  }
-  
-  /* RTL adjustments for mobile layout */
-  [dir="rtl"] .mobile-container {
+  [dir="rtl"] * {
     direction: rtl;
   }
   
+  /* Fix flex direction for RTL */
+  [dir="rtl"] .flex:not(.flex-col):not(.flex-row) {
+    flex-direction: row-reverse;
+  }
+  
+  [dir="rtl"] .justify-between {
+    flex-direction: row-reverse;
+  }
+  
+  /* Fix spacing for RTL */
+  [dir="rtl"] .space-x-1 > :not([hidden]) ~ :not([hidden]),
+  [dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]),
+  [dir="rtl"] .space-x-3 > :not([hidden]) ~ :not([hidden]),
+  [dir="rtl"] .space-x-4 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 1;
+    margin-right: var(--tw-space-x-reverse) * var(--tw-space-x);
+    margin-left: calc(1 - var(--tw-space-x-reverse)) * var(--tw-space-x);
+  }
+  
+  /* RTL text alignment */
   [dir="rtl"] .text-left {
     text-align: right;
   }
@@ -141,16 +144,66 @@
     text-align: left;
   }
   
-  /* RTL positioning adjustments */
-  [dir="rtl"] .right-4 {
+  /* RTL positioning for floating elements */
+  [dir="rtl"] .fixed.right-4 {
     right: auto;
     left: 1rem;
   }
   
-  [dir="rtl"] .left-1\/2 {
+  [dir="rtl"] .fixed.left-1\/2 {
     left: auto;
     right: 50%;
     transform: translateX(50%);
+  }
+  
+  /* RTL adjustments for buttons and form elements */
+  [dir="rtl"] .ml-2 {
+    margin-left: 0;
+    margin-right: 0.5rem;
+  }
+  
+  [dir="rtl"] .ml-3 {
+    margin-left: 0;
+    margin-right: 0.75rem;
+  }
+  
+  [dir="rtl"] .mr-2 {
+    margin-right: 0;
+    margin-left: 0.5rem;
+  }
+  
+  [dir="rtl"] .mr-3 {
+    margin-right: 0;
+    margin-left: 0.75rem;
+  }
+  
+  /* RTL grid positioning */
+  [dir="rtl"] .grid {
+    direction: rtl;
+  }
+  
+  /* RTL card layouts */
+  [dir="rtl"] .task-card,
+  [dir="rtl"] .stat-card {
+    text-align: right;
+  }
+  
+  /* RTL navigation adjustments */
+  [dir="rtl"] .bottom-navigation {
+    direction: rtl;
+  }
+  
+  /* RTL form inputs */
+  [dir="rtl"] input,
+  [dir="rtl"] textarea,
+  [dir="rtl"] select {
+    text-align: right;
+  }
+  
+  [dir="rtl"] input[type="date"],
+  [dir="rtl"] input[type="time"],
+  [dir="rtl"] input[type="number"] {
+    text-align: left; /* Keep these left-aligned for clarity */
   }
 
   html {
