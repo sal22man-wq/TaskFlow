@@ -55,7 +55,7 @@ export default function Tasks() {
         <div className="flex items-center space-x-2 space-x-reverse">
           <ArrowUpDown className="h-4 w-4" />
           <Select value={sortOrder} onValueChange={(value: "newest" | "oldest" | "dueDate") => setSortOrder(value)}>
-            <SelectTrigger className="w-36">
+            <SelectTrigger className="w-32">
               <SelectValue placeholder="الترتيب" />
             </SelectTrigger>
             <SelectContent>
