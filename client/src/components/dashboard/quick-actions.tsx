@@ -42,7 +42,7 @@ export function QuickActions() {
             data-testid="button-quick-admin"
           >
             <Shield className="h-5 w-5" />
-            <span className="text-sm font-medium">{t('nav.admin')}</span>
+            <span className="text-sm font-medium">{t('dashboard.admin')}</span>
           </Button>
         </div>
       </div>
