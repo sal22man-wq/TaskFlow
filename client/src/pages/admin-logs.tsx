@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Activity, Calendar, User, Globe, Smartphone, Filter } from "lucide-react";
+import { Activity, Calendar, User, Globe, Smartphone, Filter, ArrowUpDown } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
 
 interface SystemLog {
@@ -20,6 +20,7 @@ interface SystemLog {
 export default function AdminLogs() {
   const { t } = useLanguage();
   const [actionFilter, setActionFilter] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
 
   // Get system logs
   const { data: logs = [], isLoading } = useQuery<SystemLog[]>({
@@ -115,6 +116,13 @@ export default function AdminLogs() {
     return log.action === actionFilter;
   });
 
+  // Sort logs by timestamp
+  const sortedLogs = [...filteredLogs].sort((a, b) => {
+    const dateA = new Date(a.timestamp);
+    const dateB = new Date(b.timestamp);
+    return sortOrder === "newest" ? dateB.getTime() - dateA.getTime() : dateA.getTime() - dateB.getTime();
+  });
+
   const uniqueActions = Array.from(new Set(logs.map(log => log.action)));
 
   if (isLoading) {
@@ -161,6 +169,17 @@ export default function AdminLogs() {
                   {getActionText(action)}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          
+          <ArrowUpDown className="h-4 w-4" />
+          <Select value={sortOrder} onValueChange={(value: "newest" | "oldest") => setSortOrder(value)}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="الترتيب" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">الأحدث أولاً</SelectItem>
+              <SelectItem value="oldest">الأقدم أولاً</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -220,7 +239,7 @@ export default function AdminLogs() {
             </CardContent>
           </Card>
         ) : (
-          filteredLogs.map((log) => {
+          sortedLogs.map((log) => {
             const details = parseDetails(log.details);
             return (
               <Card key={log.id} className="hover:shadow-md transition-shadow">

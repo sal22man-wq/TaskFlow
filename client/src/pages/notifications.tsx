@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, Check, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Bell, Check, AlertCircle, CheckCircle2, Clock, ArrowUpDown } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -21,6 +23,7 @@ interface Notification {
 
 export default function Notifications() {
   const { toast } = useToast();
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
 
   // Fetch notifications
   const { data: notifications = [], isLoading } = useQuery<Notification[]>({
@@ -93,6 +96,15 @@ export default function Notifications() {
     }
   };
 
+  const unreadCount = notifications.filter(n => n.isRead === "false").length;
+
+  // Sort notifications by createdAt date
+  const sortedNotifications = [...notifications].sort((a, b) => {
+    const dateA = new Date(a.createdAt);
+    const dateB = new Date(b.createdAt);
+    return sortOrder === "newest" ? dateB.getTime() - dateA.getTime() : dateA.getTime() - dateB.getTime();
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -101,21 +113,36 @@ export default function Notifications() {
     );
   }
 
-  const unreadNotifications = notifications.filter((n) => n.isRead === "false");
-  const readNotifications = notifications.filter((n) => n.isRead === "true");
+  const unreadNotifications = sortedNotifications.filter((n) => n.isRead === "false");
+  const readNotifications = sortedNotifications.filter((n) => n.isRead === "true");
 
   return (
     <div className="container mx-auto p-6 max-w-4xl" dir="rtl">
-      <div className="flex items-center gap-3 mb-6">
-        <Bell className="h-8 w-8 text-blue-600" />
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          الإشعارات
-        </h1>
-        {unreadNotifications.length > 0 && (
-          <Badge variant="destructive" className="text-xs">
-            {unreadNotifications.length} جديد
-          </Badge>
-        )}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Bell className="h-8 w-8 text-blue-600" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            الإشعارات
+          </h1>
+          {unreadCount > 0 && (
+            <Badge variant="destructive" className="text-xs">
+              {unreadCount} جديد
+            </Badge>
+          )}
+        </div>
+        
+        <div className="flex items-center space-x-2 space-x-reverse">
+          <ArrowUpDown className="h-4 w-4" />
+          <Select value={sortOrder} onValueChange={(value: "newest" | "oldest") => setSortOrder(value)}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="الترتيب" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">الأحدث أولاً</SelectItem>
+              <SelectItem value="oldest">الأقدم أولاً</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="space-y-6">

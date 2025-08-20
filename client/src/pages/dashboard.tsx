@@ -26,7 +26,10 @@ export default function Dashboard() {
     queryKey: ["/api/team-members"],
   });
 
-  const recentTasks = tasks?.slice(0, 3) || [];
+  // Sort tasks by createdAt date (newest first) and take the first 3
+  const recentTasks = tasks
+    ?.sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime())
+    ?.slice(0, 3) || [];
   const topTeamMembers = teamMembers?.slice(0, 2) || [];
 
   return (
