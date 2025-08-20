@@ -561,7 +561,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "task_created",
         req.session.userId!,
         req.session.username!,
-        { taskId: task.id, taskTitle: task.title },
+        { 
+          taskId: task.id, 
+          taskTitle: task.title,
+          customerName: task.customerName,
+          priority: task.priority,
+          assignees: task.assigneeIds?.length || 0,
+          dueDate: task.dueDate?.toISOString().split('T')[0] || 'غير محدد'
+        },
         req.ip,
         req.get('User-Agent')
       );
@@ -608,6 +615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validatedData = updateTaskSchema.parse(req.body);
+      const originalTask = task; // We already fetched it above
       const updatedTask = await storage.updateTask(req.params.id, validatedData);
       if (!updatedTask) {
         return res.status(404).json({ message: "Task not found" });
@@ -615,6 +623,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create notifications for assigned team members when task is updated
       await storage.createTaskNotifications(updatedTask, "task_updated");
+
+      // Log task status change if status was updated
+      if (req.body.status && originalTask.status !== req.body.status) {
+        await storage.logUserAction(
+          "task_status_changed",
+          req.session.userId!,
+          req.session.username!,
+          { 
+            taskId: updatedTask.id, 
+            taskTitle: updatedTask.title,
+            oldStatus: originalTask.status,
+            newStatus: req.body.status,
+            customerName: updatedTask.customerName
+          },
+          req.ip,
+          req.get('User-Agent')
+        );
+      }
+
+      // Log task progress update if progress was updated
+      if (req.body.progress !== undefined && originalTask.progress !== req.body.progress) {
+        await storage.logUserAction(
+          "task_progress_updated",
+          req.session.userId!,
+          req.session.username!,
+          { 
+            taskId: updatedTask.id, 
+            taskTitle: updatedTask.title,
+            oldProgress: originalTask.progress || 0,
+            newProgress: req.body.progress,
+            customerName: updatedTask.customerName
+          },
+          req.ip,
+          req.get('User-Agent')
+        );
+      }
       
       res.json(updatedTask);
     } catch (error) {
@@ -627,10 +671,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/tasks/:id", requireSupervisorOrAdmin, async (req, res) => {
     try {
+      // Get task details before deletion for logging
+      const task = await storage.getTask(req.params.id);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
       const deleted = await storage.deleteTask(req.params.id);
       if (!deleted) {
         return res.status(404).json({ message: "Task not found" });
       }
+
+      // Log task deletion
+      await storage.logUserAction(
+        "task_deleted",
+        req.session.userId!,
+        req.session.username!,
+        { 
+          taskId: task.id, 
+          taskTitle: task.title,
+          customerName: task.customerName,
+          status: task.status
+        },
+        req.ip,
+        req.get('User-Agent')
+      );
+
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete task" });

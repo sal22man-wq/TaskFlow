@@ -39,10 +39,26 @@ export default function AdminLogs() {
         return "bg-blue-100 text-blue-800";
       case "task_updated":
         return "bg-yellow-100 text-yellow-800";
+      case "task_status_changed":
+        return "bg-orange-100 text-orange-800";
+      case "task_progress_updated":
+        return "bg-indigo-100 text-indigo-800";
+      case "task_deleted":
+        return "bg-red-100 text-red-800";
       case "role_changed":
         return "bg-purple-100 text-purple-800";
       case "user_created":
         return "bg-cyan-100 text-cyan-800";
+      case "user_approved":
+        return "bg-green-100 text-green-800";
+      case "user_rejected":
+        return "bg-red-100 text-red-800";
+      case "user_role_changed":
+        return "bg-purple-100 text-purple-800";
+      case "user_disabled":
+        return "bg-gray-100 text-gray-800";
+      case "user_deleted":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -60,10 +76,26 @@ export default function AdminLogs() {
         return "إنشاء مهمة";
       case "task_updated":
         return "تحديث مهمة";
+      case "task_status_changed":
+        return "تغيير حالة مهمة";
+      case "task_progress_updated":
+        return "تحديث تقدم مهمة";
+      case "task_deleted":
+        return "حذف مهمة";
       case "role_changed":
         return "تغيير صلاحيات";
       case "user_created":
         return "إنشاء مستخدم";
+      case "user_approved":
+        return "موافقة على مستخدم";
+      case "user_rejected":
+        return "رفض مستخدم";
+      case "user_role_changed":
+        return "تغيير دور مستخدم";
+      case "user_disabled":
+        return "تعطيل مستخدم";
+      case "user_deleted":
+        return "حذف مستخدم";
       default:
         return action;
     }
