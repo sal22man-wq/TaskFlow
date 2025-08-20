@@ -130,7 +130,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
         <DialogTitle data-testid="modal-create-task-title">Create New Task</DialogTitle>
       </DialogHeader>
 
-      <form onSubmit={handleSubmit} className="space-y-3 mt-4">
+      <form onSubmit={handleSubmit} className="space-y-2 mt-3">
         <div>
           <Label htmlFor="title">Title *</Label>
           <Input
@@ -149,9 +149,9 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Enter task description"
-            rows={2}
+            rows={1}
             data-testid="textarea-task-description"
-            className="text-sm"
+            className="text-sm min-h-[2rem] resize-none"
           />
         </div>
 
@@ -310,11 +310,11 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="space-y-3 mt-2"
+              className="space-y-2 mt-2"
             >
               <div>
                 <Label htmlFor="assignees" className="text-sm">Assignees (Multiple Selection)</Label>
-                <div className="mt-2 space-y-2 max-h-24 overflow-y-auto border rounded-md p-2 bg-muted/30">
+                <div className="mt-2 space-y-1 max-h-20 overflow-y-auto border rounded-md p-2 bg-muted/30">
                   {teamMembers?.map((member) => (
                     <div key={member.id} className="flex items-center space-x-2">
                       <Checkbox
@@ -350,16 +350,16 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Additional notes (optional)"
-                  rows={2}
+                  rows={1}
                   data-testid="textarea-task-notes"
-                  className="text-sm"
+                  className="text-sm min-h-[2rem] resize-none"
                 />
               </div>
             </motion.div>
           </CollapsibleContent>
         </Collapsible>
 
-        <div className="flex space-x-3 pt-2">
+        <div className="flex space-x-3 pt-3 border-t mt-4">
           <Button
             type="submit"
             className="flex-1"
