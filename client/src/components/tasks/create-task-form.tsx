@@ -25,6 +25,11 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const [assigneeId, setAssigneeId] = useState("");
   const [dueDate, setDueDate] = useState("");
 
+  // Common customers for quick selection
+  const commonCustomers = [
+    "ABC Company", "XYZ Corporation", "Tech Solutions Inc", "Global Services Ltd", "Innovation Partners"
+  ];
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -127,24 +132,43 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="customerName">Customer Name *</Label>
-            <Input
-              id="customerName"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Enter customer name"
-              data-testid="input-task-customer-name"
-            />
+            <div className="space-y-2">
+              <Select value={customerName} onValueChange={setCustomerName}>
+                <SelectTrigger data-testid="select-task-customer-name">
+                  <SelectValue placeholder="Select or enter customer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {commonCustomers.map((customer) => (
+                    <SelectItem key={customer} value={customer}>
+                      {customer}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Or enter custom customer name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                data-testid="input-task-customer-name-manual"
+                className="text-sm"
+              />
+            </div>
           </div>
 
           <div>
             <Label htmlFor="staffName">Staff Name *</Label>
-            <Input
-              id="staffName"
-              value={staffName}
-              onChange={(e) => setStaffName(e.target.value)}
-              placeholder="Enter staff name"
-              data-testid="input-task-staff-name"
-            />
+            <Select value={staffName} onValueChange={setStaffName}>
+              <SelectTrigger data-testid="select-task-staff-name">
+                <SelectValue placeholder="Select staff member" />
+              </SelectTrigger>
+              <SelectContent>
+                {teamMembers?.map((member) => (
+                  <SelectItem key={member.id} value={member.name}>
+                    {member.name} - {member.role}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

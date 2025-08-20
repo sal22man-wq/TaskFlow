@@ -147,7 +147,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
             <Label htmlFor="assignee" className="text-sm font-medium text-muted-foreground">
               Assigned to
             </Label>
-            <Select value={assigneeId} onValueChange={setAssigneeId}>
+            <Select value={assigneeId === null ? "unassigned" : assigneeId} onValueChange={(value) => setAssigneeId(value === "unassigned" ? "" : value)}>
               <SelectTrigger className="mt-1" data-testid="select-task-assignee">
                 <SelectValue placeholder="Select team member" />
               </SelectTrigger>
