@@ -11,7 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { InsertTask, TeamMember, Customer } from "@shared/schema";
-import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AddCustomerDialog } from "@/components/customers/add-customer-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronUp, Calendar as CalendarIcon } from "lucide-react";
@@ -42,11 +42,6 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   // Fetch customers from API
   const { data: customers, isLoading: customersLoading } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
-    queryFn: async () => {
-      const response = await fetch("/api/customers");
-      if (!response.ok) throw new Error("Failed to fetch customers");
-      return response.json();
-    }
   });
 
   const { toast } = useToast();
@@ -81,10 +76,11 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       setDueDate(undefined);
       onSuccess();
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Task creation error:", error);
       toast({
         title: "Error creating task",
-        description: "There was a problem creating the task. Please try again.",
+        description: error.message || "There was a problem creating the task. Please try again.",
         variant: "destructive",
       });
     },
@@ -117,6 +113,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       progress: 0,
     };
 
+    console.log("Creating task with data:", task);
     createTaskMutation.mutate(task);
   };
 
@@ -128,6 +125,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
     >
       <DialogHeader>
         <DialogTitle data-testid="modal-create-task-title">Create New Task</DialogTitle>
+        <DialogDescription>Fill in the form below to create a new task for your team.</DialogDescription>
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="space-y-2 mt-3">
