@@ -72,7 +72,7 @@ export default function MyTasksPage() {
               {task.title}
             </h3>
             <Badge variant={getPriorityColor(task.priority)} className="text-xs">
-              {task.priority}
+              {task.priority === 'high' ? 'عالية' : task.priority === 'medium' ? 'متوسطة' : 'منخفضة'}
             </Badge>
           </div>
           
@@ -81,7 +81,7 @@ export default function MyTasksPage() {
           </p>
           
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Customer: {task.customerName}</span>
+            <span className="text-muted-foreground">العميل: {task.customerName}</span>
             {task.dueDate && (
               <span className={`flex items-center gap-1 ${new Date(task.dueDate) < new Date() ? 'text-red-600' : 'text-muted-foreground'}`}>
                 <Calendar className="w-3 h-3" />
@@ -93,7 +93,7 @@ export default function MyTasksPage() {
           {task.progress > 0 && (
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
-                <span>Progress</span>
+                <span>التقدم</span>
                 <span>{task.progress}%</span>
               </div>
               <Progress value={task.progress} className="h-2" />
@@ -151,7 +151,7 @@ export default function MyTasksPage() {
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle className="w-5 h-5 text-red-600" />
           <h2 className="text-lg font-medium" data-testid="text-priority-tasks-title">
-            High Priority Tasks ({priorityTasks.length})
+            المهام عالية الأولوية ({priorityTasks.length})
           </h2>
         </div>
         
@@ -162,7 +162,7 @@ export default function MyTasksPage() {
             <Card>
               <CardContent className="p-6 text-center">
                 <p className="text-muted-foreground" data-testid="text-no-priority-tasks">
-                  No high priority tasks at the moment
+                  لا توجد مهام عالية الأولوية حالياً
                 </p>
               </CardContent>
             </Card>
@@ -175,7 +175,7 @@ export default function MyTasksPage() {
         <div className="flex items-center gap-2 mb-4">
           <Clock className="w-5 h-5 text-red-600" />
           <h2 className="text-lg font-medium" data-testid="text-overdue-tasks-title">
-            Overdue Tasks ({overdueTasks.length})
+            المهام المتأخرة ({overdueTasks.length})
           </h2>
         </div>
         
@@ -187,7 +187,7 @@ export default function MyTasksPage() {
               <CardContent className="p-6 text-center">
                 <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-2" />
                 <p className="text-muted-foreground" data-testid="text-no-overdue-tasks">
-                  Great! No overdue tasks
+                  ممتاز! لا توجد مهام متأخرة
                 </p>
               </CardContent>
             </Card>
@@ -200,7 +200,7 @@ export default function MyTasksPage() {
         <div className="flex items-center gap-2 mb-4">
           <Calendar className="w-5 h-5 text-blue-600" />
           <h2 className="text-lg font-medium" data-testid="text-upcoming-tasks-title">
-            Upcoming This Week ({upcomingTasks.length})
+            المهام القادمة هذا الأسبوع ({upcomingTasks.length})
           </h2>
         </div>
         
@@ -211,7 +211,7 @@ export default function MyTasksPage() {
             <Card>
               <CardContent className="p-6 text-center">
                 <p className="text-muted-foreground" data-testid="text-no-upcoming-tasks">
-                  No upcoming tasks this week
+                  لا توجد مهام قادمة هذا الأسبوع
                 </p>
               </CardContent>
             </Card>
@@ -224,7 +224,7 @@ export default function MyTasksPage() {
         <div className="flex items-center gap-2 mb-4">
           <MessageSquare className="w-5 h-5 text-purple-600" />
           <h2 className="text-lg font-medium" data-testid="text-tasks-with-comments-title">
-            Tasks with Comments ({tasksWithComments.length})
+            المهام مع التعليقات ({tasksWithComments.length})
           </h2>
         </div>
         
@@ -244,14 +244,14 @@ export default function MyTasksPage() {
                         {task.title}
                       </h3>
                       <Badge variant={getPriorityColor(task.priority)} className="text-xs">
-                        {task.priority}
+                        {task.priority === 'high' ? 'عالية' : task.priority === 'medium' ? 'متوسطة' : 'منخفضة'}
                       </Badge>
                     </div>
                     
                     <div className="bg-muted/50 rounded p-2">
                       <div className="flex items-center gap-1 mb-1">
                         <MessageSquare className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">Comment:</span>
+                        <span className="text-xs text-muted-foreground">التعليق:</span>
                       </div>
                       <p className="text-xs" data-testid={`text-task-comment-${task.id}`}>
                         {task.notes}
@@ -278,7 +278,7 @@ export default function MyTasksPage() {
             <Card>
               <CardContent className="p-6 text-center">
                 <p className="text-muted-foreground" data-testid="text-no-commented-tasks">
-                  No tasks with comments yet
+                  لا توجد مهام مع تعليقات بعد
                 </p>
               </CardContent>
             </Card>
