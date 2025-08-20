@@ -14,6 +14,7 @@ import Customers from "@/pages/customers";
 import AdminLogs from "@/pages/admin-logs";
 import NotFound from "@/pages/not-found";
 import { AdminGuard } from "@/components/admin/admin-guard";
+import { WelcomeModal } from "@/components/welcome-modal";
 
 function Router() {
   return (
@@ -39,6 +40,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
+        <WelcomeModal />
         <Router />
       </TooltipProvider>
     </QueryClientProvider>
