@@ -163,3 +163,22 @@ export type MessageWithSender = Message & {
 export type UserWithTeamMember = User & {
   teamMember?: TeamMember;
 };
+
+// System Logs table
+export const systemLogs = pgTable("system_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  action: text("action").notNull(), // login, logout, task_created, task_updated, user_created, role_changed, etc.
+  userId: varchar("user_id").references(() => users.id),
+  username: text("username"),
+  details: text("details"), // JSON string with additional details
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  timestamp: timestamp("timestamp").default(sql`now()`),
+});
+
+export const insertSystemLogSchema = createInsertSchema(systemLogs).omit({
+  id: true,
+  timestamp: true,
+});
+export type InsertSystemLog = z.infer<typeof insertSystemLogSchema>;
+export type SystemLog = typeof systemLogs.$inferSelect;

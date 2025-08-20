@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTeamMemberSchema, insertTaskSchema, updateTaskSchema, insertCustomerSchema, insertUserSchema, insertMessageSchema, insertNotificationSchema } from "@shared/schema";
+import { insertTeamMemberSchema, insertTaskSchema, updateTaskSchema, insertCustomerSchema, insertUserSchema, insertMessageSchema, insertNotificationSchema, insertSystemLogSchema } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import session from "express-session";
@@ -109,6 +109,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.userId = user.id;
       req.session.username = user.username;
 
+      // Log successful login
+      await storage.logUserAction(
+        "login_success",
+        user.id,
+        username,
+        { role: user.role, isApproved: user.isApproved },
+        req.ip,
+        req.get('User-Agent')
+      );
+
       res.json({ 
         message: "Login successful",
         user: { 
@@ -124,7 +134,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/logout", (req, res) => {
+  app.post("/api/auth/logout", async (req, res) => {
+    const userId = req.session.userId;
+    const username = req.session.username;
+    
+    // Log logout action
+    if (userId && username) {
+      await storage.logUserAction(
+        "logout",
+        userId,
+        username,
+        null,
+        req.ip,
+        req.get('User-Agent')
+      );
+    }
+    
     req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({ message: "Logout failed" });
@@ -181,6 +206,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // System Logs routes (admin only)
+  app.get("/api/admin/logs", requireAdmin, async (req, res) => {
+    try {
+      const { limit } = req.query;
+      const logs = await storage.getSystemLogs(limit ? parseInt(limit as string) : 100);
+      res.json(logs);
+    } catch (error) {
+      console.error("Get logs error:", error);
+      res.status(500).json({ message: "Failed to fetch logs" });
+    }
+  });
+
   // Admin routes (protected)
   app.get("/api/admin/users", requireAdmin, async (req, res) => {
     try {
@@ -233,6 +270,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
+
+      // Log role change
+      await storage.logUserAction(
+        "role_changed",
+        req.session.userId!,
+        req.session.username!,
+        { targetUser: user.username, newRole: role },
+        req.ip,
+        req.get('User-Agent')
+      );
 
       res.json({
         message: `User role updated successfully`,
@@ -433,6 +480,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create notifications for assigned team members
       await storage.createTaskNotifications(task, "task_assigned");
+      
+      // Log task creation
+      await storage.logUserAction(
+        "task_created",
+        req.session.userId!,
+        req.session.username!,
+        { taskId: task.id, taskTitle: task.title },
+        req.ip,
+        req.get('User-Agent')
+      );
       
       res.status(201).json(task);
     } catch (error) {

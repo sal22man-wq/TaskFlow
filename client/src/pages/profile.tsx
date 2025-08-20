@@ -111,6 +111,7 @@ export default function Profile() {
                   • إدارة كاملة للنظام والمستخدمين
                   <br />• إنشاء وإدارة جميع المهام
                   <br />• تغيير صلاحيات المستخدمين
+                  <br />• الوصول لسجل أحداث النظام
                 </div>
               )}
               {(user as any)?.role === 'supervisor' && (
@@ -184,6 +185,15 @@ export default function Profile() {
             >
               <UserCheck className="h-5 w-5 mr-3" />
               إدارة المستخدمين
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start h-12 text-left text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+              onClick={() => setLocation("/admin/logs")}
+              data-testid="button-admin-logs"
+            >
+              <Activity className="h-5 w-5 mr-3" />
+              سجل أحداث النظام
             </Button>
           </div>
         )}

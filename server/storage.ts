@@ -5,6 +5,7 @@ import {
   tasks,
   messages,
   notifications,
+  systemLogs,
   type User,
   type InsertUser,
   type Customer,
@@ -20,6 +21,8 @@ import {
   type MessageWithSender,
   type Notification,
   type InsertNotification,
+  type SystemLog,
+  type InsertSystemLog,
 } from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { db } from "./db";
@@ -77,6 +80,11 @@ export interface IStorage {
   createNotification(notification: InsertNotification): Promise<Notification>;
   markNotificationAsRead(notificationId: string): Promise<Notification | undefined>;
   getUnreadNotificationsCount(userId: string): Promise<number>;
+
+  // System Logs
+  getSystemLogs(limit?: number): Promise<SystemLog[]>;
+  createSystemLog(log: InsertSystemLog): Promise<SystemLog>;
+  logUserAction(action: string, userId: string, username: string, details?: any, ipAddress?: string, userAgent?: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -544,6 +552,37 @@ export class DatabaseStorage implements IStorage {
         }
       }
     }
+  }
+
+  // System Logs methods
+  async getSystemLogs(limit: number = 100): Promise<SystemLog[]> {
+    return await db.select()
+      .from(systemLogs)
+      .orderBy(desc(systemLogs.timestamp))
+      .limit(limit);
+  }
+
+  async createSystemLog(log: InsertSystemLog): Promise<SystemLog> {
+    const [systemLog] = await db.insert(systemLogs).values(log).returning();
+    return systemLog;
+  }
+
+  async logUserAction(
+    action: string,
+    userId: string,
+    username: string,
+    details?: any,
+    ipAddress?: string,
+    userAgent?: string
+  ): Promise<void> {
+    await this.createSystemLog({
+      action,
+      userId,
+      username,
+      details: details ? JSON.stringify(details) : null,
+      ipAddress,
+      userAgent,
+    });
   }
 }
 
