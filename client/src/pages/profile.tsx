@@ -1,8 +1,28 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { User, Settings, Bell, Shield, HelpCircle, LogOut } from "lucide-react";
 
 export default function Profile() {
+  const { user, logout } = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "تم تسجيل الخروج بنجاح",
+        description: "تم تسجيل خروجك من النظام",
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ في تسجيل الخروج",
+        description: "حدث خطأ أثناء تسجيل الخروج",
+        variant: "destructive",
+      });
+    }
+  };
   return (
     <div className="p-4 space-y-4">
       <h2 className="text-xl font-medium mb-4" data-testid="text-profile-title">
@@ -20,12 +40,11 @@ export default function Profile() {
         <CardContent>
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-xl">
-              AD
+              {user?.username?.charAt(0).toUpperCase() || "U"}
             </div>
             <div>
-              <h3 className="font-medium text-lg" data-testid="text-user-name">Admin User</h3>
-              <p className="text-muted-foreground" data-testid="text-user-email">admin@taskflow.com</p>
-              <p className="text-sm text-muted-foreground" data-testid="text-user-role">Team Administrator</p>
+              <h3 className="font-medium text-lg" data-testid="text-user-name">{user?.username || "مستخدم"}</h3>
+              <p className="text-sm text-muted-foreground" data-testid="text-user-role">عضو فريق - شركة اشراق الودق</p>
             </div>
           </div>
         </CardContent>
@@ -73,10 +92,11 @@ export default function Profile() {
           <Button
             variant="ghost"
             className="w-full justify-start h-12 text-left text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={handleLogout}
             data-testid="button-logout"
           >
             <LogOut className="h-5 w-5 mr-3" />
-            Sign Out
+            تسجيل الخروج
           </Button>
         </div>
       </div>

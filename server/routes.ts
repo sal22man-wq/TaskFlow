@@ -1,12 +1,129 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTeamMemberSchema, insertTaskSchema, updateTaskSchema, insertCustomerSchema } from "@shared/schema";
+import { insertTeamMemberSchema, insertTaskSchema, updateTaskSchema, insertCustomerSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
+import session from "express-session";
+
+// Extend Express session interface
+declare module 'express-session' {
+  interface SessionData {
+    userId?: string;
+    username?: string;
+  }
+}
+
+// Authentication middleware
+const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+  if (req.session && req.session.userId) {
+    return next();
+  } else {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Team member routes
-  app.get("/api/team-members", async (req, res) => {
+  // Configure session middleware
+  app.use(session({
+    secret: 'your-secret-key-change-this-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // Set to true in production with HTTPS
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  }));
+
+  // Authentication routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+
+      // Set session
+      req.session.userId = user.id;
+      req.session.username = user.username;
+
+      res.json({ 
+        message: "Login successful",
+        user: { id: user.id, username: user.username }
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.json({ message: "Logout successful" });
+    });
+  });
+
+  app.get("/api/auth/user", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json({ id: user.id, username: user.username });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user info" });
+    }
+  });
+
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(409).json({ message: "Username already exists" });
+      }
+
+      // Hash password
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+      // Create user
+      const user = await storage.createUser({
+        username,
+        password: hashedPassword
+      });
+
+      res.status(201).json({
+        message: "User created successfully",
+        user: { id: user.id, username: user.username }
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+  // Team member routes (protected)
+  app.get("/api/team-members", requireAuth, async (req, res) => {
     try {
       const members = await storage.getTeamMembers();
       res.json(members);
@@ -15,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/team-members/:id", async (req, res) => {
+  app.get("/api/team-members/:id", requireAuth, async (req, res) => {
     try {
       const member = await storage.getTeamMember(req.params.id);
       if (!member) {
@@ -27,7 +144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/team-members", async (req, res) => {
+  app.post("/api/team-members", requireAuth, async (req, res) => {
     try {
       const validatedData = insertTeamMemberSchema.parse(req.body);
       const member = await storage.createTeamMember(validatedData);
@@ -65,8 +182,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Customer routes
-  app.get("/api/customers", async (req, res) => {
+  // Customer routes (protected)
+  app.get("/api/customers", requireAuth, async (req, res) => {
     try {
       const customers = await storage.getCustomers();
       res.json(customers);
@@ -125,8 +242,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Task routes
-  app.get("/api/tasks", async (req, res) => {
+  // Task routes (protected)
+  app.get("/api/tasks", requireAuth, async (req, res) => {
     try {
       const { status, assigneeId } = req.query;
       
@@ -198,8 +315,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Statistics route
-  app.get("/api/stats", async (req, res) => {
+  // Statistics route (protected)
+  app.get("/api/stats", requireAuth, async (req, res) => {
     try {
       const stats = await storage.getTaskStats();
       const teamMembers = await storage.getTeamMembers();

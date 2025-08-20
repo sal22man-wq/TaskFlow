@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MobileLayout } from "@/components/layout/mobile-layout";
 import { LanguageProvider } from "@/hooks/use-language";
+import { AuthProvider } from "@/components/auth/auth-provider";
+import { useAuth } from "@/hooks/use-auth";
 import Dashboard from "@/pages/dashboard";
 import Tasks from "@/pages/tasks";
 import MyTasks from "@/pages/my-tasks";
@@ -13,10 +15,25 @@ import Profile from "@/pages/profile.tsx";
 import Customers from "@/pages/customers";
 import AdminLogs from "@/pages/admin-logs";
 import NotFound from "@/pages/not-found";
+import LoginPage from "@/pages/login";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { WelcomeModal } from "@/components/welcome-modal";
 
-function Router() {
+function ProtectedRouter() {
+  const { user, isLoading, login } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage onLoginSuccess={login} />;
+  }
+
   return (
     <LanguageProvider>
       <MobileLayout>
@@ -38,11 +55,13 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <WelcomeModal />
-        <Router />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <WelcomeModal />
+          <ProtectedRouter />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
