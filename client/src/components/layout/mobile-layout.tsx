@@ -20,6 +20,14 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       
       <main className="flex-1 overflow-y-auto pb-20 touch-manipulation">
         {children}
+        
+        {/* Copyright Footer */}
+        <footer className="mt-8 py-4 border-t bg-background/95 backdrop-blur">
+          <div className="text-center text-xs text-muted-foreground px-4">
+            <p className="mb-1">جميع الحقوق محفوظة © {new Date().getFullYear()}</p>
+            <p className="font-medium text-primary">شركة اشراق الودق لتكنولوجيا المعلومات</p>
+          </div>
+        </footer>
       </main>
       
       <BottomNavigation />
