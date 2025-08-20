@@ -300,14 +300,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<'en' | 'ar'>('ar');
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('language') as 'en' | 'ar' | null;
-    if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'ar')) {
-      setLanguageState(savedLanguage);
-    } else {
-      // Force Arabic as default if no saved language
-      setLanguageState('ar');
-      localStorage.setItem('language', 'ar');
-    }
+    // Clear any existing language setting and force Arabic
+    localStorage.clear();
+    localStorage.setItem('language', 'ar');
+    setLanguageState('ar');
   }, []);
 
   useEffect(() => {
