@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -12,8 +14,10 @@ import { InsertTask, TeamMember, Customer } from "@shared/schema";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AddCustomerDialog } from "@/components/customers/add-customer-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Calendar as CalendarIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface CreateTaskFormProps {
   onSuccess: () => void;
@@ -29,7 +33,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const [notes, setNotes] = useState("");
   const [priority, setPriority] = useState("medium");
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
-  const [dueDate, setDueDate] = useState("");
+  const [dueDate, setDueDate] = useState<Date>();
   
   // Collapsible sections state
   const [isCustomerDetailsOpen, setIsCustomerDetailsOpen] = useState(false);
@@ -74,7 +78,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       setNotes("");
       setPriority("medium");
       setAssigneeIds([]);
-      setDueDate("");
+      setDueDate(undefined);
       onSuccess();
     },
     onError: () => {
@@ -108,7 +112,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       notes: notes.trim() || undefined,
       priority,
       assigneeIds: assigneeIds.length > 0 ? assigneeIds : undefined,
-      dueDate: dueDate ? new Date(dueDate) : undefined,
+      dueDate: dueDate ? dueDate : undefined,
       status: "pending",
       progress: 0,
     };
@@ -265,15 +269,31 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
           </div>
 
           <div>
-            <Label htmlFor="dueDate" className="text-sm">Due Date</Label>
-            <Input
-              id="dueDate"
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              data-testid="input-task-due-date-create"
-              className="text-sm h-9"
-            />
+            <Label className="text-sm">تاريخ الإنجاز</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal text-sm h-9",
+                    !dueDate && "text-muted-foreground"
+                  )}
+                  data-testid="button-task-due-date"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dueDate ? format(dueDate, "PPP") : <span>اختر تاريخ الإنجاز</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dueDate}
+                  onSelect={setDueDate}
+                  initialFocus
+                  data-testid="calendar-task-due-date"
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
