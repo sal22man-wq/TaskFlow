@@ -25,6 +25,12 @@ export default function Profile() {
   };
   return (
     <div className="p-4 space-y-4">
+      <div className="text-center mb-6">
+        <h1 className="text-lg font-semibold text-primary mb-2" data-testid="text-welcome-message">
+          اهلا بكم في برنامج تتبع العمل في شركة اشراق الودق لتكنولوجيا المعلومات
+        </h1>
+      </div>
+      
       <h2 className="text-xl font-medium mb-4" data-testid="text-profile-title">
         Profile
       </h2>
