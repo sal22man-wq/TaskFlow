@@ -118,15 +118,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/user", requireAuth, async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId!);
-      if (!user) {
+      const userWithTeamMember = await storage.getUserWithTeamMember(req.session.userId!);
+      if (!userWithTeamMember) {
         return res.status(404).json({ message: "User not found" });
       }
       res.json({ 
-        id: user.id, 
-        username: user.username,
-        role: user.role,
-        isApproved: user.isApproved
+        id: userWithTeamMember.id, 
+        username: userWithTeamMember.username,
+        role: userWithTeamMember.role,
+        isApproved: userWithTeamMember.isApproved,
+        teamMember: userWithTeamMember.teamMember
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to get user info" });
@@ -147,14 +148,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: "Username already exists" });
       }
 
-      // Hash password
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-      // Create user
+      // Create user (this will also create team member automatically)
       const user = await storage.createUser({
         username,
-        password: hashedPassword
+        password
       });
 
       res.status(201).json({

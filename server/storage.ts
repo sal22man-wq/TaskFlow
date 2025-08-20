@@ -56,9 +56,13 @@ export interface IStorage {
   // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserWithTeamMember(id: string): Promise<User & { teamMember?: TeamMember } | undefined>;
   createUser(insertUser: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUserApproval(id: string, isApproved: string): Promise<User | undefined>;
+  
+  // Team Member by User
+  getTeamMemberByUserId(userId: string): Promise<TeamMember | undefined>;
 
   // Messages
   getMessages(userId1?: string, userId2?: string): Promise<MessageWithSender[]>;
@@ -156,11 +160,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+    const userData = { ...insertUser, password: hashedPassword };
+    
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values(userData)
       .returning();
+    
+    // Create corresponding team member for this user
+    await this.createTeamMember({
+      userId: user.id,
+      name: insertUser.username,
+      role: insertUser.role === 'admin' ? 'مدير النظام' : 'عضو فريق',
+      email: `${insertUser.username}@company.com`,
+      status: 'available',
+      avatar: insertUser.username.charAt(0).toUpperCase(),
+    });
+    
     return user;
+  }
+
+  async getUserWithTeamMember(id: string): Promise<User & { teamMember?: TeamMember } | undefined> {
+    const user = await this.getUser(id);
+    if (!user) return undefined;
+    
+    const teamMember = await this.getTeamMemberByUserId(id);
+    return { ...user, teamMember };
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -174,6 +200,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user;
+  }
+
+  // Team Member by User
+  async getTeamMemberByUserId(userId: string): Promise<TeamMember | undefined> {
+    const [member] = await db.select().from(teamMembers).where(eq(teamMembers.userId, userId));
+    return member;
   }
 
   // Team member methods

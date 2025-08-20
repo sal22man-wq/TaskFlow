@@ -67,11 +67,23 @@ export default function Profile() {
         <CardContent>
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-xl">
-              {(user as any)?.username?.charAt(0).toUpperCase() || "U"}
+              {(user as any)?.teamMember?.avatar || (user as any)?.username?.charAt(0).toUpperCase() || "U"}
             </div>
             <div>
-              <h3 className="font-medium text-lg" data-testid="text-user-name">{(user as any)?.username || "مستخدم"}</h3>
-              <p className="text-sm text-muted-foreground" data-testid="text-user-role">عضو فريق - شركة اشراق الودق</p>
+              <h3 className="font-medium text-lg" data-testid="text-user-name">{(user as any)?.teamMember?.name || (user as any)?.username || "مستخدم"}</h3>
+              <p className="text-sm text-muted-foreground" data-testid="text-user-role">{(user as any)?.teamMember?.role || "عضو فريق"} - شركة اشراق الودق</p>
+              <p className="text-xs text-muted-foreground" data-testid="text-user-email">{(user as any)?.teamMember?.email}</p>
+              <div className="mt-2">
+                <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                  (user as any)?.teamMember?.status === 'available' ? 'bg-green-100 text-green-800' : 
+                  (user as any)?.teamMember?.status === 'busy' ? 'bg-red-100 text-red-800' : 
+                  'bg-gray-100 text-gray-800'
+                }`} data-testid="text-user-status">
+                  {(user as any)?.teamMember?.status === 'available' ? 'متاح' : 
+                   (user as any)?.teamMember?.status === 'busy' ? 'مشغول' : 
+                   (user as any)?.teamMember?.status === 'offline' ? 'غير متصل' : 'غير محدد'}
+                </span>
+              </div>
             </div>
           </div>
         </CardContent>

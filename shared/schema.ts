@@ -22,6 +22,7 @@ export const users = pgTable("users", {
 
 export const teamMembers = pgTable("team_members", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").unique(), // link to users table
   name: text("name").notNull(),
   role: text("role").notNull(),
   email: text("email").notNull().unique(),
@@ -140,6 +141,25 @@ export type TaskWithAssignees = Task & {
   assignees?: TeamMember[];
 };
 
+// Relations
+export const userRelations = relations(users, ({ one }) => ({
+  teamMember: one(teamMembers, {
+    fields: [users.id],
+    references: [teamMembers.userId],
+  }),
+}));
+
+export const teamMemberRelations = relations(teamMembers, ({ one }) => ({
+  user: one(users, {
+    fields: [teamMembers.userId],
+    references: [users.id],
+  }),
+}));
+
 export type MessageWithSender = Message & {
   sender?: TeamMember | User;
+};
+
+export type UserWithTeamMember = User & {
+  teamMember?: TeamMember;
 };
