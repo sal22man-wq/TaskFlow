@@ -109,7 +109,7 @@ export default function AdminLogsPage() {
     }
   };
 
-  const getLevelColor = (level: string) => {
+  const getLevelColor = (level: string): "destructive" | "secondary" | "default" | "outline" => {
     switch (level) {
       case "error": return "destructive";
       case "warning": return "secondary";
@@ -131,7 +131,7 @@ export default function AdminLogsPage() {
     return matchesSearch && matchesLevel && matchesAction;
   }) || [];
 
-  const uniqueActions = [...new Set(logs?.map(log => log.action) || [])];
+  const uniqueActions = Array.from(new Set(logs?.map(log => log.action) || []));
 
   if (isLoading) {
     return (
