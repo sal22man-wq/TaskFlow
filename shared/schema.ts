@@ -37,7 +37,7 @@ export const tasks = pgTable("tasks", {
   customerAddress: text("customer_address"),
   time: text("time").notNull(), // estimated time or schedule
   notes: text("notes"), // additional notes
-  status: text("status").notNull().default("to_be_completed"), // to_be_completed, started, in_progress, completed, overdue
+  status: text("status").notNull().default("pending"), // pending, start, complete
   priority: text("priority").notNull().default("medium"), // low, medium, high
   assigneeIds: text("assignee_ids").array(), // Array of team member IDs
   dueDate: timestamp("due_date"),

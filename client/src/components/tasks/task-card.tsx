@@ -1,12 +1,13 @@
-import { TaskWithAssignee } from "@shared/schema";
+import { TaskWithAssignees } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, User, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { TaskDetailModal } from "./task-detail-modal";
+import { StatusActions } from "./status-actions";
 
 interface TaskCardProps {
-  task: TaskWithAssignee;
+  task: TaskWithAssignees;
 }
 
 export function TaskCard({ task }: TaskCardProps) {
@@ -14,13 +15,11 @@ export function TaskCard({ task }: TaskCardProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed":
+      case "complete":
         return "status-completed";
-      case "started":
-      case "in_progress":
+      case "start":
         return "status-in_progress";
-      case "overdue":
-        return "status-overdue";
+      case "pending":
       default:
         return "status-to_be_completed";
     }
@@ -28,16 +27,12 @@ export function TaskCard({ task }: TaskCardProps) {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "to_be_completed":
-        return "To Do";
-      case "started":
+      case "pending":
+        return "Pending";
+      case "start":
         return "Started";
-      case "in_progress":
-        return "In Progress";
-      case "completed":
-        return "Completed";
-      case "overdue":
-        return "Overdue";
+      case "complete":
+        return "Complete";
       default:
         return status;
     }
@@ -63,32 +58,43 @@ export function TaskCard({ task }: TaskCardProps) {
           </span>
         </div>
         
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div className="flex items-center space-x-4">
-            {task.assignee && (
-              <div className="flex items-center space-x-1">
-                <User className="h-3 w-3" />
-                <span data-testid={`task-assignee-${task.id}`}>{task.assignee.name}</span>
-              </div>
-            )}
-            {task.dueDate && (
-              <div className="flex items-center space-x-1">
-                <Calendar className="h-3 w-3" />
-                <span data-testid={`task-due-date-${task.id}`}>
-                  {format(new Date(task.dueDate), "MMM dd")}
-                </span>
-              </div>
-            )}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div className="flex items-center space-x-4">
+              {task.assignees && task.assignees.length > 0 && (
+                <div className="flex items-center space-x-1">
+                  <User className="h-3 w-3" />
+                  <span data-testid={`task-assignee-${task.id}`}>
+                    {task.assignees[0].name}
+                    {task.assignees.length > 1 && ` +${task.assignees.length - 1}`}
+                  </span>
+                </div>
+              )}
+              {task.dueDate && (
+                <div className="flex items-center space-x-1">
+                  <Calendar className="h-3 w-3" />
+                  <span data-testid={`task-due-date-${task.id}`}>
+                    {format(new Date(task.dueDate), "MMM dd")}
+                  </span>
+                </div>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-primary hover:text-primary-dark p-0 h-auto"
+              onClick={() => setShowDetails(true)}
+              data-testid={`button-task-details-${task.id}`}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-primary hover:text-primary-dark p-0 h-auto"
-            onClick={() => setShowDetails(true)}
-            data-testid={`button-task-details-${task.id}`}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          
+          {/* Status Actions */}
+          <StatusActions
+            taskId={task.id}
+            currentStatus={task.status}
+          />
         </div>
       </div>
 

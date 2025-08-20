@@ -102,7 +102,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       priority,
       assigneeIds: assigneeIds.length > 0 ? assigneeIds : undefined,
       dueDate: dueDate ? new Date(dueDate) : undefined,
-      status: "to_be_completed",
+      status: "pending",
       progress: 0,
     };
 

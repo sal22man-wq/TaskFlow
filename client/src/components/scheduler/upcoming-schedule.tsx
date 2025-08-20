@@ -17,7 +17,7 @@ export function UpcomingSchedule() {
     const taskDate = new Date(task.dueDate);
     const today = new Date();
     const nextWeek = addDays(today, 7);
-    return taskDate >= today && taskDate <= nextWeek && task.status !== "completed";
+    return taskDate >= today && taskDate <= nextWeek && task.status !== "complete";
   })
   .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime()) || [];
 
