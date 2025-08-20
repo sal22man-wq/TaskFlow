@@ -66,6 +66,9 @@ const translations = {
     'action.completeTask': 'Complete Task',
     'action.resetTask': 'Reset to Pending',
 
+    // Common
+    'common.viewAll': 'View All',
+
     // Messages
     'msg.noTasks': 'No tasks found',
     'msg.taskCreated': 'Task created successfully',
@@ -202,6 +205,9 @@ const translations = {
     'action.completeTask': 'إكمال المهمة',
     'action.resetTask': 'إعادة تعيين للانتظار',
 
+    // Common
+    'common.viewAll': 'عرض الكل',
+
     // Messages
     'msg.noTasks': 'لا توجد مهام',
     'msg.taskCreated': 'تم إنشاء المهمة بنجاح',
@@ -209,6 +215,7 @@ const translations = {
     'msg.loading': 'جاري التحميل...',
     'msg.saving': 'جاري الحفظ...',
     'msg.updating': 'جاري التحديث...',
+    'msg.noTeamMembers': 'لا يوجد أعضاء فريق',
 
     // My Tasks
     'myTasks.title': 'مهامي',

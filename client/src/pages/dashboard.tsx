@@ -55,7 +55,7 @@ export default function Dashboard() {
                 testId="stat-active-tasks"
               />
               <StatsCard
-                title="أعضاء الفريق"
+                title={t('team.title')}
                 value={(stats as any)?.teamMembers || 0}
                 icon="👥"
                 color="secondary"
@@ -98,7 +98,7 @@ export default function Dashboard() {
           <h3 className="text-lg font-medium" data-testid="text-recent-tasks-title">{t('dashboard.recentTasks')}</h3>
           <Link href="/tasks">
             <Button variant="ghost" size="sm" className="text-primary" data-testid="link-view-all-tasks">
-              عرض الكل
+              {t('common.viewAll')}
             </Button>
           </Link>
         </div>
@@ -128,7 +128,7 @@ export default function Dashboard() {
           <h3 className="text-lg font-medium" data-testid="text-team-members-title">{t('team.title')}</h3>
           <Link href="/team">
             <Button variant="ghost" size="sm" className="text-primary" data-testid="link-view-all-team">
-              عرض الكل
+              {t('common.viewAll')}
             </Button>
           </Link>
         </div>
@@ -146,7 +146,7 @@ export default function Dashboard() {
             ))
           ) : (
             <div className="text-center py-8 text-muted-foreground" data-testid="text-no-team-members">
-              لا يوجد أعضاء فريق
+{t('msg.noTeamMembers')}
             </div>
           )}
         </div>
