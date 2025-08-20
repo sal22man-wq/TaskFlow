@@ -1,27 +1,44 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { User, Settings, Bell, Shield, HelpCircle, LogOut } from "lucide-react";
 
 export default function Profile() {
-  const { user, logout } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const handleLogout = async () => {
-    try {
-      await logout();
+  // Get current user data
+  const { data: user } = useQuery({
+    queryKey: ["/api/auth/user"],
+    retry: false,
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/auth/logout");
+    },
+    onSuccess: () => {
       toast({
         title: "تم تسجيل الخروج بنجاح",
         description: "تم تسجيل خروجك من النظام",
       });
-    } catch (error) {
+      // Clear all queries and reload the page
+      queryClient.clear();
+      window.location.reload();
+    },
+    onError: () => {
       toast({
         title: "خطأ في تسجيل الخروج",
         description: "حدث خطأ أثناء تسجيل الخروج",
         variant: "destructive",
       });
-    }
+    },
+  });
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
   return (
     <div className="p-4 space-y-4">
@@ -99,10 +116,11 @@ export default function Profile() {
             variant="ghost"
             className="w-full justify-start h-12 text-left text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={handleLogout}
+            disabled={logoutMutation.isPending}
             data-testid="button-logout"
           >
             <LogOut className="h-5 w-5 mr-3" />
-            تسجيل الخروج
+            {logoutMutation.isPending ? "جاري تسجيل الخروج..." : "تسجيل الخروج"}
           </Button>
         </div>
       </div>

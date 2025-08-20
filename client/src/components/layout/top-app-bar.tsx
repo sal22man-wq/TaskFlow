@@ -1,10 +1,37 @@
-import { Bell, UserCircle } from "lucide-react";
+import { Bell, UserCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/use-language";
 import { LanguageToggleButton } from "@/components/ui/language-switcher";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export function TopAppBar() {
   const { t } = useLanguage();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/auth/logout");
+    },
+    onSuccess: () => {
+      // Clear all queries and reload the page
+      queryClient.clear();
+      window.location.reload();
+    },
+    onError: () => {
+      toast({
+        title: "خطأ في تسجيل الخروج",
+        description: "حدث خطأ أثناء تسجيل الخروج",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
   
   return (
     <header className="bg-primary text-primary-foreground px-4 py-3 shadow-md">
@@ -34,6 +61,17 @@ export function TopAppBar() {
             data-testid="button-profile-menu"
           >
             <UserCircle className="h-6 w-6" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-primary-foreground hover:bg-red-600/20 rounded-full"
+            onClick={handleLogout}
+            disabled={logoutMutation.isPending}
+            data-testid="button-logout"
+            title="تسجيل الخروج"
+          >
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </div>
