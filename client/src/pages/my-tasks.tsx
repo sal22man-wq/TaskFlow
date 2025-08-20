@@ -25,7 +25,7 @@ export default function MyTasksPage() {
   const priorityTasks = tasks?.filter(task => task.priority === "high") || [];
   const overdueTasks = tasks?.filter(task => {
     if (!task.dueDate) return false;
-    return new Date(task.dueDate) < new Date() && task.status !== "completed";
+    return new Date(task.dueDate) < new Date() && task.status !== "complete";
   }) || [];
   
   const upcomingTasks = tasks?.filter(task => {
@@ -33,7 +33,7 @@ export default function MyTasksPage() {
     const dueDate = new Date(task.dueDate);
     const today = new Date();
     const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    return dueDate >= today && dueDate <= nextWeek && task.status !== "completed";
+    return dueDate >= today && dueDate <= nextWeek && task.status !== "complete";
   }) || [];
 
   const tasksWithComments = tasks?.filter(task => task.notes && task.notes.length > 0) || [];
@@ -49,9 +49,9 @@ export default function MyTasksPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed": return "text-green-600";
-      case "in_progress": return "text-blue-600";
-      case "to_be_completed": return "text-orange-600";
+      case "complete": return "text-green-600";
+      case "start": return "text-blue-600";
+      case "pending": return "text-orange-600";
       default: return "text-gray-600";
     }
   };

@@ -2,13 +2,13 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { TaskCard } from "@/components/tasks/task-card";
-import { TaskWithAssignee } from "@shared/schema";
+import { TaskWithAssignees } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Tasks() {
   const [activeFilter, setActiveFilter] = useState("all");
 
-  const { data: tasks, isLoading } = useQuery<TaskWithAssignee[]>({
+  const { data: tasks, isLoading } = useQuery<TaskWithAssignees[]>({
     queryKey: ["/api/tasks"],
   });
 

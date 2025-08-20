@@ -230,7 +230,7 @@ export class MemStorage implements IStorage {
     const newTask: Task = { 
       ...task, 
       id,
-      status: task.status || "to_be_completed",
+      status: task.status || "pending",
       priority: task.priority || "medium",
       progress: task.progress || 0,
       assigneeIds: task.assigneeIds || [],
@@ -244,7 +244,7 @@ export class MemStorage implements IStorage {
     this.tasks.set(id, newTask);
 
     // Update assignees' active task counts
-    if (task.assigneeIds && task.assigneeIds.length > 0 && task.status !== 'completed') {
+    if (task.assigneeIds && task.assigneeIds.length > 0 && task.status !== 'complete') {
       for (const assigneeId of task.assigneeIds) {
         const assignee = await this.getTeamMember(assigneeId);
         if (assignee) {
@@ -277,7 +277,7 @@ export class MemStorage implements IStorage {
       const currentAssigneeIds = updatedTask.assigneeIds || [];
       
       // If task completed, decrease all assignees' counts
-      if (updates.status === 'completed') {
+      if (updates.status === 'complete') {
         for (const assigneeId of currentAssigneeIds) {
           const assignee = await this.getTeamMember(assigneeId);
           if (assignee && assignee.activeTasks > 0) {
@@ -289,7 +289,7 @@ export class MemStorage implements IStorage {
       }
       
       // If task reactivated from completed, increase assignees' counts
-      if (previousStatus === 'completed' && updates.status !== 'completed') {
+      if (previousStatus === 'complete' && updates.status !== 'complete') {
         for (const assigneeId of currentAssigneeIds) {
           const assignee = await this.getTeamMember(assigneeId);
           if (assignee) {
@@ -338,7 +338,7 @@ export class MemStorage implements IStorage {
     if (!task) return false;
 
     // Decrease assignees' active task counts if task was active
-    if (task.assigneeIds && task.assigneeIds.length > 0 && task.status !== 'completed') {
+    if (task.assigneeIds && task.assigneeIds.length > 0 && task.status !== 'complete') {
       for (const assigneeId of task.assigneeIds) {
         const assignee = await this.getTeamMember(assigneeId);
         if (assignee && assignee.activeTasks > 0) {
@@ -362,13 +362,13 @@ export class MemStorage implements IStorage {
     const now = new Date();
     
     const activeTasks = allTasks.filter(task => 
-      task.status === 'started' || task.status === 'in_progress' || task.status === 'to_be_completed'
+      task.status === 'pending' || task.status === 'start'
     ).length;
     
-    const completed = allTasks.filter(task => task.status === 'completed').length;
+    const completed = allTasks.filter(task => task.status === 'complete').length;
     
     const overdue = allTasks.filter(task => 
-      task.dueDate && new Date(task.dueDate) < now && task.status !== 'completed'
+      task.dueDate && new Date(task.dueDate) < now && task.status !== 'complete'
     ).length;
 
     return {
