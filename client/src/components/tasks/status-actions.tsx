@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/hooks/use-language";
 import { Play, CheckCircle, Clock, RotateCcw } from "lucide-react";
 
 interface StatusActionsProps {
@@ -13,6 +14,7 @@ interface StatusActionsProps {
 
 export function StatusActions({ taskId, currentStatus, onStatusChange }: StatusActionsProps) {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
 
   const updateStatusMutation = useMutation({
@@ -25,7 +27,7 @@ export function StatusActions({ taskId, currentStatus, onStatusChange }: StatusA
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       onStatusChange?.(newStatus);
       toast({
-        title: "Status updated",
+        title: t('msg.taskUpdated'),
         description: `Task status changed to ${getStatusLabel(newStatus)}`,
       });
     },
@@ -40,9 +42,9 @@ export function StatusActions({ taskId, currentStatus, onStatusChange }: StatusA
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "pending": return "Pending";
-      case "start": return "Started";
-      case "complete": return "Complete";
+      case "pending": return t('status.pending');
+      case "start": return t('status.start');
+      case "complete": return t('status.complete');
       default: return status;
     }
   };

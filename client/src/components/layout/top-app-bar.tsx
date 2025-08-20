@@ -1,7 +1,11 @@
 import { Bell, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/hooks/use-language";
+import { LanguageToggleButton } from "@/components/ui/language-switcher";
 
 export function TopAppBar() {
+  const { t } = useLanguage();
+  
   return (
     <header className="bg-primary text-primary-foreground px-4 py-3 shadow-md">
       <div className="flex items-center justify-between">
@@ -9,7 +13,8 @@ export function TopAppBar() {
           <div className="text-xl">📋</div>
           <h1 className="text-lg font-medium" data-testid="text-app-title">TaskFlow</h1>
         </div>
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-2">
+          <LanguageToggleButton />
           <Button
             variant="ghost"
             size="icon"

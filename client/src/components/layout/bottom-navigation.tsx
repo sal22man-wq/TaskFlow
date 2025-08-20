@@ -1,17 +1,19 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Home, ListTodo, CheckSquare, Users, User, UserCheck } from "lucide-react";
+import { useLanguage } from "@/hooks/use-language";
 
 export function BottomNavigation() {
   const [location, setLocation] = useLocation();
+  const { t } = useLanguage();
 
   const navItems = [
-    { path: "/", icon: Home, label: "Dashboard", testId: "nav-dashboard" },
-    { path: "/tasks", icon: ListTodo, label: "Tasks", testId: "nav-tasks" },
-    { path: "/my-tasks", icon: CheckSquare, label: "My Tasks", testId: "nav-my-tasks" },
-    { path: "/customers", icon: UserCheck, label: "Customers", testId: "nav-customers" },
-    { path: "/team", icon: Users, label: "Team", testId: "nav-team" },
-    { path: "/profile", icon: User, label: "Profile", testId: "nav-profile" },
+    { path: "/", icon: Home, label: t('nav.dashboard'), testId: "nav-dashboard" },
+    { path: "/tasks", icon: ListTodo, label: t('nav.tasks'), testId: "nav-tasks" },
+    { path: "/my-tasks", icon: CheckSquare, label: t('nav.myTasks'), testId: "nav-my-tasks" },
+    { path: "/customers", icon: UserCheck, label: t('nav.customers'), testId: "nav-customers" },
+    { path: "/team", icon: Users, label: t('nav.team'), testId: "nav-team" },
+    { path: "/profile", icon: User, label: t('nav.profile'), testId: "nav-profile" },
   ];
 
   return (

@@ -9,8 +9,10 @@ import { Clock, AlertTriangle, CheckCircle2, Calendar, MessageSquare, User } fro
 import { TaskWithAssignees, TeamMember } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
+import { useLanguage } from "@/hooks/use-language";
 
 export default function MyTasksPage() {
+  const { t } = useLanguage();
   const [selectedTask, setSelectedTask] = useState<TaskWithAssignees | null>(null);
   
   const { data: tasks, isLoading: tasksLoading } = useQuery<TaskWithAssignees[]>({
@@ -140,8 +142,8 @@ export default function MyTasksPage() {
     <div className="space-y-6">
       {/* Header */}
       <section className="p-4">
-        <h1 className="text-2xl font-bold mb-2" data-testid="text-my-tasks-title">My Tasks</h1>
-        <p className="text-muted-foreground text-sm">Personal task overview with priorities and reminders</p>
+        <h1 className="text-2xl font-bold mb-2" data-testid="text-my-tasks-title">{t('myTasks.title')}</h1>
+        <p className="text-muted-foreground text-sm">{t('myTasks.subtitle')}</p>
       </section>
 
       {/* Priority Tasks */}

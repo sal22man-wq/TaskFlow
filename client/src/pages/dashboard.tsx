@@ -9,8 +9,11 @@ import { Button } from "@/components/ui/button";
 import { TaskWithAssignees, TeamMember } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
+import { useLanguage } from "@/hooks/use-language";
 
 export default function Dashboard() {
+  const { t } = useLanguage();
+  
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/stats"],
   });
@@ -31,7 +34,7 @@ export default function Dashboard() {
       {/* Dashboard Overview */}
       <section className="p-4">
         <h2 className="text-xl font-medium mb-4 text-on-surface" data-testid="text-dashboard-title">
-          Dashboard Overview
+          {t('dashboard.title')}
         </h2>
         
         {/* Stats Cards Grid */}

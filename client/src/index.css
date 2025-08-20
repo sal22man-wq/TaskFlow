@@ -107,6 +107,52 @@
     font-family: 'Roboto', var(--font-sans);
   }
 
+  /* Arabic text styling */
+  [dir="rtl"] {
+    text-align: right;
+  }
+  
+  [dir="rtl"] .flex {
+    flex-direction: row-reverse;
+  }
+  
+  [dir="rtl"] .space-x-1 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 1;
+  }
+  
+  [dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 1;
+  }
+  
+  [dir="rtl"] .space-x-3 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 1;
+  }
+  
+  /* RTL adjustments for mobile layout */
+  [dir="rtl"] .mobile-container {
+    direction: rtl;
+  }
+  
+  [dir="rtl"] .text-left {
+    text-align: right;
+  }
+  
+  [dir="rtl"] .text-right {
+    text-align: left;
+  }
+  
+  /* RTL positioning adjustments */
+  [dir="rtl"] .right-4 {
+    right: auto;
+    left: 1rem;
+  }
+  
+  [dir="rtl"] .left-1\/2 {
+    left: auto;
+    right: 50%;
+    transform: translateX(50%);
+  }
+
   html {
     scroll-behavior: smooth;
   }
