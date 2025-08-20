@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -73,6 +74,20 @@ export default function Profile() {
               <h3 className="font-medium text-lg" data-testid="text-user-name">{(user as any)?.teamMember?.name || (user as any)?.username || "مستخدم"}</h3>
               <p className="text-sm text-muted-foreground" data-testid="text-user-role">{(user as any)?.teamMember?.role || "عضو فريق"} - شركة اشراق الودق</p>
               <p className="text-xs text-muted-foreground" data-testid="text-user-email">{(user as any)?.teamMember?.email}</p>
+              {/* User Permission Level */}
+              <div className="flex items-center mt-2 space-x-2 space-x-reverse">
+                <Shield className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">مستوى الصلاحيات:</span>
+                {(user as any)?.role === 'admin' && (
+                  <Badge className="bg-red-100 text-red-800">مدير النظام</Badge>
+                )}
+                {(user as any)?.role === 'supervisor' && (
+                  <Badge className="bg-blue-100 text-blue-800">مشرف</Badge>
+                )}
+                {((user as any)?.role === 'user' || !(user as any)?.role) && (
+                  <Badge className="bg-gray-100 text-gray-800">مستخدم عادي</Badge>
+                )}
+              </div>
               <div className="mt-2">
                 <span className={`inline-block px-2 py-1 text-xs rounded-full ${
                   (user as any)?.teamMember?.status === 'available' ? 'bg-green-100 text-green-800' : 
@@ -84,6 +99,34 @@ export default function Profile() {
                    (user as any)?.teamMember?.status === 'offline' ? 'غير متصل' : 'غير محدد'}
                 </span>
               </div>
+            </div>
+          </div>
+          
+          {/* Permission Details */}
+          <div className="mt-4 pt-4 border-t">
+            <h4 className="font-medium mb-2">الصلاحيات المتاحة:</h4>
+            <div className="space-y-1 text-sm">
+              {(user as any)?.role === 'admin' && (
+                <div className="text-red-700">
+                  • إدارة كاملة للنظام والمستخدمين
+                  <br />• إنشاء وإدارة جميع المهام
+                  <br />• تغيير صلاحيات المستخدمين
+                </div>
+              )}
+              {(user as any)?.role === 'supervisor' && (
+                <div className="text-blue-700">
+                  • إنشاء وإدارة المهام
+                  <br />• عرض جميع المهام في النظام
+                  <br />• إدارة فريق العمل
+                </div>
+              )}
+              {((user as any)?.role === 'user' || !(user as any)?.role) && (
+                <div className="text-gray-700">
+                  • عرض المهام المُسندة لك فقط
+                  <br />• تحديث حالة وتقدم المهام
+                  <br />• إضافة ملاحظات على المهام
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

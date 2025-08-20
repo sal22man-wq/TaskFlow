@@ -42,6 +42,23 @@ const requireAdmin = async (req: Request, res: Response, next: NextFunction) => 
   }
 };
 
+// Supervisor or Admin middleware
+const requireSupervisorOrAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+  
+  try {
+    const user = await storage.getUser(req.session.userId);
+    if (!user || (user.role !== "admin" && user.role !== "supervisor")) {
+      return res.status(403).json({ message: "Supervisor or admin access required" });
+    }
+    return next();
+  } catch (error) {
+    return res.status(500).json({ message: "Authorization check failed" });
+  }
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure session store with PostgreSQL
   const PgSession = connectPgSimple(session);
@@ -203,6 +220,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/admin/users/:id/role", requireAdmin, async (req, res) => {
+    try {
+      const { role } = req.body;
+      const userId = req.params.id;
+
+      if (!["user", "supervisor", "admin"].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+
+      const user = await storage.updateUserRole(userId, role);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({
+        message: `User role updated successfully`,
+        user: { 
+          id: user.id, 
+          username: user.username,
+          role: user.role
+        }
+      });
+    } catch (error) {
+      console.error("Admin role update error:", error);
+      res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
   // Team member routes (protected)
   app.get("/api/team-members", requireAuth, async (req, res) => {
     try {
@@ -326,9 +371,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Task routes (protected)
   app.get("/api/tasks", requireAuth, async (req, res) => {
     try {
-      const { status, assigneeId } = req.query;
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      let tasks;
       
-      let tasks = await storage.getAllTasks();
+      // Admin and supervisors can see all tasks, regular users only see their assigned tasks
+      if (currentUser.role === 'admin' || currentUser.role === 'supervisor') {
+        tasks = await storage.getAllTasks();
+      } else {
+        tasks = await storage.getTasksForUser(currentUser.id);
+      }
+
+      const { status, assigneeId } = req.query;
       
       // Filter tasks by status if provided
       if (status) {
@@ -360,7 +417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/tasks", requireAuth, async (req, res) => {
+  app.post("/api/tasks", requireSupervisorOrAdmin, async (req, res) => {
     try {
       console.log("Received task data:", JSON.stringify(req.body, null, 2));
       
@@ -388,18 +445,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/tasks/:id", async (req, res) => {
+  app.put("/api/tasks/:id", requireAuth, async (req, res) => {
     try {
-      const validatedData = updateTaskSchema.parse(req.body);
-      const task = await storage.updateTask(req.params.id, validatedData);
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const task = await storage.getTask(req.params.id);
       if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
+      // Check permissions based on user role
+      if (currentUser.role === 'user') {
+        // Regular users can only update their assigned tasks and only status/progress
+        const teamMember = await storage.getTeamMemberByUserId(currentUser.id);
+        if (!teamMember || !task.assigneeIds?.includes(teamMember.id)) {
+          return res.status(403).json({ message: "You can only update tasks assigned to you" });
+        }
+        
+        // Regular users can only update status and progress
+        const allowedUpdates = ['status', 'progress', 'notes'];
+        const updateKeys = Object.keys(req.body);
+        const hasUnauthorizedUpdate = updateKeys.some(key => !allowedUpdates.includes(key));
+        
+        if (hasUnauthorizedUpdate) {
+          return res.status(403).json({ message: "You can only update task status, progress, and notes" });
+        }
+      }
+
+      const validatedData = updateTaskSchema.parse(req.body);
+      const updatedTask = await storage.updateTask(req.params.id, validatedData);
+      if (!updatedTask) {
         return res.status(404).json({ message: "Task not found" });
       }
       
       // Create notifications for assigned team members when task is updated
-      await storage.createTaskNotifications(task, "task_updated");
+      await storage.createTaskNotifications(updatedTask, "task_updated");
       
-      res.json(task);
+      res.json(updatedTask);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid task data", errors: error.errors });
@@ -408,7 +493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/tasks/:id", async (req, res) => {
+  app.delete("/api/tasks/:id", requireSupervisorOrAdmin, async (req, res) => {
     try {
       const deleted = await storage.deleteTask(req.params.id);
       if (!deleted) {

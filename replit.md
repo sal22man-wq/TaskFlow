@@ -1,6 +1,6 @@
 # Overview
 
-TaskFlow is a mobile-first task management and team collaboration platform designed for "شركة اشراق الودق لتكنولوجيا المعلومات" with full Arabic language support. The application features unified user-team member system where each user account automatically corresponds to a team member with the same username, comprehensive messaging system, notifications for new tasks and messages, administrator-controlled user approval system, and mobile-optimized interface with Arabic as the primary interface language.
+TaskFlow is a mobile-first task management and team collaboration platform designed for "شركة اشراق الودق لتكنولوجيا المعلومات" with full Arabic language support. The application features unified user-team member system where each user account automatically corresponds to a team member with the same username, three-tier permission system (Admin, Supervisor, Regular User), comprehensive messaging system, notifications for new tasks and messages, administrator-controlled user approval system, and mobile-optimized interface with Arabic as the primary interface language.
 
 # User Preferences
 
@@ -45,11 +45,21 @@ Preferred communication style: Simple, everyday language.
 - **Performance Optimization**: Query caching, lazy loading, and optimized bundle splitting
 
 ## Recent Changes (2025-08-20)
+- **Three-Tier Permission System**: Implemented comprehensive role-based access control with Admin, Supervisor, and Regular User levels
+- **Admin Panel**: Added complete user management interface with role assignment and approval controls
+- **Task Access Control**: Users only see assigned tasks, Supervisors can create and view all tasks, Admins have full system access
+- **Permission-Based UI**: Dynamic interface elements based on user role with appropriate action restrictions
+- **Role Management**: Admin can change user roles with automatic team member role synchronization
 - **Unified User-Team System**: Integrated user accounts with team member records - each user now automatically becomes a team member
 - **Messaging System**: Complete implementation with real-time notifications for new tasks and messages
 - **Database Migration**: Successfully migrated from memory storage to persistent PostgreSQL database
 - **Arabic Interface**: Full translation of dashboard, messaging, and notification interfaces
 - **Navigation Updates**: Added messaging and notifications to bottom navigation with Arabic labels
+
+### Permission System Details:
+- **Admin (مدير النظام)**: Full system access, user management, role changes, all CRUD operations
+- **Supervisor (مشرف)**: Task creation, view all tasks, team management, cannot change user roles
+- **User (مستخدم عادي)**: View only assigned tasks, update task status/progress/notes, limited access
 
 # External Dependencies
 

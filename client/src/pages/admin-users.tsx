@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { UserCheck, UserX, Users, Clock, UserPlus } from "lucide-react";
+import { UserCheck, UserX, Users, Clock, UserPlus, Shield } from "lucide-react";
 import { AddUserForm } from "@/components/admin/add-user-form";
 
 interface User {
@@ -47,6 +48,26 @@ export default function AdminUsers() {
     },
   });
 
+  const roleUpdateMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+      await apiRequest("PATCH", `/api/admin/users/${userId}/role`, { role });
+    },
+    onSuccess: () => {
+      toast({
+        title: "تم تحديث الصلاحيات",
+        description: "تم تحديث صلاحيات المستخدم بنجاح",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    },
+    onError: () => {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ في تحديث الصلاحيات",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleApprove = (userId: string) => {
     approveMutation.mutate({ userId, action: "approved" });
   };
@@ -69,7 +90,33 @@ export default function AdminUsers() {
   };
 
   const getRoleText = (role: string) => {
-    return role === "admin" ? "مدير" : "مستخدم عادي";
+    switch (role) {
+      case "admin":
+        return "مدير النظام";
+      case "supervisor":
+        return "مشرف";
+      case "user":
+        return "مستخدم عادي";
+      default:
+        return "غير محدد";
+    }
+  };
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case "admin":
+        return "bg-red-100 text-red-800";
+      case "supervisor":
+        return "bg-blue-100 text-blue-800";
+      case "user":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const handleRoleChange = (userId: string, newRole: string) => {
+    roleUpdateMutation.mutate({ userId, role: newRole });
   };
 
   const pendingUsers = users.filter(user => user.isApproved === "pending");
@@ -200,47 +247,73 @@ export default function AdminUsers() {
           <Users className="h-5 w-5 mr-2" />
           جميع المستخدمين ({users.length})
         </h2>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {users.map((user) => (
-            <Card key={user.id} className={user.isApproved === "pending" ? "bg-yellow-50" : ""}>
+            <Card key={user.id}>
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium" data-testid={`text-all-user-${user.id}`}>
+                  <div className="flex-1">
+                    <h3 className="font-medium" data-testid={`text-user-${user.id}`}>
                       {user.username}
-                      {user.role === "admin" && <span className="text-xs text-blue-600 mr-2">(مدير)</span>}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {getRoleText(user.role)} • {new Date(user.createdAt).toLocaleDateString('ar-EG')}
+                    <p className="text-sm text-muted-foreground mb-2">
+                      تسجل في: {new Date(user.createdAt).toLocaleDateString('ar-EG')}
                     </p>
-                    <div className="mt-2">
+                    <div className="flex items-center space-x-2 space-x-reverse">
                       {getStatusBadge(user.isApproved)}
+                      <Badge className={getRoleBadgeColor(user.role)}>
+                        <Shield className="h-3 w-3 ml-1" />
+                        {getRoleText(user.role)}
+                      </Badge>
                     </div>
                   </div>
-                  {user.isApproved === "pending" && (
-                    <div className="flex space-x-2 space-x-reverse">
-                      <Button
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                        onClick={() => handleApprove(user.id)}
-                        disabled={approveMutation.isPending}
-                        data-testid={`button-approve-all-${user.id}`}
-                      >
-                        <UserCheck className="h-4 w-4 mr-1" />
-                        قبول
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleReject(user.id)}
-                        disabled={approveMutation.isPending}
-                        data-testid={`button-reject-all-${user.id}`}
-                      >
-                        <UserX className="h-4 w-4 mr-1" />
-                        رفض
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex flex-col space-y-2 min-w-[200px]">
+                    {/* Role Management */}
+                    {user.isApproved === "approved" && (
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <span className="text-sm font-medium">الصلاحية:</span>
+                        <Select
+                          value={user.role}
+                          onValueChange={(value) => handleRoleChange(user.id, value)}
+                          disabled={roleUpdateMutation.isPending}
+                        >
+                          <SelectTrigger className="w-32 h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="user">مستخدم عادي</SelectItem>
+                            <SelectItem value="supervisor">مشرف</SelectItem>
+                            <SelectItem value="admin">مدير النظام</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    {/* Approval Actions */}
+                    {user.isApproved === "pending" && (
+                      <div className="flex space-x-2 space-x-reverse">
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => handleApprove(user.id)}
+                          disabled={approveMutation.isPending}
+                          data-testid={`button-approve-${user.id}`}
+                        >
+                          <UserCheck className="h-4 w-4 mr-1" />
+                          قبول
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleReject(user.id)}
+                          disabled={approveMutation.isPending}
+                          data-testid={`button-reject-${user.id}`}
+                        >
+                          <UserX className="h-4 w-4 mr-1" />
+                          رفض
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

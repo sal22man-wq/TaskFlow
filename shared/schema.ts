@@ -15,7 +15,7 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  role: text("role").notNull().default("user"), // user, admin
+  role: text("role").notNull().default("user"), // user, supervisor, admin
   isApproved: text("is_approved").notNull().default("pending"), // pending, approved, rejected
   createdAt: timestamp("created_at").default(sql`now()`),
 });

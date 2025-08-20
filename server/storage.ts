@@ -28,6 +28,7 @@ import bcrypt from "bcryptjs";
 export interface IStorage {
   // Tasks
   getAllTasks(): Promise<TaskWithAssignees[]>;
+  getTasksForUser(userId: string): Promise<TaskWithAssignees[]>;
   getTask(id: string): Promise<TaskWithAssignees | undefined>;
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: string, updates: UpdateTask): Promise<Task | undefined>;
@@ -60,6 +61,7 @@ export interface IStorage {
   createUser(insertUser: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUserApproval(id: string, isApproved: string): Promise<User | undefined>;
+  updateUserRole(id: string, role: string): Promise<User | undefined>;
   
   // Team Member by User
   getTeamMemberByUserId(userId: string): Promise<TeamMember | undefined>;
@@ -169,10 +171,15 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     // Create corresponding team member for this user
+    const teamMemberRole = 
+      insertUser.role === 'admin' ? 'مدير النظام' : 
+      insertUser.role === 'supervisor' ? 'مشرف' : 
+      'عضو فريق';
+      
     await this.createTeamMember({
       userId: user.id,
       name: insertUser.username,
-      role: insertUser.role === 'admin' ? 'مدير النظام' : 'عضو فريق',
+      role: teamMemberRole,
       email: `${insertUser.username}@company.com`,
       status: 'available',
       avatar: insertUser.username.charAt(0).toUpperCase(),
@@ -199,6 +206,29 @@ export class DatabaseStorage implements IStorage {
       .set({ isApproved })
       .where(eq(users.id, id))
       .returning();
+    return user;
+  }
+
+  async updateUserRole(id: string, role: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ role })
+      .where(eq(users.id, id))
+      .returning();
+    
+    // Update corresponding team member role
+    if (user) {
+      const teamMemberRole = 
+        role === 'admin' ? 'مدير النظام' : 
+        role === 'supervisor' ? 'مشرف' : 
+        'عضو فريق';
+        
+      await db
+        .update(teamMembers)
+        .set({ role: teamMemberRole })
+        .where(eq(teamMembers.userId, user.id));
+    }
+    
     return user;
   }
 
@@ -279,6 +309,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Task methods
+  async getTasksForUser(userId: string): Promise<TaskWithAssignees[]> {
+    // Get team member ID for this user
+    const teamMember = await this.getTeamMemberByUserId(userId);
+    if (!teamMember) return [];
+    
+    // Get all tasks assigned to this team member
+    const allTasks = await db.select().from(tasks).orderBy(desc(tasks.createdAt));
+    
+    // Filter tasks where this team member is assigned
+    const userTasks = allTasks.filter(task => 
+      task.assigneeIds && task.assigneeIds.includes(teamMember.id)
+    );
+    
+    // Get assignees for each task
+    const tasksWithAssignees = await Promise.all(
+      userTasks.map(async (task) => {
+        if (!task.assigneeIds || task.assigneeIds.length === 0) {
+          return { ...task, assignees: [] };
+        }
+        
+        const assignees = await Promise.all(
+          task.assigneeIds.map(async (assigneeId) => {
+            const member = await this.getTeamMember(assigneeId);
+            return member;
+          })
+        );
+        
+        return {
+          ...task,
+          assignees: assignees.filter((assignee): assignee is TeamMember => assignee !== undefined),
+        };
+      })
+    );
+    
+    return tasksWithAssignees;
+  }
+
   async getAllTasks(): Promise<TaskWithAssignees[]> {
     const allTasks = await db.select().from(tasks).orderBy(desc(tasks.createdAt));
     const allMembers = await this.getTeamMembers();
