@@ -21,7 +21,7 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with Express.js framework for REST API endpoints
 - **Language**: TypeScript throughout the entire application for consistency
 - **API Design**: RESTful endpoints for CRUD operations on tasks, team members, and statistics
-- **Data Storage**: In-memory storage implementation with interface-based design for easy database migration
+- **Data Storage**: PostgreSQL database integration using DatabaseStorage implementation with full CRUD operations
 - **Validation**: Zod schemas for runtime type checking and API request validation
 - **Development Server**: Custom Vite integration for seamless full-stack development
 
