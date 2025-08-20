@@ -242,13 +242,79 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
 
         <div>
           <Label htmlFor="time">Time/Schedule *</Label>
-          <Input
-            id="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            placeholder="e.g., 2 hours, 9:00 AM - 12:00 PM"
-            data-testid="input-task-time"
-          />
+          <div className="space-y-2">
+            {/* Quick Time Choices */}
+            <div className="grid grid-cols-3 gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs h-7"
+                onClick={() => setTime("1 ساعة")}
+                data-testid="button-time-1hour"
+              >
+                1 ساعة
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs h-7"
+                onClick={() => setTime("2 ساعة")}
+                data-testid="button-time-2hours"
+              >
+                2 ساعة
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs h-7"
+                onClick={() => setTime("نصف يوم")}
+                data-testid="button-time-halfday"
+              >
+                نصف يوم
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs h-7"
+                onClick={() => setTime("يوم كامل")}
+                data-testid="button-time-fullday"
+              >
+                يوم كامل
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs h-7"
+                onClick={() => setTime("صباحاً")}
+                data-testid="button-time-morning"
+              >
+                صباحاً
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs h-7"
+                onClick={() => setTime("مساءً")}
+                data-testid="button-time-evening"
+              >
+                مساءً
+              </Button>
+            </div>
+            
+            <Input
+              id="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              placeholder="أو أدخل وقت مخصص"
+              data-testid="input-task-time"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -268,77 +334,30 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
 
           <div>
             <Label className="text-sm">تاريخ الإنجاز</Label>
-            <div className="space-y-2">
-              {/* Quick Date Choices */}
-              <div className="grid grid-cols-2 gap-1">
+            <Popover>
+              <PopoverTrigger asChild>
                 <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-7"
-                  onClick={() => setDueDate(new Date())}
-                  data-testid="button-date-today"
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal text-sm h-9",
+                    !dueDate && "text-muted-foreground"
+                  )}
+                  data-testid="button-task-due-date"
                 >
-                  اليوم
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dueDate ? format(dueDate, "PPP") : <span>اختر تاريخ الإنجاز</span>}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-7"
-                  onClick={() => setDueDate(addDays(new Date(), 1))}
-                  data-testid="button-date-tomorrow"
-                >
-                  غداً
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-7"
-                  onClick={() => setDueDate(addDays(new Date(), 3))}
-                  data-testid="button-date-3-days"
-                >
-                  خلال 3 أيام
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-7"
-                  onClick={() => setDueDate(addDays(new Date(), 7))}
-                  data-testid="button-date-week"
-                >
-                  الأسبوع القادم
-                </Button>
-              </div>
-              
-              {/* Calendar Picker */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal text-sm h-9",
-                      !dueDate && "text-muted-foreground"
-                    )}
-                    data-testid="button-task-due-date"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dueDate ? format(dueDate, "PPP") : <span>اختر تاريخ مخصص</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dueDate}
-                    onSelect={setDueDate}
-                    initialFocus
-                    data-testid="calendar-task-due-date"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dueDate}
+                  onSelect={setDueDate}
+                  initialFocus
+                  data-testid="calendar-task-due-date"
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
