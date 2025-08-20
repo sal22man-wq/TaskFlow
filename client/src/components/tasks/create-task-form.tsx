@@ -16,7 +16,7 @@ import { AddCustomerDialog } from "@/components/customers/add-customer-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronUp, Calendar as CalendarIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { format } from "date-fns";
+import { format, addDays, startOfWeek, endOfWeek, addWeeks } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface CreateTaskFormProps {
@@ -268,30 +268,77 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
 
           <div>
             <Label className="text-sm">تاريخ الإنجاز</Label>
-            <Popover>
-              <PopoverTrigger asChild>
+            <div className="space-y-2">
+              {/* Quick Date Choices */}
+              <div className="grid grid-cols-2 gap-1">
                 <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal text-sm h-9",
-                    !dueDate && "text-muted-foreground"
-                  )}
-                  data-testid="button-task-due-date"
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={() => setDueDate(new Date())}
+                  data-testid="button-date-today"
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dueDate ? format(dueDate, "PPP") : <span>اختر تاريخ الإنجاز</span>}
+                  اليوم
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dueDate}
-                  onSelect={setDueDate}
-                  initialFocus
-                  data-testid="calendar-task-due-date"
-                />
-              </PopoverContent>
-            </Popover>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={() => setDueDate(addDays(new Date(), 1))}
+                  data-testid="button-date-tomorrow"
+                >
+                  غداً
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={() => setDueDate(addDays(new Date(), 3))}
+                  data-testid="button-date-3-days"
+                >
+                  خلال 3 أيام
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={() => setDueDate(addDays(new Date(), 7))}
+                  data-testid="button-date-week"
+                >
+                  الأسبوع القادم
+                </Button>
+              </div>
+              
+              {/* Calendar Picker */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal text-sm h-9",
+                      !dueDate && "text-muted-foreground"
+                    )}
+                    data-testid="button-task-due-date"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dueDate ? format(dueDate, "PPP") : <span>اختر تاريخ مخصص</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dueDate}
+                    onSelect={setDueDate}
+                    initialFocus
+                    data-testid="calendar-task-due-date"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </div>
 
