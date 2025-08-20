@@ -18,6 +18,7 @@ interface Message {
   receiverId: string | null;
   content: string;
   messageType: string;
+  messageScope: string;
   taskId: string | null;
   isRead: string;
   createdAt: string;
@@ -37,6 +38,7 @@ interface TeamMember {
 
 export default function Messages() {
   const [selectedReceiver, setSelectedReceiver] = useState<string>("");
+  const [messageScope, setMessageScope] = useState<string>("private");
   const [newMessage, setNewMessage] = useState("");
   const { toast } = useToast();
 
@@ -52,16 +54,18 @@ export default function Messages() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (messageData: { receiverId: string; content: string }) => {
-      return await apiRequest("/api/messages", "POST", messageData);
+    mutationFn: async (messageData: { receiverId?: string; content: string; messageScope: string }) => {
+      return await apiRequest("POST", "/api/messages", messageData);
     },
     onSuccess: () => {
       setNewMessage("");
-      setSelectedReceiver("");
+      if (messageScope === "private") {
+        setSelectedReceiver("");
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
       toast({
         title: "تم الإرسال",
-        description: "تم إرسال الرسالة بنجاح",
+        description: messageScope === "group" ? "تم إرسال الرسالة الجماعية بنجاح" : "تم إرسال الرسالة بنجاح",
       });
     },
     onError: () => {
@@ -74,18 +78,20 @@ export default function Messages() {
   });
 
   const handleSendMessage = () => {
-    if (!selectedReceiver || !newMessage.trim()) {
+    if (!newMessage.trim()) return;
+    if (messageScope === "private" && !selectedReceiver) {
       toast({
         title: "خطأ",
-        description: "يرجى اختيار المستلم وكتابة الرسالة",
+        description: "يرجى اختيار المستلم للرسالة الخاصة",
         variant: "destructive",
       });
       return;
     }
-
+    
     sendMessageMutation.mutate({
-      receiverId: selectedReceiver,
+      receiverId: messageScope === "private" ? selectedReceiver : undefined,
       content: newMessage.trim(),
+      messageScope,
     });
   };
 
@@ -116,28 +122,62 @@ export default function Messages() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Message Type Selection */}
             <div>
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                المستلم
+                نوع الرسالة
               </label>
-              <Select value={selectedReceiver} onValueChange={setSelectedReceiver}>
+              <Select value={messageScope} onValueChange={(value) => {
+                setMessageScope(value);
+                if (value === "group") {
+                  setSelectedReceiver("");
+                }
+              }}>
                 <SelectTrigger>
-                  <SelectValue placeholder="اختر عضو الفريق" />
+                  <SelectValue placeholder="اختر نوع الرسالة" />
                 </SelectTrigger>
                 <SelectContent>
-                  {teamMembers.map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs font-medium text-blue-600">
-                          {member.avatar || member.name.charAt(0)}
-                        </div>
-                        {member.name}
-                      </div>
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="private">رسالة خاصة</SelectItem>
+                  <SelectItem value="group">رسالة جماعية</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Receiver Selection - Only for private messages */}
+            {messageScope === "private" && (
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+                  المستلم
+                </label>
+                <Select value={selectedReceiver} onValueChange={setSelectedReceiver}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر عضو الفريق" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teamMembers.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs font-medium text-blue-600">
+                            {member.avatar || member.name.charAt(0)}
+                          </div>
+                          {member.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Group message info */}
+            {messageScope === "group" && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm text-blue-800">سيتم إرسال هذه الرسالة لجميع أعضاء الفريق</span>
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
@@ -188,9 +228,17 @@ export default function Messages() {
                             {message.sender?.name?.charAt(0) || message.sender?.username?.charAt(0) || "?"}
                           </div>
                           <div>
-                            <p className="font-medium text-sm text-gray-900 dark:text-white">
-                              {message.sender?.name || message.sender?.username || "مستخدم غير معروف"}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sm text-gray-900 dark:text-white">
+                                {message.sender?.name || message.sender?.username || "مستخدم غير معروف"}
+                              </p>
+                              {message.messageScope === "group" && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Users className="h-3 w-3 mr-1" />
+                                  جماعية
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-xs text-gray-500">
                               {format(new Date(message.createdAt), "dd/MM/yyyy HH:mm")}
                             </p>

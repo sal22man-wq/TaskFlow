@@ -900,8 +900,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Messages routes
   app.get("/api/messages", requireAuth, async (req, res) => {
     try {
-      const { userId1, userId2 } = req.query;
-      const messages = await storage.getMessages(userId1 as string, userId2 as string);
+      const currentUserId = req.session.userId!;
+      const messages = await storage.getAllMessagesForUser(currentUserId);
       res.json(messages);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch messages" });
@@ -910,12 +910,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/messages", requireAuth, async (req, res) => {
     try {
+      const senderId = req.session.userId!;
+      const { receiverId, content, messageScope = "private" } = req.body;
+      
       const messageData = {
-        ...req.body,
-        senderId: req.session.userId!
+        senderId,
+        receiverId: messageScope === "group" ? null : receiverId,
+        content,
+        messageScope
       };
+      
       const validatedData = insertMessageSchema.parse(messageData);
       const message = await storage.createMessage(validatedData);
+      
+      // If it's a group message, create notifications for all team members except sender
+      if (messageScope === "group") {
+        await storage.createGroupMessageNotifications(senderId, message.id, content);
+      }
+      
+      // Log the message action
+      await storage.createLog({
+        userId: senderId,
+        action: messageScope === "group" ? "group_message_sent" : "private_message_sent",
+        targetType: "message",
+        targetId: message.id,
+        details: `Sent ${messageScope} message: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`
+      });
+      
       res.status(201).json(message);
     } catch (error) {
       if (error instanceof z.ZodError) {

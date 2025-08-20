@@ -69,6 +69,7 @@ export const messages = pgTable("messages", {
   receiverId: varchar("receiver_id"), // null for group messages
   content: text("content").notNull(),
   messageType: text("message_type").notNull().default("text"), // text, task, system
+  messageScope: text("message_scope").notNull().default("private"), // private, group
   taskId: varchar("task_id"), // reference to task if message is task-related
   isRead: text("is_read").notNull().default("false"),
   createdAt: timestamp("created_at").default(sql`now()`),

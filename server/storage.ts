@@ -24,7 +24,7 @@ import {
   type SystemLog,
   type InsertSystemLog,
 } from "@shared/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, or, ne, sql } from "drizzle-orm";
 import { db } from "./db";
 import bcrypt from "bcryptjs";
 
@@ -72,9 +72,11 @@ export interface IStorage {
 
   // Messages
   getMessages(userId1?: string, userId2?: string): Promise<MessageWithSender[]>;
+  getAllMessagesForUser(userId: string): Promise<MessageWithSender[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   markMessageAsRead(messageId: string): Promise<Message | undefined>;
   getUnreadMessagesCount(userId: string): Promise<number>;
+  createGroupMessageNotifications(senderId: string, messageId: string, content: string): Promise<void>;
 
   // Notifications
   getNotifications(userId: string): Promise<Notification[]>;
@@ -490,6 +492,36 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
+  async getAllMessagesForUser(userId: string): Promise<MessageWithSender[]> {
+    try {
+      let query = db.select().from(messages).orderBy(desc(messages.createdAt));
+      
+      // Get messages where user is receiver (private messages) or all group messages not sent by user
+      query = query.where(
+        or(
+          eq(messages.receiverId, userId), // Private messages to user
+          and(eq(messages.messageScope, "group"), ne(messages.senderId, userId)) // Group messages not sent by user
+        )
+      ) as any;
+      
+      const allMessages = await query;
+      const allMembers = await this.getTeamMembers();
+      const allUsers = await this.getAllUsers();
+      
+      return allMessages.map((message) => {
+        let sender = allMembers.find(member => member.id === message.senderId) || 
+                    allUsers.find(user => user.id === message.senderId);
+        return {
+          ...message,
+          sender
+        };
+      });
+    } catch (error) {
+      console.error("Error getting all messages for user:", error);
+      return [];
+    }
+  }
+
   async createMessage(message: InsertMessage): Promise<Message> {
     const [newMessage] = await db
       .insert(messages)
@@ -497,7 +529,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     // Create notification for receiver if it's a direct message
-    if (message.receiverId) {
+    if (message.receiverId && message.messageScope === "private") {
       await this.createNotification({
         userId: message.receiverId,
         title: "رسالة جديدة",
@@ -508,6 +540,28 @@ export class DatabaseStorage implements IStorage {
     }
     
     return newMessage;
+  }
+
+  async createGroupMessageNotifications(senderId: string, messageId: string, content: string): Promise<void> {
+    try {
+      // Get all users except the sender
+      const allUsers = await db.select({ id: users.id })
+        .from(users)
+        .where(and(ne(users.id, senderId), eq(users.isApproved, "approved")));
+
+      // Create notification for each user
+      for (const user of allUsers) {
+        await this.createNotification({
+          userId: user.id,
+          title: "رسالة جماعية جديدة",
+          content: `رسالة جماعية: ${content.substring(0, 50)}${content.length > 50 ? '...' : ''}`,
+          type: "new_message",
+          relatedId: messageId
+        });
+      }
+    } catch (error) {
+      console.error("Error creating group message notifications:", error);
+    }
   }
 
   async markMessageAsRead(messageId: string): Promise<Message | undefined> {
