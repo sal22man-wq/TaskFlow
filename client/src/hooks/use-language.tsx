@@ -303,6 +303,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const savedLanguage = localStorage.getItem('language') as 'en' | 'ar' | null;
     if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'ar')) {
       setLanguageState(savedLanguage);
+    } else {
+      // Force Arabic as default if no saved language
+      setLanguageState('ar');
+      localStorage.setItem('language', 'ar');
     }
   }, []);
 
