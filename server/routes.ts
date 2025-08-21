@@ -1172,17 +1172,184 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reschedule task endpoint (supervisor/admin only)
+  app.put("/api/tasks/:id/reschedule", requireSupervisorOrAdmin, async (req, res) => {
+    try {
+      const taskId = req.params.id;
+      const { newDueDate, rescheduleReason } = req.body;
+      
+      if (!newDueDate || !rescheduleReason) {
+        return res.status(400).json({ message: "New due date and reschedule reason are required" });
+      }
+
+      // Get current task info
+      const currentTask = await storage.getTask(taskId);
+      if (!currentTask) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
+      // Prevent rescheduling completed or cancelled tasks
+      if (currentTask.status === "complete" || currentTask.status === "cancelled") {
+        return res.status(400).json({ message: "Cannot reschedule completed or cancelled tasks" });
+      }
+
+      // Validate that new date is in the future
+      const newDate = new Date(newDueDate);
+      const currentDate = currentTask.dueDate ? new Date(currentTask.dueDate) : new Date();
+      
+      if (newDate <= currentDate) {
+        return res.status(400).json({ message: "New due date must be after current date" });
+      }
+
+      // Update task with reschedule info
+      const updatedTask = await storage.updateTask(taskId, {
+        dueDate: newDate,
+        originalDueDate: currentTask.dueDate ? new Date(currentTask.dueDate) : null,
+        rescheduleCount: (currentTask as any).rescheduleCount ? (currentTask as any).rescheduleCount + 1 : 1,
+        rescheduleReason,
+        status: currentTask.status, // Keep current status, don't change to rescheduled
+        updatedAt: new Date()
+      });
+
+      if (!updatedTask) {
+        return res.status(500).json({ message: "Failed to reschedule task" });
+      }
+
+      // Create notification for all assignees
+      if (currentTask.assigneeIds && currentTask.assigneeIds.length > 0) {
+        for (const assigneeId of currentTask.assigneeIds) {
+          await storage.createNotification({
+            userId: assigneeId,
+            title: "تم تأجيل المهمة",
+            content: `تم تأجيل المهمة "${currentTask.title}" إلى ${new Date(newDate).toLocaleDateString('ar-SA')}. السبب: ${rescheduleReason}`,
+            type: "task_rescheduled",
+            relatedId: taskId
+          });
+        }
+      }
+
+      // Log the reschedule action
+      await storage.logUserAction(
+        "task_rescheduled",
+        req.session.userId!,
+        req.session.username!,
+        { 
+          taskId, 
+          taskTitle: currentTask.title,
+          oldDueDate: currentTask.dueDate,
+          newDueDate: newDate,
+          rescheduleReason,
+          rescheduleCount: ((currentTask as any).rescheduleCount || 0) + 1,
+          message: `تم تأجيل المهمة: ${currentTask.title}` 
+        },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json({ 
+        message: "Task rescheduled successfully", 
+        task: updatedTask 
+      });
+    } catch (error) {
+      console.error("Error rescheduling task:", error);
+      res.status(500).json({ message: "Failed to reschedule task" });
+    }
+  });
+
+  // Cancel task endpoint (supervisor/admin only)
+  app.put("/api/tasks/:id/cancel", requireSupervisorOrAdmin, async (req, res) => {
+    try {
+      const taskId = req.params.id;
+      const { cancelledBy, cancellationReason } = req.body;
+      
+      if (!cancelledBy || !cancellationReason) {
+        return res.status(400).json({ message: "Cancelled by and cancellation reason are required" });
+      }
+
+      // Validate cancelledBy value
+      const validCancelledBy = ["customer", "admin", "system"];
+      if (!validCancelledBy.includes(cancelledBy)) {
+        return res.status(400).json({ message: "Invalid cancelled by value" });
+      }
+
+      // Get current task info
+      const currentTask = await storage.getTask(taskId);
+      if (!currentTask) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
+      // Prevent cancelling already completed or cancelled tasks
+      if (currentTask.status === "complete" || currentTask.status === "cancelled") {
+        return res.status(400).json({ message: "Task is already completed or cancelled" });
+      }
+
+      // Update task with cancellation info
+      const updatedTask = await storage.updateTask(taskId, {
+        status: "cancelled",
+        cancelledBy,
+        cancellationReason,
+        updatedAt: new Date()
+      });
+
+      if (!updatedTask) {
+        return res.status(500).json({ message: "Failed to cancel task" });
+      }
+
+      // Create notification for all assignees
+      if (currentTask.assigneeIds && currentTask.assigneeIds.length > 0) {
+        const cancelledByText = cancelledBy === "customer" ? "العميل" : 
+                              cancelledBy === "admin" ? "الإدارة" : "النظام";
+        
+        for (const assigneeId of currentTask.assigneeIds) {
+          await storage.createNotification({
+            userId: assigneeId,
+            title: "تم إلغاء المهمة",
+            content: `تم إلغاء المهمة "${currentTask.title}" بواسطة ${cancelledByText}. السبب: ${cancellationReason}`,
+            type: "task_cancelled",
+            relatedId: taskId
+          });
+        }
+      }
+
+      // Log the cancellation action
+      await storage.logUserAction(
+        "task_cancelled",
+        req.session.userId!,
+        req.session.username!,
+        { 
+          taskId, 
+          taskTitle: currentTask.title,
+          customerName: currentTask.customerName,
+          cancelledBy,
+          cancellationReason,
+          message: `تم إلغاء المهمة: ${currentTask.title}` 
+        },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json({ 
+        message: "Task cancelled successfully", 
+        task: updatedTask 
+      });
+    } catch (error) {
+      console.error("Error cancelling task:", error);
+      res.status(500).json({ message: "Failed to cancel task" });
+    }
+  });
+
   // Statistics route (protected)
   app.get("/api/stats", requireAuth, async (req, res) => {
     try {
       const allTasks = await storage.getAllTasks();
       
       const stats = {
-        activeTasks: allTasks.filter(task => task.status !== "complete").length,
+        activeTasks: allTasks.filter(task => task.status !== "complete" && task.status !== "cancelled").length,
         completed: allTasks.filter(task => task.status === "complete").length,
+        cancelled: allTasks.filter(task => task.status === "cancelled").length,
         overdue: allTasks.filter(task => {
           if (!task.dueDate) return false;
-          return new Date(task.dueDate) < new Date() && task.status !== "complete";
+          return new Date(task.dueDate) < new Date() && task.status !== "complete" && task.status !== "cancelled";
         }).length,
         total: allTasks.length
       };

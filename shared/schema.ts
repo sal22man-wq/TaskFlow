@@ -76,10 +76,15 @@ export const tasks = pgTable("tasks", {
   time: text("time").notNull(), // estimated time or schedule
   notes: text("notes"), // additional notes
   finalReport: text("final_report"), // التقرير النهائي للمهمة - يكتبه المكلف بالمهمة فقط
-  status: text("status").notNull().default("pending"), // pending, start, complete
+  status: text("status").notNull().default("pending"), // pending, start, complete, cancelled, rescheduled
   priority: text("priority").notNull().default("medium"), // low, medium, high
   assigneeIds: text("assignee_ids").array(), // Array of team member IDs
   dueDate: timestamp("due_date"),
+  originalDueDate: timestamp("original_due_date"), // التاريخ الأصلي قبل التأجيل
+  rescheduleCount: integer("reschedule_count").notNull().default(0), // عدد مرات التأجيل
+  rescheduleReason: text("reschedule_reason"), // سبب التأجيل
+  cancellationReason: text("cancellation_reason"), // سبب الإلغاء
+  cancelledBy: text("cancelled_by"), // من قام بالإلغاء (customer, admin, system)
   progress: integer("progress").notNull().default(0), // 0-100
   createdAt: timestamp("created_at").default(sql`now()`),
   updatedAt: timestamp("updated_at").default(sql`now()`),
