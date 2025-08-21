@@ -231,10 +231,13 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
                   type="tel"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="أدخل رقم هاتف العميل"
+                  placeholder="مثال: +9647812345678"
                   data-testid="input-customer-phone-create"
                   className="text-sm"
                 />
+                <div className="text-xs text-muted-foreground mt-1">
+                  يرجى إدخال رقم الهاتف مع مفتاح الدولة (مثال: +964 للعراق)
+                </div>
               </div>
 
               <div>

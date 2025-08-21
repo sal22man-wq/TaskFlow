@@ -498,11 +498,14 @@ export default function Customers() {
                     <FormControl>
                       <Input
                         type="tel"
-                        placeholder="أدخل رقم الهاتف"
+                        placeholder="مثال: +9647812345678"
                         {...field}
                         data-testid="input-customer-phone"
                       />
                     </FormControl>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      يرجى إدخال رقم الهاتف مع مفتاح الدولة (مثال: +964 للعراق)
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

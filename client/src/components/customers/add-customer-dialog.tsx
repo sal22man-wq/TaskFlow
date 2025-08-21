@@ -125,9 +125,12 @@ export function AddCustomerDialog({ onCustomerAdded }: AddCustomerDialogProps) {
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="أدخل رقم الهاتف"
+              placeholder="مثال: +9647812345678"
               data-testid="input-customer-phone-new"
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              يرجى إدخال رقم الهاتف مع مفتاح الدولة (مثال: +964 للعراق)
+            </div>
           </div>
 
           <div>
