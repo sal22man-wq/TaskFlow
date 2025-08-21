@@ -40,8 +40,24 @@ export const customers = pgTable("customers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   phone: text("phone"),
+  whatsappNumber: text("whatsapp_number"), // رقم الواتساب
   email: text("email"),
   address: text("address"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+});
+
+// جدول تقييمات العملاء
+export const customerRatings = pgTable("customer_ratings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskId: varchar("task_id").notNull().references(() => tasks.id),
+  customerId: varchar("customer_id").references(() => customers.id),
+  customerName: text("customer_name").notNull(),
+  customerPhone: text("customer_phone").notNull(),
+  rating: text("rating").notNull(), // angry, satisfied, very_satisfied
+  ratingText: text("rating_text").notNull(), // غاضب، راضي، راضي جدا
+  comments: text("comments"), // تعليقات إضافية اختيارية
+  messageSent: text("message_sent").notNull().default("false"), // تم إرسال الرسالة
+  responseReceived: text("response_received").notNull().default("false"), // تم تلقي الرد
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 
@@ -114,6 +130,11 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   createdAt: true,
 });
 
+export const insertCustomerRatingSchema = createInsertSchema(customerRatings).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   createdAt: true,
@@ -136,6 +157,9 @@ export type Task = typeof tasks.$inferSelect;
 
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
 export type Customer = typeof customers.$inferSelect;
+
+export type InsertCustomerRating = z.infer<typeof insertCustomerRatingSchema>;
+export type CustomerRating = typeof customerRatings.$inferSelect;
 
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;

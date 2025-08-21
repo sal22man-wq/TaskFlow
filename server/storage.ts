@@ -1,6 +1,7 @@
 import {
   users,
   customers,
+  customerRatings,
   teamMembers,
   tasks,
   messages,
@@ -10,6 +11,8 @@ import {
   type InsertUser,
   type Customer,
   type InsertCustomer,
+  type CustomerRating,
+  type InsertCustomerRating,
   type TeamMember,
   type InsertTeamMember,
   type Task,
@@ -56,6 +59,13 @@ export interface IStorage {
     updates: Partial<Customer>,
   ): Promise<Customer | undefined>;
   deleteCustomer(id: string): Promise<boolean>;
+
+  // Customer Ratings
+  getCustomerRatings(): Promise<CustomerRating[]>;
+  getCustomerRating(id: string): Promise<CustomerRating | undefined>;
+  createCustomerRating(rating: InsertCustomerRating): Promise<CustomerRating>;
+  updateCustomerRating(id: string, updates: Partial<CustomerRating>): Promise<CustomerRating | undefined>;
+  getPendingCustomerRating(phoneNumber: string): Promise<CustomerRating | undefined>;
 
   // Users
   getUser(id: string): Promise<User | undefined>;
@@ -690,6 +700,49 @@ export class DatabaseStorage implements IStorage {
       ipAddress,
       userAgent,
     });
+  }
+
+  // Customer Ratings methods
+  async getCustomerRatings(): Promise<CustomerRating[]> {
+    return await db.select().from(customerRatings).orderBy(desc(customerRatings.createdAt));
+  }
+
+  async getCustomerRating(id: string): Promise<CustomerRating | undefined> {
+    const [rating] = await db.select().from(customerRatings).where(eq(customerRatings.id, id));
+    return rating;
+  }
+
+  async createCustomerRating(rating: InsertCustomerRating): Promise<CustomerRating> {
+    const [newRating] = await db
+      .insert(customerRatings)
+      .values(rating)
+      .returning();
+    return newRating;
+  }
+
+  async updateCustomerRating(id: string, updates: Partial<CustomerRating>): Promise<CustomerRating | undefined> {
+    const [updated] = await db
+      .update(customerRatings)
+      .set(updates)
+      .where(eq(customerRatings.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getPendingCustomerRating(phoneNumber: string): Promise<CustomerRating | undefined> {
+    const [rating] = await db
+      .select()
+      .from(customerRatings)
+      .where(
+        and(
+          eq(customerRatings.customerPhone, phoneNumber),
+          eq(customerRatings.messageSent, "true"),
+          eq(customerRatings.responseReceived, "false")
+        )
+      )
+      .orderBy(desc(customerRatings.createdAt))
+      .limit(1);
+    return rating;
   }
 }
 

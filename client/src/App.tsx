@@ -17,6 +17,7 @@ import Messages from "@/pages/messages";
 import Notifications from "@/pages/notifications";
 import AdminLogs from "@/pages/admin-logs";
 import AdminUsers from "@/pages/admin-users";
+import CustomerRatings from "@/pages/customer-ratings";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 import { AdminGuard } from "@/components/admin/admin-guard";
@@ -55,6 +56,7 @@ function ProtectedRouter() {
           <Route path="/profile" component={Profile} />
           <Route path="/admin/logs" component={() => <AdminGuard><AdminLogs /></AdminGuard>} />
           <Route path="/admin/users" component={() => <AdminGuard><AdminUsers /></AdminGuard>} />
+          <Route path="/admin/customer-ratings" component={CustomerRatings} />
           <Route component={NotFound} />
         </Switch>
       </MobileLayout>

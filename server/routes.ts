@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
+import { whatsappService } from "./whatsapp-service";
 
 // Extend Express session interface
 declare module 'express-session' {
@@ -618,6 +619,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Customer ratings routes (admin and supervisor only)
+  app.get("/api/customer-ratings", requireSupervisorOrAdmin, async (req, res) => {
+    try {
+      const ratings = await storage.getCustomerRatings();
+      res.json(ratings);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch customer ratings" });
+    }
+  });
+
+  // WhatsApp service status (admin only)
+  app.get("/api/whatsapp/status", requireAdmin, async (req, res) => {
+    try {
+      const isReady = whatsappService.isServiceReady();
+      res.json({ 
+        isReady,
+        status: isReady ? "متصل" : "غير متصل",
+        message: isReady ? "خدمة الواتساب تعمل بشكل طبيعي" : "خدمة الواتساب غير متاحة حالياً"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to check WhatsApp status" });
+    }
+  });
+
   app.get("/api/customers/:id", async (req, res) => {
     try {
       const customer = await storage.getCustomer(req.params.id);
@@ -818,6 +843,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           req.ip,
           req.get('User-Agent')
         );
+
+        // Send WhatsApp customer satisfaction rating when task is completed
+        if (req.body.status === 'completed' && originalTask.status !== 'completed') {
+          try {
+            if (updatedTask.customerName && updatedTask.customerPhone) {
+              const wasMessageSent = await whatsappService.sendCustomerRatingRequest(
+                updatedTask.customerPhone,
+                updatedTask.customerName,
+                updatedTask.title,
+                updatedTask.id
+              );
+              
+              if (wasMessageSent) {
+                console.log(`✅ تم إرسال رسالة تقييم العميل: ${updatedTask.customerName}`);
+              } else {
+                console.log(`❌ فشل إرسال رسالة تقييم للعميل: ${updatedTask.customerName}`);
+              }
+            }
+          } catch (error) {
+            console.error('خطأ في إرسال رسالة تقييم العميل:', error);
+          }
+        }
       }
 
       // Log task progress update if progress was updated
