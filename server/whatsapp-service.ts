@@ -64,13 +64,15 @@ export class WhatsAppService {
 
   private setupEventHandlers() {
     this.client.on('qr', (qr: string) => {
-      console.log('\n🔗 امسح رمز QR للاتصال بواتساب:');
+      console.log('\n🔗 تم إنشاء رمز QR حقيقي للواتساب:');
       const qrcodeGenerator = qrcodeTerminal.default || qrcodeTerminal;
       qrcodeGenerator.generate(qr, { small: true });
-      console.log('\n📱 افتح واتساب على هاتفك واتبع التعليمات...\n');
+      console.log('\n📱 امسح الرمز أعلاه بكاميرا واتساب على هاتفك');
+      console.log('💡 رمز QR الحقيقي متاح الآن في واجهة الويب أيضاً\n');
       
-      // حفظ رمز QR للعرض في واجهة الويب
+      // حفظ رمز QR الحقيقي للعرض في واجهة الويب
       this.currentQRCode = qr;
+      console.log('✅ تم حفظ رمز QR الحقيقي للعرض في الواجهة');
     });
 
     this.client.on('ready', () => {
@@ -115,11 +117,16 @@ export class WhatsAppService {
                              process.env.ENABLE_REAL_WHATSAPP === 'true' ||
                              (global as any).forceRealWhatsApp === true;
       
+      console.log(`🔧 وضع الواتساب: ${useRealWhatsApp ? 'حقيقي' : 'محاكاة'}`);
+      
       if (useRealWhatsApp) {
+        console.log('🔄 تحميل مكتبات الواتساب الحقيقي...');
         await this.loadDependencies();
         this.initializeClient();
+        console.log('🚀 بدء تشغيل الواتساب الحقيقي...');
         await this.client.initialize();
         this.isInitialized = true;
+        console.log('✅ تم تشغيل الواتساب الحقيقي بنجاح!');
       } else {
         // محاكاة ربط الواتساب مع إظهار QR Code
         this.showFakeQRCode();
@@ -148,6 +155,7 @@ export class WhatsAppService {
       console.log('🔄 إعادة تشغيل خدمة الواتساب...');
       
       if (this.client) {
+        console.log('🛑 إيقاف العميل الحالي...');
         await this.client.destroy();
       }
       
@@ -155,8 +163,13 @@ export class WhatsAppService {
       this.isInitialized = false;
       this.currentQRCode = null;
       this.senderNumber = null;
+      this.client = null;
+      
+      // انتظار قصير للتأكد من إنهاء العملية السابقة
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // إعادة التشغيل
+      console.log('🔄 بدء إعادة التشغيل...');
       await this.initialize();
       
     } catch (error) {
