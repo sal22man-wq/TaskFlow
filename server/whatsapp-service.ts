@@ -19,12 +19,30 @@ export class WhatsAppService {
   private async loadDependencies() {
     if (!whatsappWebJs) {
       try {
+        console.log('📦 بدء تحميل مكتبات whatsapp-web.js...');
+        
+        // تحقق من البيئة أولاً
+        const isReplit = process.env.REPL_ID !== undefined;
+        const memoryUsage = process.memoryUsage();
+        console.log(`💾 استخدام الذاكرة: ${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`);
+        console.log(`🌐 البيئة: ${isReplit ? 'Replit' : 'محلي'}`);
+        
+        if (isReplit) {
+          console.log('⚠️ تحذير: في بيئة Replit المجانية، قد يفشل تحميل مكتبات الواتساب بسبب قيود الذاكرة');
+        }
+        
         whatsappWebJs = await import('whatsapp-web.js');
         qrcodeTerminal = await import('qrcode-terminal');
         
         console.log('✅ تم تحميل مكتبات الواتساب بنجاح');
+        
+        if (isReplit && memoryUsage.heapUsed > 100 * 1024 * 1024) {
+          console.warn('⚠️ تحذير: استخدام ذاكرة عالي في بيئة Replit المجانية - قد تحتاج خطة مدفوعة');
+        }
+        
       } catch (error) {
         console.error('❌ خطأ في تحميل مكتبات الواتساب:', error);
+        console.error('💡 نصيحة: في بيئة Replit المجانية، قد تحتاج ترقية للخطة المدفوعة لتشغيل الواتساب الحقيقي');
         throw error;
       }
     }
