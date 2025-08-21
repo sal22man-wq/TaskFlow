@@ -28,6 +28,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const [description, setDescription] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
   const [startTime, setStartTime] = useState("");
   const [startPeriod, setStartPeriod] = useState("AM");
@@ -71,6 +72,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       setDescription("");
       setCustomerName("");
       setCustomerPhone("");
+      setCustomerEmail("");
       setCustomerAddress("");
       setStartTime("");
       setStartPeriod("AM");
@@ -111,6 +113,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       description: description.trim(),
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim() || undefined,
+      customerEmail: customerEmail.trim() || undefined,
       customerAddress: customerAddress.trim() || undefined,
       time: timeSchedule,
       notes: notes.trim() || undefined,
@@ -167,19 +170,19 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
             <AddCustomerDialog
               onCustomerAdded={(customer) => {
                 setCustomerName(customer.name);
-                if (customer.phone) {
-                  setCustomerPhone(customer.phone);
-                }
+                if (customer.phone) setCustomerPhone(customer.phone);
+                if (customer.email) setCustomerEmail(customer.email);
               }}
             />
           </div>
           <div className="space-y-2">
             <Select value={customerName} onValueChange={(value) => {
               setCustomerName(value);
-              // Auto-fill phone and address if customer exists
+              // Auto-fill customer details if customer exists
               const customer = customers?.find(c => c.name === value);
               if (customer) {
                 if (customer.phone) setCustomerPhone(customer.phone);
+                if (customer.email) setCustomerEmail(customer.email);
                 if (customer.address) setCustomerAddress(customer.address);
               }
             }}>
@@ -229,6 +232,19 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   placeholder="أدخل رقم هاتف العميل"
                   data-testid="input-customer-phone-create"
+                  className="text-sm"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="customer-email" className="text-sm">بريد العميل الإلكتروني</Label>
+                <Input
+                  id="customer-email"
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="أدخل البريد الإلكتروني للعميل"
+                  data-testid="input-customer-email-create"
                   className="text-sm"
                 />
               </div>

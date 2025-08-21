@@ -70,6 +70,7 @@ export const tasks = pgTable("tasks", {
   description: text("description").notNull(),
   customerName: text("customer_name").notNull(),
   customerPhone: text("customer_phone"),
+  customerEmail: text("customer_email"),
   customerAddress: text("customer_address"),
   time: text("time").notNull(), // estimated time or schedule
   notes: text("notes"), // additional notes
