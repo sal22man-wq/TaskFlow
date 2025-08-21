@@ -1319,6 +1319,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // إعادة تشغيل خدمة الواتساب وتجديد QR Code
+  app.post("/api/whatsapp/restart", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'supervisor')) {
+        return res.status(403).json({ message: "Access denied. Admin or Supervisor role required." });
+      }
+
+      const whatsappService = (global as any).whatsappService;
+      if (whatsappService) {
+        await whatsappService.restart();
+        
+        // Log the action
+        await storage.logUserAction(
+          "whatsapp_restart",
+          req.session.userId!,
+          req.session.username!,
+          { details: `تم إعادة تشغيل خدمة الواتساب وتجديد رمز QR` },
+          req.ip,
+          req.get('User-Agent')
+        );
+      }
+
+      res.json({ 
+        message: "تم إعادة تشغيل الواتساب بنجاح",
+        success: true
+      });
+    } catch (error) {
+      console.error("Error restarting WhatsApp:", error);
+      res.status(500).json({ message: "Failed to restart WhatsApp service" });
+    }
+  });
+
   // Team Points stats for dashboard
   app.get("/api/team-points/stats", requireAuth, async (req, res) => {
     try {
@@ -1541,8 +1574,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'رقم الهاتف': customer.phone || '',
         'البريد الإلكتروني': customer.email || '',
         'العنوان': customer.address || '',
-        'الموقع الجغرافي (خط الطول)': customer.longitude || '',
-        'الموقع الجغرافي (خط العرض)': customer.latitude || '',
+        'الموقع الجغرافي (خط الطول)': customer.gpsLongitude || '',
+        'الموقع الجغرافي (خط العرض)': customer.gpsLatitude || '',
         'تاريخ الإضافة': customer.createdAt ? new Date(customer.createdAt).toLocaleDateString('en-GB') : ''
       }));
 
@@ -1650,7 +1683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'رقم المهمة': task.taskNumber,
         'عنوان المهمة': task.title,
         'الوصف': task.description || '',
-        'المكلف بالمهمة': task.assignedTo,
+        'المكلف بالمهمة': task.assigneeNames || '',
         'اسم العميل': task.customerName || '',
         'هاتف العميل': task.customerPhone || '',
         'عنوان العميل': task.customerAddress || '',
@@ -1672,8 +1705,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'رقم الهاتف': customer.phone || '',
         'البريد الإلكتروني': customer.email || '',
         'العنوان': customer.address || '',
-        'الموقع الجغرافي (خط الطول)': customer.longitude || '',
-        'الموقع الجغرافي (خط العرض)': customer.latitude || '',
+        'الموقع الجغرافي (خط الطول)': customer.gpsLongitude || '',
+        'الموقع الجغرافي (خط العرض)': customer.gpsLatitude || '',
         'تاريخ الإضافة': customer.createdAt ? new Date(customer.createdAt).toLocaleDateString('en-GB') : ''
       }));
       const customersWb = XLSX.utils.book_new();
