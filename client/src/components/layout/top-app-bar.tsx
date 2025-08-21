@@ -1,15 +1,24 @@
 import { Bell, UserCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/hooks/use-language";
-import { LanguageToggleButton } from "@/components/ui/language-switcher";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export function TopAppBar() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Get unread notifications count
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['/api/notifications/unread-count'],
+    enabled: !!user,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
   
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -45,14 +54,21 @@ export function TopAppBar() {
           <h1 className="text-lg font-medium" data-testid="text-app-title">TaskFlow</h1>
         </div>
         <div className="flex items-center space-x-2 rtl:space-x-reverse">
-          <LanguageToggleButton />
           <Button
             variant="ghost"
             size="icon"
-            className="text-primary-foreground hover:bg-primary-dark rounded-full"
+            className="text-primary-foreground hover:bg-primary-dark rounded-full relative"
             data-testid="button-notifications"
           >
             <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs font-bold min-w-[20px]"
+              >
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Badge>
+            )}
           </Button>
           <Button
             variant="ghost"

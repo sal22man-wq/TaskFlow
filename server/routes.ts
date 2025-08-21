@@ -600,15 +600,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/team-members/:id", async (req, res) => {
+  // Delete team member (admin only)
+  app.delete("/api/team-members/:id", requireAdmin, async (req, res) => {
     try {
-      const deleted = await storage.deleteTeamMember(req.params.id);
-      if (!deleted) {
+      const { id } = req.params;
+      
+      // Get member info for logging before deletion
+      const memberToDelete = await storage.getTeamMember(id);
+      if (!memberToDelete) {
         return res.status(404).json({ message: "Team member not found" });
       }
-      res.status(204).send();
+
+      // Check if this team member has an associated user account
+      const associatedUser = memberToDelete.userId ? await storage.getUser(memberToDelete.userId) : null;
+      
+      // If there's an associated user, prevent deletion if it's the current admin
+      if (associatedUser && associatedUser.id === req.session.userId) {
+        return res.status(400).json({ message: "Cannot delete your own team member record" });
+      }
+
+      const deleted = await storage.deleteTeamMember(id);
+      if (!deleted) {
+        return res.status(500).json({ message: "Failed to delete team member" });
+      }
+
+      // Log admin action
+      await storage.logUserAction(
+        "team_member_deleted",
+        req.session.userId!,
+        req.session.username!,
+        { 
+          targetMemberId: id, 
+          memberName: memberToDelete.name,
+          memberEmail: memberToDelete.email,
+          hadAssociatedUser: !!memberToDelete.userId,
+          message: `تم حذف عضو الفريق: ${memberToDelete.name}`
+        },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json({ 
+        message: "Team member deleted successfully",
+        deletedMember: {
+          id: memberToDelete.id,
+          name: memberToDelete.name
+        }
+      });
     } catch (error) {
+      console.error("Error deleting team member:", error);
       res.status(500).json({ message: "Failed to delete team member" });
+    }
+  });
+
+  // Clean up default/example team members (admin only)
+  app.post("/api/admin/cleanup-default-members", requireAdmin, async (req, res) => {
+    try {
+      // Find team members that look like default/example data
+      const allMembers = await storage.getTeamMembers();
+      const defaultMembers = allMembers.filter(member => 
+        // Check for typical default/example names and emails
+        member.name.toLowerCase().includes('example') ||
+        member.name.toLowerCase().includes('test') ||
+        member.name.toLowerCase().includes('demo') ||
+        member.email.toLowerCase().includes('example') ||
+        member.email.toLowerCase().includes('test') ||
+        member.email.toLowerCase().includes('demo') ||
+        member.name === 'John Doe' ||
+        member.name === 'Jane Smith' ||
+        member.name === 'أحمد محمد' ||
+        member.name === 'فاطمة علي' ||
+        // Check if they don't have a linked user account (likely default data)
+        !member.userId
+      );
+
+      if (defaultMembers.length === 0) {
+        return res.json({ 
+          message: "No default members found to clean up",
+          cleaned: 0
+        });
+      }
+
+      let cleanedCount = 0;
+      const cleanedMembers = [];
+
+      for (const member of defaultMembers) {
+        try {
+          const deleted = await storage.deleteTeamMember(member.id);
+          if (deleted) {
+            cleanedCount++;
+            cleanedMembers.push({
+              id: member.id,
+              name: member.name,
+              email: member.email
+            });
+
+            // Log the cleanup action
+            await storage.logUserAction(
+              "default_member_cleaned",
+              req.session.userId!,
+              req.session.username!,
+              { 
+                cleanedMember: {
+                  id: member.id,
+                  name: member.name,
+                  email: member.email
+                },
+                reason: "تنظيف البيانات الافتراضية"
+              },
+              req.ip,
+              req.get('User-Agent')
+            );
+          }
+        } catch (error) {
+          console.error(`Error deleting default member ${member.name}:`, error);
+        }
+      }
+
+      res.json({ 
+        message: `تم تنظيف ${cleanedCount} من الأعضاء الافتراضيين بنجاح`,
+        cleaned: cleanedCount,
+        cleanedMembers
+      });
+    } catch (error) {
+      console.error("Error cleaning up default members:", error);
+      res.status(500).json({ message: "Failed to clean up default members" });
     }
   });
 

@@ -85,6 +85,8 @@ export interface IStorage {
   updateUserApproval(id: string, isApproved: string): Promise<User | undefined>;
   updateUserRole(id: string, role: string): Promise<User | undefined>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
+  toggleUserStatus(id: string): Promise<User | undefined>;
   
   // Team Member by User
   getTeamMemberByUserId(userId: string): Promise<TeamMember | undefined>;
@@ -1030,6 +1032,55 @@ export class DatabaseStorage implements IStorage {
 
   async getAllCustomerRatings(): Promise<CustomerRating[]> {
     return await db.select().from(customerRatings).orderBy(desc(customerRatings.createdAt));
+  }
+
+  // Delete user completely
+  async deleteUser(id: string): Promise<boolean> {
+    try {
+      // First get the user to check if they have a linked team member
+      const user = await this.getUser(id);
+      if (!user) {
+        return false;
+      }
+
+      // Find and delete associated team member if exists
+      const teamMember = await this.getTeamMemberByUserId(id);
+      if (teamMember) {
+        await this.deleteTeamMember(teamMember.id);
+      }
+
+      // Delete user from database
+      const result = await db.delete(users).where(eq(users.id, id));
+      return result.rowCount ? result.rowCount > 0 : false;
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      return false;
+    }
+  }
+
+  // Toggle user active status
+  async toggleUserStatus(id: string): Promise<User | undefined> {
+    try {
+      // First get current user status
+      const user = await this.getUser(id);
+      if (!user) {
+        return undefined;
+      }
+
+      // Toggle the status
+      const newStatus = user.isActive === "true" ? "false" : "true";
+      
+      const [updated] = await db
+        .update(users)
+        .set({ isActive: newStatus })
+        .where(eq(users.id, id))
+        .returning();
+      
+      return updated;
+    } catch (error) {
+      console.error("Error toggling user status:", error);
+      return undefined;
+    }
   }
 }
 
