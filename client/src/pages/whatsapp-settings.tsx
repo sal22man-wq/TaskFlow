@@ -46,7 +46,11 @@ export default function WhatsAppSettings() {
   // Restart WhatsApp mutation
   const restartMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("/api/whatsapp/restart", "POST");
+      return await fetch("/api/whatsapp/restart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }).then(res => res.json());
     },
     onSuccess: () => {
       toast({
@@ -68,7 +72,11 @@ export default function WhatsAppSettings() {
   // Reconnect WhatsApp mutation
   const reconnectMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("/api/whatsapp/reconnect", "POST");
+      return await fetch("/api/whatsapp/reconnect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }).then(res => res.json());
     },
     onSuccess: () => {
       toast({
@@ -134,7 +142,11 @@ export default function WhatsAppSettings() {
   // Enable real WhatsApp mutation
   const enableRealMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("/api/whatsapp/enable-real", "POST");
+      return await fetch("/api/whatsapp/enable-real", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }).then(res => res.json());
     },
     onSuccess: () => {
       toast({
@@ -156,7 +168,11 @@ export default function WhatsAppSettings() {
   // Disable real WhatsApp mutation
   const disableRealMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("/api/whatsapp/disable-real", "POST");
+      return await fetch("/api/whatsapp/disable-real", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }).then(res => res.json());
     },
     onSuccess: () => {
       toast({
