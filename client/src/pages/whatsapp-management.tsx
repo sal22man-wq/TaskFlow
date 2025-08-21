@@ -9,6 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { useErrorHandler } from '@/lib/error-handler';
+import { useLanguage } from '@/hooks/use-language';
+import { ErrorBoundary, ComponentErrorFallback } from '@/components/error/error-boundary';
 import { 
   MessageCircle, 
   Phone, 
@@ -40,6 +43,7 @@ interface WhatsAppSettings {
 
 export default function WhatsAppManagement() {
   const { toast } = useToast();
+  const { handleError, handleSuccess, t } = useErrorHandler();
   const queryClient = useQueryClient();
   const [editingMessage, setEditingMessage] = useState(false);
   const [newMessage, setNewMessage] = useState('');
@@ -59,17 +63,17 @@ export default function WhatsAppManagement() {
   const reconnectMutation = useMutation({
     mutationFn: () => apiRequest('POST', '/api/whatsapp/reconnect'),
     onSuccess: () => {
-      toast({
-        title: "تم بدء إعادة الربط",
-        description: "جاري إعادة ربط الواتساب. راقب وحدة التحكم للـ QR Code.",
+      handleSuccess('whatsapp.reconnecting', {
+        title: t('whatsapp.reconnecting'),
+        description: t('whatsapp.qrCode'),
       });
       queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/status'] });
     },
     onError: (error) => {
-      toast({
-        title: "خطأ في إعادة الربط",
-        description: error.message,
-        variant: "destructive",
+      handleError(error, {
+        title: t('error.generic'),
+        action: () => reconnectMutation.mutate(),
+        actionLabel: t('guidance.retry'),
       });
     },
   });
@@ -79,18 +83,15 @@ export default function WhatsAppManagement() {
     mutationFn: (message: string) => 
       apiRequest('PUT', '/api/whatsapp/settings', { defaultMessage: message }),
     onSuccess: () => {
-      toast({
-        title: "تم التحديث",
-        description: "تم تحديث نص الرسالة بنجاح",
-      });
+      handleSuccess('whatsapp.settingsUpdated');
       setEditingMessage(false);
       queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/settings'] });
     },
     onError: (error) => {
-      toast({
-        title: "خطأ في التحديث",
-        description: error.message,
-        variant: "destructive",
+      handleError(error, {
+        title: t('error.validation'),
+        action: () => updateMessageMutation.mutate(newMessage),
+        actionLabel: t('guidance.retry'),
       });
     },
   });
@@ -100,16 +101,18 @@ export default function WhatsAppManagement() {
     mutationFn: (phoneNumber: string) => 
       apiRequest('POST', '/api/whatsapp/test-message', { phoneNumber }),
     onSuccess: () => {
-      toast({
-        title: "تم الإرسال",
-        description: "تم إرسال الرسالة التجريبية بنجاح",
-      });
+      handleSuccess('whatsapp.messageSent');
     },
     onError: (error) => {
-      toast({
-        title: "فشل الإرسال",
-        description: error.message,
-        variant: "destructive",
+      handleError(error, {
+        title: t('whatsapp.messageFailed'),
+        action: () => {
+          const phoneInput = document.querySelector('input[placeholder*="966"]') as HTMLInputElement;
+          if (phoneInput?.value) {
+            testMessageMutation.mutate(phoneInput.value);
+          }
+        },
+        actionLabel: t('guidance.retry'),
       });
     },
   });
@@ -142,13 +145,14 @@ export default function WhatsAppManagement() {
           <MessageCircle className="h-6 w-6" />
           <h1 className="text-2xl font-bold">إدارة الواتساب</h1>
         </div>
-        <div className="text-center py-8">جاري التحميل...</div>
+        <div className="text-center py-8">{t('guidance.loading')}</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <ErrorBoundary fallback={ComponentErrorFallback}>
+      <div className="container mx-auto p-4 space-y-6">
       <div className="flex items-center gap-2 mb-6">
         <MessageCircle className="h-6 w-6" />
         <h1 className="text-2xl font-bold">إدارة الواتساب</h1>
@@ -349,6 +353,7 @@ export default function WhatsAppManagement() {
           <p>• في حالة انقطاع الاتصال، استخدم زر "إعادة ربط الواتساب"</p>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

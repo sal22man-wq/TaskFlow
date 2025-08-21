@@ -5,17 +5,52 @@ import { TaskCard } from "@/components/tasks/task-card";
 import { TaskWithAssignees } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, AlertCircle, RefreshCw } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
+import { useErrorHandler } from "@/lib/error-handler";
+import { ErrorBoundary, ComponentErrorFallback } from "@/components/error/error-boundary";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
-export default function Tasks() {
+function TasksContent() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "dueDate">("newest");
   const { t } = useLanguage();
+  const { handleError } = useErrorHandler();
 
-  const { data: tasks, isLoading } = useQuery<TaskWithAssignees[]>({
+  const { data: tasks, isLoading, error, refetch } = useQuery<TaskWithAssignees[]>({
     queryKey: ["/api/tasks"],
+    retry: 2,
+    retryDelay: 1000,
   });
+
+  // Handle query errors
+  if (error) {
+    return (
+      <div className="p-4">
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">{t('error.generic')}</p>
+              <p className="text-sm mt-1 opacity-80">
+                {error.message || t('error.network')}
+              </p>
+            </div>
+            <Button 
+              onClick={() => refetch()} 
+              size="sm" 
+              variant="outline"
+              data-testid="button-retry-tasks"
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              {t('guidance.retry')}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   const filteredTasks = tasks?.filter((task) => {
     if (activeFilter === "all") return true;
@@ -88,5 +123,21 @@ export default function Tasks() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Tasks() {
+  return (
+    <ErrorBoundary 
+      fallback={({ error, resetError }) => (
+        <ComponentErrorFallback
+          error={error}
+          resetError={resetError}
+          componentName="صفحة المهام"
+        />
+      )}
+    >
+      <TasksContent />
+    </ErrorBoundary>
   );
 }

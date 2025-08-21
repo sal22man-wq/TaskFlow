@@ -7,6 +7,7 @@ import { MobileLayout } from "@/components/layout/mobile-layout";
 import { LanguageProvider } from "@/hooks/use-language";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { useAuth } from "@/hooks/use-auth";
+import { ErrorBoundary } from "@/components/error/error-boundary";
 import Dashboard from "@/pages/dashboard";
 import Tasks from "@/pages/tasks";
 import MyTasks from "@/pages/my-tasks";
@@ -44,25 +45,27 @@ function ProtectedRouter() {
   }
 
   return (
-    <LanguageProvider>
-      <MobileLayout>
-        <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/tasks" component={Tasks} />
-          <Route path="/my-tasks" component={MyTasks} />
-          <Route path="/team" component={Team} />
-          <Route path="/customers" component={Customers} />
-          <Route path="/messages" component={Messages} />
-          <Route path="/notifications" component={Notifications} />
-          <Route path="/profile" component={Profile} />
-          <Route path="/admin/logs" component={() => <AdminGuard><AdminLogs /></AdminGuard>} />
-          <Route path="/admin/users" component={() => <AdminGuard><AdminUsers /></AdminGuard>} />
-          <Route path="/admin/customer-ratings" component={CustomerRatings} />
-          <Route path="/admin/whatsapp" component={WhatsAppManagement} />
-          <Route component={NotFound} />
-        </Switch>
-      </MobileLayout>
-    </LanguageProvider>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <MobileLayout>
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/tasks" component={Tasks} />
+            <Route path="/my-tasks" component={MyTasks} />
+            <Route path="/team" component={Team} />
+            <Route path="/customers" component={Customers} />
+            <Route path="/messages" component={Messages} />
+            <Route path="/notifications" component={Notifications} />
+            <Route path="/profile" component={Profile} />
+            <Route path="/admin/logs" component={() => <AdminGuard><AdminLogs /></AdminGuard>} />
+            <Route path="/admin/users" component={() => <AdminGuard><AdminUsers /></AdminGuard>} />
+            <Route path="/admin/customer-ratings" component={CustomerRatings} />
+            <Route path="/admin/whatsapp" component={WhatsAppManagement} />
+            <Route component={NotFound} />
+          </Switch>
+        </MobileLayout>
+      </LanguageProvider>
+    </ErrorBoundary>
   );
 }
 

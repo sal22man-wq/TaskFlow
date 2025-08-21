@@ -91,6 +91,63 @@ const translations = {
     // Admin
     'admin.logs': 'System Logs',
     'admin.access': 'Administrator Access',
+
+    // Error Messages
+    'error.generic': 'An error occurred. Please try again.',
+    'error.network': 'Network connection error. Please check your internet connection.',
+    'error.unauthorized': 'You are not authorized to access this resource.',
+    'error.forbidden': 'Access denied. Insufficient permissions.',
+    'error.notFound': 'The requested resource was not found.',
+    'error.validation': 'Please check your input and try again.',
+    'error.server': 'Server error. Please try again later.',
+    'error.timeout': 'Request timed out. Please try again.',
+    'error.database': 'Database error. Please contact support.',
+    'error.session': 'Your session has expired. Please log in again.',
+    'error.fileUpload': 'File upload failed. Please check file size and format.',
+    'error.invalidFormat': 'Invalid format. Please check your input.',
+    'error.tooManyRequests': 'Too many requests. Please wait before trying again.',
+
+    // Form Validation Errors
+    'validation.required': 'This field is required',
+    'validation.email': 'Please enter a valid email address',
+    'validation.phone': 'Please enter a valid phone number',
+    'validation.minLength': 'Minimum {min} characters required',
+    'validation.maxLength': 'Maximum {max} characters allowed',
+    'validation.password': 'Password must be at least 6 characters',
+    'validation.passwordMatch': 'Passwords do not match',
+    'validation.future': 'Date must be in the future',
+    'validation.past': 'Date must be in the past',
+
+    // User Guidance
+    'guidance.loading': 'Loading data, please wait...',
+    'guidance.saving': 'Saving your changes...',
+    'guidance.deleting': 'Deleting item...',
+    'guidance.uploading': 'Uploading file...',
+    'guidance.connecting': 'Establishing connection...',
+    'guidance.processing': 'Processing your request...',
+    'guidance.retry': 'Click to retry',
+    'guidance.refresh': 'Refresh the page',
+    'guidance.contactSupport': 'Contact support if the problem persists',
+
+    // WhatsApp Messages
+    'whatsapp.connecting': 'Connecting to WhatsApp...',
+    'whatsapp.connected': 'WhatsApp connected successfully',
+    'whatsapp.disconnected': 'WhatsApp disconnected',
+    'whatsapp.qrCode': 'Scan QR code with WhatsApp',
+    'whatsapp.reconnecting': 'Reconnecting to WhatsApp...',
+    'whatsapp.messageSent': 'Message sent successfully',
+    'whatsapp.messageFailed': 'Failed to send message',
+    'whatsapp.settingsUpdated': 'WhatsApp settings updated',
+
+    // Success Messages
+    'success.taskCreated': 'Task created successfully',
+    'success.taskUpdated': 'Task updated successfully',
+    'success.taskDeleted': 'Task deleted successfully',
+    'success.userCreated': 'User created successfully',
+    'success.userUpdated': 'User updated successfully',
+    'success.profileUpdated': 'Profile updated successfully',
+    'success.passwordChanged': 'Password changed successfully',
+    'success.settingsSaved': 'Settings saved successfully',
     'admin.password': 'Enter admin password',
     'admin.login': 'Access Admin Panel',
     'admin.userManagement': 'User Management',
@@ -293,6 +350,63 @@ const translations = {
     'stats.completed': 'مكتملة',
     'stats.overdue': 'متأخرة',
     'stats.total': 'الإجمالي',
+
+    // Error Messages
+    'error.generic': 'حدث خطأ. يرجى المحاولة مرة أخرى.',
+    'error.network': 'خطأ في الاتصال بالشبكة. يرجى التحقق من اتصالك بالإنترنت.',
+    'error.unauthorized': 'غير مصرح لك بالوصول لهذا المورد.',
+    'error.forbidden': 'تم رفض الوصول. صلاحيات غير كافية.',
+    'error.notFound': 'المورد المطلوب غير موجود.',
+    'error.validation': 'يرجى التحقق من البيانات المدخلة والمحاولة مرة أخرى.',
+    'error.server': 'خطأ في الخادم. يرجى المحاولة لاحقاً.',
+    'error.timeout': 'انتهت مهلة الطلب. يرجى المحاولة مرة أخرى.',
+    'error.database': 'خطأ في قاعدة البيانات. يرجى التواصل مع الدعم الفني.',
+    'error.session': 'انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى.',
+    'error.fileUpload': 'فشل في رفع الملف. يرجى التحقق من حجم ونوع الملف.',
+    'error.invalidFormat': 'تنسيق غير صحيح. يرجى التحقق من البيانات المدخلة.',
+    'error.tooManyRequests': 'طلبات كثيرة جداً. يرجى الانتظار قبل المحاولة مرة أخرى.',
+
+    // Form Validation Errors
+    'validation.required': 'هذا الحقل مطلوب',
+    'validation.email': 'يرجى إدخال عنوان بريد إلكتروني صحيح',
+    'validation.phone': 'يرجى إدخال رقم هاتف صحيح',
+    'validation.minLength': 'يجب أن يكون {min} أحرف على الأقل',
+    'validation.maxLength': 'الحد الأقصى {max} حرف',
+    'validation.password': 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+    'validation.passwordMatch': 'كلمات المرور غير متطابقة',
+    'validation.future': 'التاريخ يجب أن يكون في المستقبل',
+    'validation.past': 'التاريخ يجب أن يكون في الماضي',
+
+    // User Guidance
+    'guidance.loading': 'جاري تحميل البيانات، يرجى الانتظار...',
+    'guidance.saving': 'جاري حفظ التغييرات...',
+    'guidance.deleting': 'جاري حذف العنصر...',
+    'guidance.uploading': 'جاري رفع الملف...',
+    'guidance.connecting': 'جاري تأسيس الاتصال...',
+    'guidance.processing': 'جاري معالجة طلبك...',
+    'guidance.retry': 'اضغط للمحاولة مرة أخرى',
+    'guidance.refresh': 'أعد تحميل الصفحة',
+    'guidance.contactSupport': 'تواصل مع الدعم الفني إذا استمرت المشكلة',
+
+    // WhatsApp Messages
+    'whatsapp.connecting': 'جاري الاتصال بالواتساب...',
+    'whatsapp.connected': 'تم الاتصال بالواتساب بنجاح',
+    'whatsapp.disconnected': 'تم قطع الاتصال مع الواتساب',
+    'whatsapp.qrCode': 'امسح رمز QR بالواتساب',
+    'whatsapp.reconnecting': 'جاري إعادة الاتصال بالواتساب...',
+    'whatsapp.messageSent': 'تم إرسال الرسالة بنجاح',
+    'whatsapp.messageFailed': 'فشل في إرسال الرسالة',
+    'whatsapp.settingsUpdated': 'تم تحديث إعدادات الواتساب',
+
+    // Success Messages
+    'success.taskCreated': 'تم إنشاء المهمة بنجاح',
+    'success.taskUpdated': 'تم تحديث المهمة بنجاح',
+    'success.taskDeleted': 'تم حذف المهمة بنجاح',
+    'success.userCreated': 'تم إنشاء المستخدم بنجاح',
+    'success.userUpdated': 'تم تحديث المستخدم بنجاح',
+    'success.profileUpdated': 'تم تحديث الملف الشخصي بنجاح',
+    'success.passwordChanged': 'تم تغيير كلمة المرور بنجاح',
+    'success.settingsSaved': 'تم حفظ الإعدادات بنجاح',
   },
 };
 
