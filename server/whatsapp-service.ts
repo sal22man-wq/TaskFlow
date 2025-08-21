@@ -410,15 +410,44 @@ export class WhatsAppService {
   async enableRealMode(): Promise<void> {
     try {
       console.log('🔄 تفعيل الواتساب الحقيقي...');
+      console.log('📱 تحديد الوضع الحقيقي...');
       this.isRealMode = true;
       
-      // إعادة تشغيل الخدمة في الوضع الحقيقي
-      await this.restart();
+      // إيقاف العميل الحالي إن وجد
+      if (this.client) {
+        console.log('🛑 إيقاف العميل الحالي...');
+        await this.client.destroy();
+      }
+      
+      // إعادة تعيين الحالة
+      this.isReady = false;
+      this.isInitialized = false;
+      this.currentQRCode = null;
+      this.senderNumber = null;
+      this.client = null;
+      
+      // انتظار قصير ثم بدء الوضع الحقيقي
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // تحميل مكتبات الواتساب الحقيقي
+      console.log('🔄 تحميل مكتبات الواتساب الحقيقي...');
+      await this.loadDependencies();
+      this.initializeClient();
+      
+      console.log('🚀 بدء تشغيل الواتساب الحقيقي...');
+      await this.client.initialize();
+      this.isInitialized = true;
       
       console.log('✅ تم تفعيل الواتساب الحقيقي بنجاح');
     } catch (error) {
       console.error('❌ خطأ في تفعيل الواتساب الحقيقي:', error);
       this.isRealMode = false;
+      // في حالة الفشل، عودة للمحاكاة
+      this.showFakeQRCode();
+      setTimeout(() => {
+        this.isReady = true;
+        this.senderNumber = '966501234567';
+      }, 3000);
     }
   }
 
@@ -428,8 +457,30 @@ export class WhatsAppService {
       console.log('🔄 العودة لوضع المحاكاة...');
       this.isRealMode = false;
       
-      // إعادة تشغيل الخدمة في وضع المحاكاة
-      await this.restart();
+      // إيقاف العميل الحقيقي إن وجد
+      if (this.client && this.isInitialized) {
+        console.log('🛑 إيقاف الواتساب الحقيقي...');
+        await this.client.destroy();
+      }
+      
+      // إعادة تعيين الحالة
+      this.isReady = false;
+      this.isInitialized = false;
+      this.currentQRCode = null;
+      this.senderNumber = null;
+      this.client = null;
+      
+      // بدء وضع المحاكاة
+      this.showFakeQRCode();
+      
+      // تأخير قصير لمحاكاة عملية الاتصال
+      setTimeout(() => {
+        console.log('✅ تم ربط الواتساب بنجاح! (محاكاة)');
+        console.log('📱 رقم الواتساب المتصل: 966501234567 (محاكاة)');
+        this.isReady = true;
+        this.senderNumber = '966501234567';
+        this.currentQRCode = null; // إزالة رمز QR بعد الاتصال الناجح
+      }, 3000);
       
       console.log('✅ تم العودة لوضع المحاكاة بنجاح');
     } catch (error) {
@@ -503,6 +554,8 @@ export class WhatsAppService {
       isConnected: this.isReady && this.client,
       isReady: this.isReady,
       isInitialized: this.isInitialized,
+      isRealMode: this.isRealMode,
+      mode: this.isRealMode ? 'حقيقي' : 'محاكاة',
       senderNumber: this.senderNumber,
       qrCode: this.currentQRCode,
       lastConnected: this.isReady ? new Date().toISOString() : null,
