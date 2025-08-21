@@ -17,16 +17,16 @@ export function BottomNavigation() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 w-full bg-surface border-t border-surface-variant z-50 safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 w-full bg-gradient-to-r from-white/95 to-white/90 backdrop-blur-lg border-t border-border/50 z-50 safe-area-bottom shadow-2xl">
       <div className="grid grid-cols-6 h-14 sm:h-16 lg:h-18 max-w-full mx-auto">
         {navItems.map(({ path, icon: Icon, label, testId }) => (
           <Button
             key={path}
             variant="ghost"
-            className={`flex flex-col items-center justify-center space-y-0.5 sm:space-y-1 h-full rounded-none touch-manipulation touch-target px-1 ${
+            className={`flex flex-col items-center justify-center space-y-0.5 sm:space-y-1 h-full rounded-none touch-manipulation touch-target px-1 transition-all duration-200 ${
               location === path
-                ? "text-primary"
-                : "text-gray-400 hover:text-on-surface"
+                ? "text-primary bg-primary/10 scale-110"
+                : "text-gray-400 hover:text-on-surface hover:bg-muted/30 hover:scale-105"
             }`}
             onClick={() => setLocation(path)}
             data-testid={testId}

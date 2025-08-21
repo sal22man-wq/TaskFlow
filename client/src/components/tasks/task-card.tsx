@@ -8,7 +8,7 @@ import { StatusActions } from "./status-actions";
 import { ChatButton } from "@/components/chat/chat-button";
 import { RescheduleTaskModal } from "./reschedule-task-modal";
 import { CancelTaskModal } from "./cancel-task-modal";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 
 interface TaskCardProps {
   task: TaskWithAssignees;
@@ -54,7 +54,7 @@ export function TaskCard({ task }: TaskCardProps) {
   };
 
   // Check if user can reschedule/cancel tasks (admin/supervisor only)
-  const canManageTask = user?.role === "admin" || user?.role === "supervisor";
+  const canManageTask = (user as any)?.role === "admin" || (user as any)?.role === "supervisor";
   
   // Don't show reschedule/cancel for completed or already cancelled tasks
   const canReschedule = canManageTask && task.status !== "complete" && task.status !== "cancelled";
@@ -198,7 +198,7 @@ export function TaskCard({ task }: TaskCardProps) {
         <RescheduleTaskModal
           taskId={task.id}
           taskTitle={task.title}
-          currentDueDate={task.dueDate}
+          currentDueDate={task.dueDate || new Date().toISOString()}
           rescheduleCount={(task as any).rescheduleCount || 0}
           open={showReschedule}
           onOpenChange={setShowReschedule}

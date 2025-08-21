@@ -497,15 +497,40 @@ body {
   }
 
   .stat-card {
-    @apply bg-white rounded-lg p-4 shadow-md border-0 transition-all;
-    background: hsl(var(--surface));
-    border: 1px solid hsl(var(--border) / 0.3);
-    min-height: 100px;
+    @apply bg-white rounded-xl p-4 shadow-lg border-0 transition-all duration-300 hover:shadow-xl hover:scale-105;
+    background: linear-gradient(135deg, hsl(var(--surface)) 0%, hsl(var(--muted)) 100%);
+    border: 1px solid hsl(var(--border) / 0.2);
+    min-height: 110px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)));
   }
 
   .task-card {
-    @apply bg-surface rounded-lg p-4 shadow-sm border hover:shadow-md transition-shadow;
-    border-color: hsl(var(--surface-variant) / 0.5);
+    @apply bg-surface rounded-xl p-5 shadow-md border hover:shadow-xl transition-all duration-300 hover:scale-[1.02];
+    border-color: hsl(var(--border) / 0.3);
+    background: linear-gradient(135deg, hsl(var(--surface)) 0%, hsl(var(--muted) / 0.3) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .task-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, hsl(var(--primary) / 0.6), hsl(var(--secondary) / 0.6));
   }
 
   .status-chip {
