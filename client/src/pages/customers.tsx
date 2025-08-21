@@ -80,7 +80,15 @@ export default function Customers() {
       queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
       setIsDialogOpen(false);
       setEditingCustomer(null);
-      form.reset();
+      setIsGettingLocation(false); // إعادة تعيين حالة تحديد الموقع
+      form.reset({
+        name: '',
+        phone: '+964',
+        address: '',
+        gpsLatitude: '',
+        gpsLongitude: '',
+        gpsAddress: '',
+      });
       toast({
         title: 'تم بنجاح',
         description: editingCustomer ? 'تم تحديث العميل' : 'تم إضافة العميل',
@@ -298,7 +306,15 @@ export default function Customers() {
             <Button 
               onClick={() => {
                 setEditingCustomer(null);
-                form.reset();
+                setIsGettingLocation(false); // إعادة تعيين حالة تحديد الموقع
+                form.reset({
+                  name: '',
+                  phone: '+964',
+                  address: '',
+                  gpsLatitude: '',
+                  gpsLongitude: '',
+                  gpsAddress: '',
+                });
               }}
               data-testid="button-add-customer"
             >
