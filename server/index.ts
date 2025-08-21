@@ -64,6 +64,8 @@ app.use((req, res, next) => {
   // Initialize WhatsApp service
   try {
     await whatsappService.initialize();
+    // تسجيل الخدمة في المتغير العام للوصول إليها من routes
+    (global as any).whatsappService = whatsappService;
     log('✅ WhatsApp service initialized successfully');
   } catch (error) {
     log('❌ WhatsApp service initialization failed:', String(error));
