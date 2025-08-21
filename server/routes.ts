@@ -1316,6 +1316,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Team Points stats for dashboard
+  app.get("/api/team-points/stats", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const allPoints = await storage.getAllTeamMemberPoints();
+      
+      // إحصائيات عامة
+      const totalMembers = allPoints.length;
+      const totalPoints = allPoints.reduce((sum, p) => sum + (p.points || 0), 0);
+      const averagePoints = totalMembers > 0 ? Math.round(totalPoints / totalMembers) : 0;
+      const topScorer = allPoints.length > 0 ? allPoints[0] : null;
+
+      // الحصول على نقاط المستخدم الحالي
+      const teamMember = await storage.getTeamMemberByUserId(req.session.userId!);
+      let userPoints = null;
+      if (teamMember) {
+        userPoints = await storage.getTeamMemberPoints(teamMember.id);
+      }
+
+      // أظهر جميع الإحصائيات لجميع المستخدمين
+      res.json({
+        totalMembers,
+        totalPoints,
+        averagePoints,
+        topScorer: topScorer ? {
+          name: topScorer.teamMember.name,
+          points: topScorer.points || 0,
+          role: topScorer.teamMember.role
+        } : null,
+        topPerformers: allPoints.slice(0, 3).map(p => ({
+          name: p.teamMember.name,
+          points: p.points || 0,
+          role: p.teamMember.role
+        })),
+        userPoints: userPoints?.points || 0,
+        userTotalEarned: userPoints?.totalEarned || 0,
+        userRank: userPoints ? allPoints.findIndex(p => p.teamMemberId === teamMember?.id) + 1 : null,
+        canViewAll: true
+      });
+    } catch (error) {
+      console.error("Error fetching team points stats:", error);
+      res.status(500).json({ message: "Failed to fetch team points stats" });
+    }
+  });
+
   // Team Points routes
   app.get("/api/team-points", requireAuth, async (req, res) => {
     try {

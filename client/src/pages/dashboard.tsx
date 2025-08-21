@@ -5,6 +5,7 @@ import { TaskCard } from "@/components/tasks/task-card";
 import { TeamMemberCard } from "@/components/team/team-member-card";
 import { SchedulerWidget } from "@/components/scheduler/scheduler-widget";
 import { UpcomingSchedule } from "@/components/scheduler/upcoming-schedule";
+import { TeamPointsWidget } from "@/components/dashboard/team-points-widget";
 import { Button } from "@/components/ui/button";
 import { TaskWithAssignees, TeamMember } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -83,6 +84,11 @@ export default function Dashboard() {
         </div>
 
         <QuickActions />
+      </section>
+
+      {/* Team Points Section */}
+      <section className="px-4">
+        <TeamPointsWidget />
       </section>
 
       {/* Scheduler Section */}
