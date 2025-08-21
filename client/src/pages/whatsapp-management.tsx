@@ -57,7 +57,7 @@ export default function WhatsAppManagement() {
 
   // إعادة ربط الواتساب
   const reconnectMutation = useMutation({
-    mutationFn: () => apiRequest('/api/whatsapp/reconnect', 'POST'),
+    mutationFn: () => apiRequest('POST', '/api/whatsapp/reconnect'),
     onSuccess: () => {
       toast({
         title: "تم بدء إعادة الربط",
@@ -77,7 +77,7 @@ export default function WhatsAppManagement() {
   // تحديث إعدادات الرسالة
   const updateMessageMutation = useMutation({
     mutationFn: (message: string) => 
-      apiRequest('/api/whatsapp/settings', 'PUT', { defaultMessage: message }),
+      apiRequest('PUT', '/api/whatsapp/settings', { defaultMessage: message }),
     onSuccess: () => {
       toast({
         title: "تم التحديث",
@@ -98,7 +98,7 @@ export default function WhatsAppManagement() {
   // إرسال رسالة تجريبية
   const testMessageMutation = useMutation({
     mutationFn: (phoneNumber: string) => 
-      apiRequest('/api/whatsapp/test-message', 'POST', { phoneNumber }),
+      apiRequest('POST', '/api/whatsapp/test-message', { phoneNumber }),
     onSuccess: () => {
       toast({
         title: "تم الإرسال",

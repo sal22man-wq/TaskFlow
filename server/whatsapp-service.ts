@@ -324,6 +324,34 @@ export class WhatsAppService {
     }
   }
 
+  // إعادة ربط الخدمة
+  async reconnect(): Promise<void> {
+    try {
+      console.log('🔄 بدء إعادة ربط خدمة الواتساب...');
+      
+      // إيقاف الاتصال الحالي إن وجد
+      if (this.client && this.isReady) {
+        console.log('⏹️ إيقاف الاتصال الحالي...');
+        this.isReady = false;
+        await this.client.destroy();
+      }
+      
+      // إعادة التهيئة
+      console.log('🔄 إعادة تهيئة العميل...');
+      await this.loadDependencies();
+      this.initializeClient();
+      
+      // بدء الاتصال
+      console.log('🚀 بدء الاتصال الجديد...');
+      await this.client.initialize();
+      
+      console.log('✅ تم بدء عملية إعادة الربط بنجاح');
+    } catch (error) {
+      console.error('❌ خطأ في إعادة ربط الواتساب:', error);
+      throw error;
+    }
+  }
+
   // التحقق من حالة الخدمة
   isServiceReady(): boolean {
     return this.isReady;
