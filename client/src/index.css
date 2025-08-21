@@ -492,12 +492,13 @@ body {
 
 @layer components {
   .mobile-container {
-    @apply min-h-screen flex flex-col max-w-md mx-auto bg-surface shadow-xl;
+    @apply min-h-screen flex flex-col max-w-md mx-auto bg-surface;
   }
 
   .stat-card {
-    @apply bg-surface rounded-lg p-4 shadow-sm border hover:shadow-md transition-shadow;
-    border-color: hsl(var(--surface-variant) / 0.5);
+    @apply bg-surface rounded-lg p-3 shadow-sm border-0 transition-shadow;
+    background: linear-gradient(135deg, hsl(var(--surface)) 0%, hsl(var(--muted)) 100%);
+    border: 1px solid hsl(var(--border));
   }
 
   .task-card {

@@ -15,16 +15,16 @@ export function StatsCard({ title, value, icon, color, testId }: StatsCardProps)
   };
 
   return (
-    <div className="stat-card responsive-padding" data-testid={testId}>
-      <div className="flex items-center justify-between h-full">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm sm:text-base lg:text-lg text-muted-foreground truncate responsive-text" data-testid={`${testId}-title`}>{title}</p>
-          <p className={`text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold ${colorClasses[color]} truncate`} data-testid={`${testId}-value`}>
+    <div className="stat-card" data-testid={testId}>
+      <div className="flex items-center justify-center gap-3 h-full p-4">
+        <div className={`text-3xl ${colorClasses[color]} flex-shrink-0`} data-testid={`${testId}-icon`}>
+          {icon}
+        </div>
+        <div className="flex-1 text-center">
+          <p className="text-sm text-muted-foreground mb-1" data-testid={`${testId}-title`}>{title}</p>
+          <p className={`text-2xl font-bold ${colorClasses[color]}`} data-testid={`${testId}-value`}>
             {value}
           </p>
-        </div>
-        <div className={`text-xl sm:text-2xl lg:text-3xl xl:text-4xl ${colorClasses[color]} flex-shrink-0 ml-2`} data-testid={`${testId}-icon`}>
-          {icon}
         </div>
       </div>
     </div>
