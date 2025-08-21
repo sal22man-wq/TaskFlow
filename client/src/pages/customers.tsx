@@ -142,31 +142,65 @@ export default function Customers() {
         form.setValue('gpsLatitude', lat);
         form.setValue('gpsLongitude', lng);
         
-        // محاولة الحصول على العنوان من الإحداثيات
-        fetch(`https://api.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-          .then(response => response.json())
+        // محاولة الحصول على العنوان من الإحداثيات مع User-Agent
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`, {
+          headers: {
+            'User-Agent': 'TaskFlow App (task@example.com)'
+          }
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('فشل في الحصول على العنوان');
+            }
+            return response.json();
+          })
           .then(data => {
-            if (data.display_name) {
+            if (data && data.display_name) {
               form.setValue('gpsAddress', data.display_name);
             }
           })
-          .catch(() => {
+          .catch((error) => {
+            console.log('فشل في الحصول على العنوان:', error);
             // فشل في الحصول على العنوان، لكن الإحداثيات محفوظة
           });
 
         setIsGettingLocation(false);
         toast({
           title: 'تم الحصول على الموقع',
-          description: 'تم حفظ إحداثيات GPS',
+          description: `تم حفظ الإحداثيات: ${lat.substring(0, 8)}, ${lng.substring(0, 8)}`,
         });
       },
       (error) => {
+        console.error('خطأ في الموقع:', error);
         setIsGettingLocation(false);
+        
+        let errorMessage = 'لم نتمكن من الحصول على موقعك';
+        
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'تم رفض الإذن للوصول للموقع. يرجى السماح بالوصول في إعدادات المتصفح';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'معلومات الموقع غير متاحة';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'انتهت مهلة البحث عن الموقع';
+            break;
+          default:
+            errorMessage = 'حدث خطأ غير معروف في تحديد الموقع';
+            break;
+        }
+        
         toast({
           title: 'خطأ في الموقع',
-          description: 'لم نتمكن من الحصول على موقعك',
+          description: errorMessage,
           variant: 'destructive',
         });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
       }
     );
   };
