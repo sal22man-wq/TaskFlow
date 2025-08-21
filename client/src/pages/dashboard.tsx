@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { QuickActions } from "@/components/dashboard/quick-actions";
-import { TaskCard } from "@/components/tasks/task-card";
+
 import { TeamMemberCard } from "@/components/team/team-member-card";
 import { SchedulerWidget } from "@/components/scheduler/scheduler-widget";
 import { UpcomingSchedule } from "@/components/scheduler/upcoming-schedule";
 import { TeamPointsWidget } from "@/components/dashboard/team-points-widget";
 import { Button } from "@/components/ui/button";
-import { TaskWithAssignees, TeamMember } from "@shared/schema";
+import { TeamMember } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
@@ -19,18 +19,10 @@ export default function Dashboard() {
     queryKey: ["/api/stats"],
   });
 
-  const { data: tasks, isLoading: tasksLoading } = useQuery<TaskWithAssignees[]>({
-    queryKey: ["/api/tasks"],
-  });
-
   const { data: teamMembers, isLoading: teamLoading } = useQuery<TeamMember[]>({
     queryKey: ["/api/team-members"],
   });
 
-  // Sort tasks by createdAt date (newest first) and take the first 3
-  const recentTasks = tasks
-    ?.sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime())
-    ?.slice(0, 3) || [];
   const topTeamMembers = teamMembers?.slice(0, 2) || [];
 
   return (
@@ -99,36 +91,6 @@ export default function Dashboard() {
       {/* Upcoming Schedule */}
       <section className="px-4">
         <UpcomingSchedule />
-      </section>
-
-      {/* Recent Tasks */}
-      <section className="px-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium" data-testid="text-recent-tasks-title">{t('dashboard.recentTasks')}</h3>
-          <Link href="/tasks">
-            <Button variant="ghost" size="sm" className="text-primary" data-testid="link-view-all-tasks">
-              {t('common.viewAll')}
-            </Button>
-          </Link>
-        </div>
-
-        <div className="space-y-3">
-          {tasksLoading ? (
-            <>
-              {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-24 rounded-lg" />
-              ))}
-            </>
-          ) : recentTasks.length > 0 ? (
-            recentTasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))
-          ) : (
-            <div className="text-center py-8 text-muted-foreground" data-testid="text-no-tasks">
-              {t('msg.noTasks')}
-            </div>
-          )}
-        </div>
       </section>
 
       {/* Team Members */}
