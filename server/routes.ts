@@ -821,19 +821,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check permissions based on user role
       if (currentUser.role === 'user') {
-        // Regular users can only update their assigned tasks and only status/progress
+        // Regular users can only update their assigned tasks and only status/progress/notes/finalReport
         const teamMember = await storage.getTeamMemberByUserId(currentUser.id);
         if (!teamMember || !task.assigneeIds?.includes(teamMember.id)) {
           return res.status(403).json({ message: "You can only update tasks assigned to you" });
         }
         
-        // Regular users can only update status and progress
-        const allowedUpdates = ['status', 'progress', 'notes'];
+        // Regular users can only update status, progress, notes, and finalReport
+        const allowedUpdates = ['status', 'progress', 'notes', 'finalReport'];
         const updateKeys = Object.keys(req.body);
         const hasUnauthorizedUpdate = updateKeys.some(key => !allowedUpdates.includes(key));
         
         if (hasUnauthorizedUpdate) {
-          return res.status(403).json({ message: "You can only update task status, progress, and notes" });
+          return res.status(403).json({ message: "You can only update task status, progress, notes, and final report" });
         }
       }
 

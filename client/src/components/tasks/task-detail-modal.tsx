@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -13,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { TeamMember } from "@shared/schema";
 import { format } from "date-fns";
 import { ChatButton } from "@/components/chat/chat-button";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TaskDetailModalProps {
   task: TaskWithAssignees;
@@ -28,6 +30,9 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
     task.dueDate ? format(new Date(task.dueDate), "yyyy-MM-dd") : ""
   );
   const [progress, setProgress] = useState(task.progress);
+  const [finalReport, setFinalReport] = useState(task.finalReport || "");
+
+  const { user } = useAuth();
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -66,16 +71,36 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
       assigneeIds: assigneeIds.length > 0 ? assigneeIds : undefined,
       dueDate: dueDate ? new Date(dueDate) : undefined,
       progress,
+      finalReport: finalReport.trim() || undefined,
     };
 
     updateTaskMutation.mutate(updates);
+  };
+
+  // Check if current user is assigned to this task
+  const isAssignedToTask = () => {
+    const currentUser = user as any;
+    if (!currentUser?.teamMember) return false;
+    return task.assigneeIds?.includes(currentUser.teamMember.id) || false;
+  };
+
+  // Check if user can edit final report (only assigned team members)
+  const canEditFinalReport = () => {
+    const currentUser = user as any;
+    if (!currentUser?.role) return false;
+    return currentUser.role === 'admin' || currentUser.role === 'supervisor' || isAssignedToTask();
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle data-testid="modal-task-details-title">Task Details</DialogTitle>
+          <DialogTitle data-testid="modal-task-details-title">
+            تفاصيل المهمة
+            {task.taskNumber && (
+              <span className="text-primary text-sm mr-2">#{task.taskNumber}</span>
+            )}
+          </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
@@ -230,6 +255,41 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               />
             </div>
           </div>
+
+          {/* Final Report Section - Only for assigned team members */}
+          {canEditFinalReport() && (
+            <div>
+              <Label htmlFor="finalReport" className="text-sm font-medium text-muted-foreground">
+                التقرير النهائي {isAssignedToTask() && "(للمكلف بالمهمة فقط)"}
+              </Label>
+              <Textarea
+                id="finalReport"
+                value={finalReport}
+                onChange={(e) => setFinalReport(e.target.value)}
+                placeholder="اكتب التقرير النهائي للمهمة هنا..."
+                className="mt-1 min-h-[100px]"
+                data-testid="textarea-final-report"
+                disabled={!isAssignedToTask() && (user as any)?.role === 'user'}
+              />
+              {task.finalReport && !isAssignedToTask() && (user as any)?.role === 'user' && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  يمكن فقط للمكلف بالمهمة تعديل التقرير النهائي
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Display existing final report for non-assigned users */}
+          {!canEditFinalReport() && task.finalReport && (
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">
+                التقرير النهائي
+              </Label>
+              <div className="mt-1 p-3 bg-muted/50 rounded border text-sm">
+                {task.finalReport}
+              </div>
+            </div>
+          )}
           
           <div className="flex space-x-3">
             <Button
@@ -238,7 +298,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               disabled={updateTaskMutation.isPending}
               data-testid="button-save-task"
             >
-              {updateTaskMutation.isPending ? "Saving..." : "Save Changes"}
+              {updateTaskMutation.isPending ? "حفظ..." : "حفظ التغييرات"}
             </Button>
             <ChatButton taskId={task.id} taskTitle={task.title} />
             <Button
@@ -247,7 +307,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
               onClick={() => onOpenChange(false)}
               data-testid="button-cancel-task"
             >
-              Cancel
+              إلغاء
             </Button>
           </div>
         </div>

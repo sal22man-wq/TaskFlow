@@ -471,10 +471,28 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
+  // دالة توليد رقم المهمة التسلسلي
+  private async generateTaskNumber(): Promise<string> {
+    const currentYear = new Date().getFullYear();
+    const allTasks = await db.select({ taskNumber: tasks.taskNumber }).from(tasks);
+    
+    // البحث عن أعلى رقم في السنة الحالية
+    const currentYearTasks = allTasks
+      .filter(task => task.taskNumber && task.taskNumber.startsWith(currentYear.toString()))
+      .map(task => parseInt(task.taskNumber!.split('-')[1] || '0'))
+      .filter(num => !isNaN(num));
+    
+    const nextNumber = currentYearTasks.length > 0 ? Math.max(...currentYearTasks) + 1 : 1;
+    return `${currentYear}-${nextNumber.toString().padStart(3, '0')}`;
+  }
+
   async createTask(task: InsertTask): Promise<Task> {
+    // توليد رقم المهمة التسلسلي
+    const taskNumber = await this.generateTaskNumber();
+    
     const [newTask] = await db
       .insert(tasks)
-      .values(task)
+      .values({ ...task, taskNumber })
       .returning();
     return newTask;
   }

@@ -65,6 +65,7 @@ export const customerRatings = pgTable("customer_ratings", {
 
 export const tasks = pgTable("tasks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskNumber: text("task_number").unique(), // رقم المهمة التسلسلي
   title: text("title").notNull(),
   description: text("description").notNull(),
   customerName: text("customer_name").notNull(),
@@ -72,6 +73,7 @@ export const tasks = pgTable("tasks", {
   customerAddress: text("customer_address"),
   time: text("time").notNull(), // estimated time or schedule
   notes: text("notes"), // additional notes
+  finalReport: text("final_report"), // التقرير النهائي للمهمة - يكتبه المكلف بالمهمة فقط
   status: text("status").notNull().default("pending"), // pending, start, complete
   priority: text("priority").notNull().default("medium"), // low, medium, high
   assigneeIds: text("assignee_ids").array(), // Array of team member IDs

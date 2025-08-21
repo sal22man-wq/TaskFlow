@@ -44,9 +44,16 @@ export function TaskCard({ task }: TaskCardProps) {
       <div className="task-card" data-testid={`task-card-${task.id}`}>
         <div className="flex items-start justify-between mb-3 rtl:flex-row-reverse">
           <div className="flex-1">
-            <h4 className="font-medium text-base text-on-surface" data-testid={`task-title-${task.id}`}>
-              {task.title}
-            </h4>
+            <div className="flex items-center gap-2 mb-1">
+              {task.taskNumber && (
+                <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-semibold" data-testid={`task-number-${task.id}`}>
+                  #{task.taskNumber}
+                </span>
+              )}
+              <h4 className="font-medium text-base text-on-surface" data-testid={`task-title-${task.id}`}>
+                {task.title}
+              </h4>
+            </div>
             <p className="text-sm text-muted-foreground mt-1" data-testid={`task-description-${task.id}`}>
               {task.description}
             </p>
