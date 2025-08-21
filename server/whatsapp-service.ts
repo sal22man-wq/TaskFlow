@@ -10,6 +10,7 @@ export class WhatsAppService {
   private isInitialized = false;
   private senderNumber: string | null = null;
   private currentQRCode: string | null = null;
+  private isRealMode = false; // متغير للتحكم في وضع الواتساب
 
   constructor() {
     // Empty constructor - actual initialization happens in initialize()
@@ -112,14 +113,9 @@ export class WhatsAppService {
     try {
       console.log('🚀 محاولة ربط الواتساب...');
       
-      // إذا كان في بيئة الإنتاج أو تم تفعيل الواتساب الحقيقي، استخدم الواتساب الحقيقي
-      const useRealWhatsApp = process.env.NODE_ENV === 'production' || 
-                             process.env.ENABLE_REAL_WHATSAPP === 'true' ||
-                             (global as any).forceRealWhatsApp === true;
+      console.log(`🔧 وضع الواتساب: ${this.isRealMode ? 'حقيقي' : 'محاكاة'}`);
       
-      console.log(`🔧 وضع الواتساب: ${useRealWhatsApp ? 'حقيقي' : 'محاكاة'}`);
-      
-      if (useRealWhatsApp) {
+      if (this.isRealMode) {
         console.log('🔄 تحميل مكتبات الواتساب الحقيقي...');
         await this.loadDependencies();
         this.initializeClient();
@@ -410,6 +406,37 @@ export class WhatsAppService {
     }
   }
 
+  // تفعيل الواتساب الحقيقي
+  async enableRealMode(): Promise<void> {
+    try {
+      console.log('🔄 تفعيل الواتساب الحقيقي...');
+      this.isRealMode = true;
+      
+      // إعادة تشغيل الخدمة في الوضع الحقيقي
+      await this.restart();
+      
+      console.log('✅ تم تفعيل الواتساب الحقيقي بنجاح');
+    } catch (error) {
+      console.error('❌ خطأ في تفعيل الواتساب الحقيقي:', error);
+      this.isRealMode = false;
+    }
+  }
+
+  // إلغاء تفعيل الواتساب الحقيقي والعودة للمحاكاة
+  async disableRealMode(): Promise<void> {
+    try {
+      console.log('🔄 العودة لوضع المحاكاة...');
+      this.isRealMode = false;
+      
+      // إعادة تشغيل الخدمة في وضع المحاكاة
+      await this.restart();
+      
+      console.log('✅ تم العودة لوضع المحاكاة بنجاح');
+    } catch (error) {
+      console.error('❌ خطأ في العودة لوضع المحاكاة:', error);
+    }
+  }
+
   // قطع الاتصال مع الواتساب
   async disconnect(): Promise<void> {
     try {
@@ -417,8 +444,19 @@ export class WhatsAppService {
       this.isReady = false;
       this.senderNumber = null;
       
+      if (this.isRealMode && this.client) {
+        await this.client.destroy();
+      }
+      
       // إظهار QR Code جديد للإعادة الربط
-      this.showFakeQRCode();
+      if (this.isRealMode) {
+        // في الوضع الحقيقي، إعادة تشغيل العميل للحصول على QR جديد
+        setTimeout(async () => {
+          await this.initialize();
+        }, 1000);
+      } else {
+        this.showFakeQRCode();
+      }
       
       console.log('✅ تم قطع الاتصال - رمز QR متاح للإعادة الربط');
     } catch (error) {

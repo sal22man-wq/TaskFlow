@@ -1360,13 +1360,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied. Admin role required." });
       }
 
-      // تعيين المتغير العام لتفعيل الواتساب الحقيقي
-      (global as any).forceRealWhatsApp = true;
+      console.log('🔄 تفعيل الواتساب الحقيقي...');
       
-      // إعادة تشغيل الخدمة مع الواتساب الحقيقي
+      // استخدام الطريقة الجديدة لتفعيل الوضع الحقيقي
       const whatsappService = (global as any).whatsappService;
       if (whatsappService) {
-        await whatsappService.restart();
+        await whatsappService.enableRealMode();
       }
       
       // Log the action
@@ -1397,13 +1396,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied. Admin role required." });
       }
 
-      // إلغاء تفعيل الواتساب الحقيقي
-      (global as any).forceRealWhatsApp = false;
+      console.log('🔄 العودة لوضع المحاكاة...');
       
-      // إعادة تشغيل الخدمة بوضع المحاكاة
+      // استخدام الطريقة الجديدة لإلغاء تفعيل الوضع الحقيقي
       const whatsappService = (global as any).whatsappService;
       if (whatsappService) {
-        await whatsappService.restart();
+        await whatsappService.disableRealMode();
       }
       
       // Log the action
