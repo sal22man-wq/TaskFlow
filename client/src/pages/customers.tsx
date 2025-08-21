@@ -362,7 +362,7 @@ export default function Customers() {
                   )}
                 />
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-medium">موقع GPS</label>
                     <Button
@@ -378,43 +378,91 @@ export default function Customers() {
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  {/* Hidden GPS fields */}
+                  <div className="hidden">
                     <FormField
                       control={form.control}
                       name="gpsLatitude"
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input {...field} placeholder="خط العرض" data-testid="input-gps-lat" />
+                            <Input {...field} data-testid="input-gps-lat" />
                           </FormControl>
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="gpsLongitude"
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input {...field} placeholder="خط الطول" data-testid="input-gps-lng" />
+                            <Input {...field} data-testid="input-gps-lng" />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="gpsAddress"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input {...field} data-testid="input-gps-address" />
                           </FormControl>
                         </FormItem>
                       )}
                     />
                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name="gpsAddress"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Textarea {...field} placeholder="العنوان من GPS" rows={2} data-testid="input-gps-address" />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                  {/* Map preview */}
+                  {form.watch('gpsLatitude') && form.watch('gpsLongitude') && (
+                    <div className="border rounded-lg overflow-hidden bg-muted">
+                      <div 
+                        className="relative h-32 cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => {
+                          const lat = form.watch('gpsLatitude');
+                          const lng = form.watch('gpsLongitude');
+                          if (lat && lng) openInMaps(lat, lng);
+                        }}
+                        data-testid="map-preview"
+                      >
+                        <iframe
+                          src={`https://maps.google.com/maps?q=${form.watch('gpsLatitude')},${form.watch('gpsLongitude')}&t=m&z=15&output=embed`}
+                          width="100%"
+                          height="100%"
+                          style={{ border: 0, pointerEvents: 'none' }}
+                          allowFullScreen
+                          loading="lazy"
+                          referrerPolicy="no-referrer-when-downgrade"
+                          title="معاينة الموقع"
+                        />
+                        <div className="absolute inset-0 bg-transparent hover:bg-black/10 transition-colors flex items-center justify-center">
+                          <div className="bg-white/90 px-3 py-1.5 rounded-md text-sm font-medium shadow-sm opacity-0 hover:opacity-100 transition-opacity">
+                            انقر لفتح في خرائط جوجل
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-3 bg-background">
+                        <div className="flex items-center gap-2 text-sm">
+                          <MapPin className="h-4 w-4 text-green-600" />
+                          <span className="font-medium">تم تحديد الموقع</span>
+                        </div>
+                        {form.watch('gpsAddress') && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {form.watch('gpsAddress')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {!form.watch('gpsLatitude') && (
+                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                      <MapPin className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">اضغط "تحديد الموقع" لإضافة موقع العميل</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-2 pt-4">
@@ -490,25 +538,35 @@ export default function Customers() {
                       )}
 
                       {customer.gpsLatitude && customer.gpsLongitude && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Navigation className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">
-                            {customer.gpsLatitude}, {customer.gpsLongitude}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                        <div className="mt-3">
+                          <div 
+                            className="relative h-24 rounded-lg overflow-hidden cursor-pointer border hover:opacity-90 transition-opacity"
                             onClick={() => openInMaps(customer.gpsLatitude!, customer.gpsLongitude!)}
-                            data-testid={`button-open-maps-${customer.id}`}
+                            data-testid={`map-preview-${customer.id}`}
                           >
-                            <Map className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
-
-                      {customer.gpsAddress && (
-                        <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
-                          {customer.gpsAddress}
+                            <iframe
+                              src={`https://maps.google.com/maps?q=${customer.gpsLatitude},${customer.gpsLongitude}&t=m&z=15&output=embed`}
+                              width="100%"
+                              height="100%"
+                              style={{ border: 0, pointerEvents: 'none' }}
+                              allowFullScreen
+                              loading="lazy"
+                              referrerPolicy="no-referrer-when-downgrade"
+                              title={`موقع ${customer.name}`}
+                            />
+                            <div className="absolute inset-0 bg-transparent hover:bg-black/10 transition-colors flex items-center justify-center">
+                              <div className="bg-white/90 px-2 py-1 rounded text-xs font-medium shadow-sm opacity-0 hover:opacity-100 transition-opacity">
+                                <Map className="h-3 w-3 inline mr-1" />
+                                فتح في خرائط جوجل
+                              </div>
+                            </div>
+                          </div>
+                          {customer.gpsAddress && (
+                            <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/30 rounded">
+                              <MapPin className="h-3 w-3 inline mr-1" />
+                              {customer.gpsAddress}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
