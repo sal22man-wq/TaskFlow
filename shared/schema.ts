@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -212,3 +212,27 @@ export const insertSystemLogSchema = createInsertSchema(systemLogs).omit({
 });
 export type InsertSystemLog = z.infer<typeof insertSystemLogSchema>;
 export type SystemLog = typeof systemLogs.$inferSelect;
+
+// WhatsApp settings table
+export const whatsappSettings = pgTable("whatsapp_settings", {
+  id: varchar("id").primaryKey().default("default"),
+  defaultMessage: text("default_message").notNull().default(`مرحباً {customerName}
+
+✅ تم إتمام مهمة "{taskTitle}" بنجاح من قبل شركة اشراق الودق لتكنولوجيا المعلومات.
+
+🌟 نرجو تقييم مستوى رضاكم عن أدائنا:
+
+رد برقم واحد فقط:
+1️⃣ - غاضب 😠
+2️⃣ - راضي 😊  
+3️⃣ - راضي جدا 😍
+
+شكراً لثقتكم بنا 🙏`),
+  senderName: varchar("sender_name").default("شركة اشراق الودق لتكنولوجيا المعلومات"),
+  autoSend: boolean("auto_send").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type WhatsAppSettings = typeof whatsappSettings.$inferSelect;
+export type UpsertWhatsAppSettings = typeof whatsappSettings.$inferInsert;

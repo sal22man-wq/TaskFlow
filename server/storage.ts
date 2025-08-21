@@ -7,6 +7,7 @@ import {
   messages,
   notifications,
   systemLogs,
+  whatsappSettings,
   type User,
   type InsertUser,
   type Customer,
@@ -26,6 +27,8 @@ import {
   type InsertNotification,
   type SystemLog,
   type InsertSystemLog,
+  type WhatsAppSettings,
+  type UpsertWhatsAppSettings,
 } from "@shared/schema";
 import { eq, desc, and, or, ne, sql } from "drizzle-orm";
 import { db } from "./db";
@@ -98,6 +101,10 @@ export interface IStorage {
   getSystemLogs(limit?: number): Promise<SystemLog[]>;
   createSystemLog(log: InsertSystemLog): Promise<SystemLog>;
   logUserAction(action: string, userId: string, username: string, details?: any, ipAddress?: string, userAgent?: string): Promise<void>;
+
+  // WhatsApp Settings
+  getWhatsAppSettings(): Promise<WhatsAppSettings>;
+  updateWhatsAppSettings(updates: Partial<UpsertWhatsAppSettings>): Promise<WhatsAppSettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -743,6 +750,67 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(customerRatings.createdAt))
       .limit(1);
     return rating;
+  }
+
+  // WhatsApp Settings
+  async getWhatsAppSettings(): Promise<WhatsAppSettings> {
+    const [settings] = await db
+      .select()
+      .from(whatsappSettings)
+      .where(eq(whatsappSettings.id, "default"))
+      .limit(1);
+    
+    if (!settings) {
+      // Create default settings if they don't exist
+      const [newSettings] = await db
+        .insert(whatsappSettings)
+        .values({
+          id: "default",
+          defaultMessage: `مرحباً {customerName}
+
+✅ تم إتمام مهمة "{taskTitle}" بنجاح من قبل شركة اشراق الودق لتكنولوجيا المعلومات.
+
+🌟 نرجو تقييم مستوى رضاكم عن أدائنا:
+
+رد برقم واحد فقط:
+1️⃣ - غاضب 😠
+2️⃣ - راضي 😊  
+3️⃣ - راضي جدا 😍
+
+شكراً لثقتكم بنا 🙏`,
+          senderName: "شركة اشراق الودق لتكنولوجيا المعلومات",
+          autoSend: true
+        })
+        .returning();
+      return newSettings;
+    }
+    
+    return settings;
+  }
+
+  async updateWhatsAppSettings(updates: Partial<UpsertWhatsAppSettings>): Promise<WhatsAppSettings> {
+    const [updated] = await db
+      .update(whatsappSettings)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(whatsappSettings.id, "default"))
+      .returning();
+    
+    if (!updated) {
+      // If no record was updated, create a new one
+      const [newSettings] = await db
+        .insert(whatsappSettings)
+        .values({
+          id: "default",
+          ...updates
+        })
+        .returning();
+      return newSettings;
+    }
+    
+    return updated;
   }
 }
 

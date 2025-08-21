@@ -12,7 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { User, Settings, Bell, Shield, HelpCircle, LogOut, UserCheck, Activity, Edit, Save, X } from "lucide-react";
+import { User, Settings, Bell, Shield, HelpCircle, LogOut, UserCheck, Activity, Edit, Save, X, MessageCircle } from "lucide-react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
 
@@ -456,6 +456,15 @@ export default function Profile() {
             >
               <Activity className="h-4 w-4 mr-2" />
               سجل أحداث النظام
+            </Button>
+            <Button 
+              className="w-full" 
+              variant="outline"
+              onClick={() => setLocation("/admin/whatsapp")}
+              data-testid="button-admin-whatsapp"
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              إدارة الواتساب
             </Button>
           </CardContent>
         </Card>

@@ -1157,6 +1157,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // WhatsApp management routes
+  app.get("/api/whatsapp/status", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'supervisor')) {
+        return res.status(403).json({ message: "Access denied. Admin or Supervisor role required." });
+      }
+
+      const whatsappService = (global as any).whatsappService;
+      const status = {
+        isConnected: whatsappService?.isReady || false,
+        isReady: whatsappService?.isReady || false,
+        senderNumber: whatsappService?.senderNumber || null,
+        lastConnected: whatsappService?.lastConnected || null,
+        qrCode: whatsappService?.currentQRCode || null,
+        messagesCount: whatsappService?.messageCount || 0
+      };
+
+      res.json(status);
+    } catch (error) {
+      console.error("Error fetching WhatsApp status:", error);
+      res.status(500).json({ message: "Failed to fetch WhatsApp status" });
+    }
+  });
+
+  app.get("/api/whatsapp/settings", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'supervisor')) {
+        return res.status(403).json({ message: "Access denied. Admin or Supervisor role required." });
+      }
+
+      const settings = await storage.getWhatsAppSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching WhatsApp settings:", error);
+      res.status(500).json({ message: "Failed to fetch WhatsApp settings" });
+    }
+  });
+
+  app.put("/api/whatsapp/settings", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      const { defaultMessage } = req.body;
+      if (!defaultMessage || typeof defaultMessage !== 'string') {
+        return res.status(400).json({ message: "Default message is required" });
+      }
+
+      await storage.updateWhatsAppSettings({ defaultMessage });
+      
+      // Log the action
+      await storage.logUserAction(
+        "update_whatsapp_settings",
+        req.session.userId!,
+        req.session.username!,
+        { details: `تم تحديث نص رسالة التقييم الافتراضية` },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json({ message: "Settings updated successfully" });
+    } catch (error) {
+      console.error("Error updating WhatsApp settings:", error);
+      res.status(500).json({ message: "Failed to update WhatsApp settings" });
+    }
+  });
+
+  app.post("/api/whatsapp/reconnect", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'supervisor')) {
+        return res.status(403).json({ message: "Access denied. Admin or Supervisor role required." });
+      }
+
+      const whatsappService = (global as any).whatsappService;
+      if (whatsappService) {
+        await whatsappService.reconnect();
+        
+        // Log the action
+        await storage.logUserAction(
+          "whatsapp_reconnect",
+          req.session.userId!,
+          req.session.username!,
+          { details: `تم طلب إعادة ربط خدمة الواتساب` },
+          req.ip,
+          req.get('User-Agent')
+        );
+      }
+
+      res.json({ message: "Reconnection initiated" });
+    } catch (error) {
+      console.error("Error reconnecting WhatsApp:", error);
+      res.status(500).json({ message: "Failed to reconnect WhatsApp" });
+    }
+  });
+
+  app.post("/api/whatsapp/test-message", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'supervisor')) {
+        return res.status(403).json({ message: "Access denied. Admin or Supervisor role required." });
+      }
+
+      const { phoneNumber } = req.body;
+      if (!phoneNumber || typeof phoneNumber !== 'string') {
+        return res.status(400).json({ message: "Phone number is required" });
+      }
+
+      const whatsappService = (global as any).whatsappService;
+      if (!whatsappService || !whatsappService.isReady) {
+        return res.status(400).json({ message: "WhatsApp service is not ready" });
+      }
+
+      const settings = await storage.getWhatsAppSettings();
+      const testMessage = `رسالة تجريبية من نظام إدارة المهام\n\n${settings.defaultMessage}\n\n--- رسالة تجريبية ---`;
+
+      await whatsappService.sendMessage(phoneNumber, testMessage);
+      
+      // Log the action
+      await storage.logUserAction(
+        "send_test_message",
+        req.session.userId!,
+        req.session.username!,
+        { phoneNumber, details: `تم إرسال رسالة تجريبية إلى ${phoneNumber}` },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json({ message: "Test message sent successfully" });
+    } catch (error) {
+      console.error("Error sending test message:", error);
+      res.status(500).json({ message: "Failed to send test message" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
