@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Customer } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import { CustomerMap } from '@/components/customers/customer-map';
+import { useAuth } from '@/hooks/useAuth';
+import { isUnauthorizedError } from '@/lib/authUtils';
 
 // نموذج التحقق للعميل
 const customerSchema = z.object({
@@ -36,6 +38,7 @@ export default function Customers() {
   const [showMap, setShowMap] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   const { data: customers, isLoading } = useQuery<Customer[]>({
     queryKey: ['/api/customers'],
@@ -58,17 +61,11 @@ export default function Customers() {
   const customerMutation = useMutation({
     mutationFn: async (data: CustomerFormData) => {
       if (editingCustomer) {
-        return await fetch(`/api/customers/${editingCustomer.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }).then(res => res.json());
+        const response = await apiRequest('PUT', `/api/customers/${editingCustomer.id}`, data);
+        return await response.json();
       } else {
-        return await fetch('/api/customers', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }).then(res => res.json());
+        const response = await apiRequest('POST', '/api/customers', data);
+        return await response.json();
       }
     },
     onSuccess: () => {
@@ -82,6 +79,17 @@ export default function Customers() {
       });
     },
     onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "يتطلب تسجيل الدخول",
+          description: "جاري إعادة توجيهك لتسجيل الدخول...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 1000);
+        return;
+      }
       toast({
         title: 'خطأ',
         description: 'حدث خطأ في العملية',
@@ -93,9 +101,8 @@ export default function Customers() {
   // حذف عميل
   const deleteMutation = useMutation({
     mutationFn: async (customerId: string) => {
-      return await fetch(`/api/customers/${customerId}`, {
-        method: 'DELETE',
-      }).then(res => res.json());
+      const response = await apiRequest('DELETE', `/api/customers/${customerId}`);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
@@ -190,6 +197,33 @@ export default function Customers() {
     const url = `https://www.google.com/maps?q=${lat},${lng}`;
     window.open(url, '_blank');
   };
+
+  // التحقق من المصادقة
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-2">تسجيل الدخول مطلوب</h2>
+          <p className="text-muted-foreground mb-4">يجب تسجيل الدخول للوصول إلى قائمة العملاء</p>
+          <Button onClick={() => window.location.href = '/api/login'}>
+            تسجيل الدخول
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-4">
