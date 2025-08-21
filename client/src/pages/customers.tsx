@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,9 +11,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Users, Phone, MapPin, Plus, Edit, Trash2, Navigation, Map } from 'lucide-react';
+import { Users, Phone, MapPin, Plus, Edit, Trash2, Navigation, Map, Search, X, Calendar, FileText, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Customer } from '@shared/schema';
+import { Customer, Task } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import { CustomerMap } from '@/components/customers/customer-map';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,6 +40,9 @@ export default function Customers() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -46,6 +50,19 @@ export default function Customers() {
   const { data: customers, isLoading } = useQuery<Customer[]>({
     queryKey: ['/api/customers'],
   });
+
+  // البحث عن المهام المرتبطة بعميل معين
+  const { data: customerTasks, isLoading: tasksLoading } = useQuery<Task[]>({
+    queryKey: ['/api/tasks', 'customer', selectedCustomer?.id],
+    enabled: !!selectedCustomer?.id,
+  });
+
+  // تصفية العملاء حسب البحث
+  const filteredCustomers = customers?.filter(customer => 
+    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.phone.includes(searchTerm) ||
+    customer.address?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
   const form = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
@@ -249,6 +266,11 @@ export default function Customers() {
     window.open(url, '_blank');
   };
 
+  const handleViewDetails = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsDetailsOpen(true);
+  };
+
   // التحقق من المصادقة
   if (authLoading) {
     return (
@@ -295,6 +317,35 @@ export default function Customers() {
           </Button>
         </div>
       </div>
+
+      {/* شريط البحث */}
+      <div className="relative">
+        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder="البحث في العملاء (الاسم، الهاتف، العنوان)..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pr-10"
+          data-testid="input-search-customers"
+        />
+        {searchTerm && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSearchTerm('')}
+            className="absolute left-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+            data-testid="button-clear-search"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      {searchTerm && (
+        <div className="text-sm text-muted-foreground">
+          تم العثور على {filteredCustomers.length} عميل من أصل {customers?.length || 0}
+        </div>
+      )}
 
       {showMap && customers && (
         <CustomerMap customers={customers} />
@@ -541,7 +592,7 @@ export default function Customers() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {customers.map((customer) => (
+          {filteredCustomers.map((customer) => (
             <Card key={customer.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
@@ -609,6 +660,14 @@ export default function Customers() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => handleViewDetails(customer)}
+                      data-testid={`button-view-customer-${customer.id}`}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleEdit(customer)}
                       data-testid={`button-edit-customer-${customer.id}`}
                     >
@@ -630,6 +689,137 @@ export default function Customers() {
           ))}
         </div>
       )}
+
+      {/* نافذة تفاصيل العميل */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>تفاصيل العميل - {selectedCustomer?.name}</DialogTitle>
+          </DialogHeader>
+          
+          {selectedCustomer && (
+            <div className="space-y-6">
+              {/* معلومات العميل الأساسية */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    المعلومات الأساسية
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">الاسم</label>
+                      <p className="text-sm">{selectedCustomer.name}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">الهاتف</label>
+                      <p className="text-sm">{selectedCustomer.phone}</p>
+                    </div>
+                  </div>
+                  {selectedCustomer.address && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">العنوان</label>
+                      <p className="text-sm">{selectedCustomer.address}</p>
+                    </div>
+                  )}
+                  {selectedCustomer.gpsLatitude && selectedCustomer.gpsLongitude && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">الموقع</label>
+                      <div 
+                        className="h-24 rounded-lg overflow-hidden cursor-pointer border hover:opacity-90 transition-opacity mt-2"
+                        onClick={() => openInMaps(selectedCustomer.gpsLatitude!, selectedCustomer.gpsLongitude!)}
+                      >
+                        <iframe
+                          src={`https://maps.google.com/maps?q=${selectedCustomer.gpsLatitude},${selectedCustomer.gpsLongitude}&t=m&z=15&output=embed`}
+                          width="100%"
+                          height="100%"
+                          style={{ border: 0, pointerEvents: 'none' }}
+                          allowFullScreen
+                          loading="lazy"
+                          title={`موقع ${selectedCustomer.name}`}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* المهام والخدمات */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    تاريخ الخدمات والمهام
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {tasksLoading ? (
+                    <div className="text-center py-4">
+                      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                      <p className="text-sm text-muted-foreground">جاري تحميل المهام...</p>
+                    </div>
+                  ) : !customerTasks || customerTasks.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>لا توجد مهام مسجلة لهذا العميل بعد</p>
+                      <p className="text-sm">ستظهر هنا جميع الخدمات المقدمة للعميل</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {customerTasks.map((task) => (
+                        <div key={task.id} className="border rounded-lg p-3 hover:bg-muted/50 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-medium">{task.title}</h4>
+                              {task.description && (
+                                <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
+                              )}
+                              <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                                <span>تاريخ الإنشاء: {new Date(task.createdAt!).toLocaleDateString('ar-EG')}</span>
+                                {task.dueDate && (
+                                  <span>موعد الانتهاء: {new Date(task.dueDate).toLocaleDateString('ar-EG')}</span>
+                                )}
+                              </div>
+                            </div>
+                            <Badge 
+                              variant={
+                                task.status === 'completed' ? 'default' : 
+                                task.status === 'in_progress' ? 'secondary' : 
+                                'outline'
+                              }
+                              className="text-xs"
+                            >
+                              {task.status === 'completed' ? 'مكتملة' :
+                               task.status === 'in_progress' ? 'قيد التنفيذ' :
+                               task.status === 'pending' ? 'معلقة' : 'جديدة'}
+                            </Badge>
+                          </div>
+                          {task.progress > 0 && (
+                            <div className="mt-2">
+                              <div className="flex items-center justify-between text-xs">
+                                <span>التقدم</span>
+                                <span>{task.progress}%</span>
+                              </div>
+                              <div className="w-full bg-muted rounded-full h-2 mt-1">
+                                <div 
+                                  className="bg-primary h-2 rounded-full transition-all"
+                                  style={{ width: `${task.progress}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
