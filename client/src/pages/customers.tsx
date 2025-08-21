@@ -14,6 +14,7 @@ import { Users, Phone, MapPin, Plus, Edit, Trash2, Navigation, Map } from 'lucid
 import { useToast } from '@/hooks/use-toast';
 import { Customer } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
+import { CustomerMap } from '@/components/customers/customer-map';
 
 // نموذج التحقق للعميل
 const customerSchema = z.object({
@@ -32,6 +33,7 @@ export default function Customers() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [showMap, setShowMap] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -197,6 +199,23 @@ export default function Customers() {
           <h1 className="text-2xl font-bold">قائمة العملاء</h1>
         </div>
         
+        <div className="flex gap-2">
+          <Button 
+            variant={showMap ? "default" : "outline"} 
+            onClick={() => setShowMap(!showMap)} 
+            data-testid="button-toggle-map"
+          >
+            <Map className="h-4 w-4 mr-2" />
+            {showMap ? "إخفاء الخريطة" : "عرض الخريطة"}
+          </Button>
+        </div>
+      </div>
+
+      {showMap && customers && (
+        <CustomerMap customers={customers} />
+      )}
+
+      <div className="flex justify-end">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
