@@ -122,6 +122,14 @@ export interface IStorage {
 
   // Points History
   getPointsHistory(teamMemberId?: string, limit?: number): Promise<(PointsHistory & { teamMember: TeamMember; performedByUser?: User })[]>;
+  
+  // Backup and Export methods
+  getAllUsers(): Promise<User[]>;
+  getAllCustomers(): Promise<Customer[]>;
+  getAllMessages(): Promise<Message[]>;
+  getAllNotifications(): Promise<Notification[]>;
+  getAllSystemLogs(): Promise<SystemLog[]>;
+  getAllCustomerRatings(): Promise<CustomerRating[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1002,6 +1010,26 @@ export class DatabaseStorage implements IStorage {
       teamMember: row.team_members,
       performedByUser: row.users || undefined
     }));
+  }
+  // Backup and Export implementations
+  async getAllCustomers(): Promise<Customer[]> {
+    return await db.select().from(customers);
+  }
+
+  async getAllMessages(): Promise<Message[]> {
+    return await db.select().from(messages).orderBy(desc(messages.createdAt));
+  }
+
+  async getAllNotifications(): Promise<Notification[]> {
+    return await db.select().from(notifications).orderBy(desc(notifications.createdAt));
+  }
+
+  async getAllSystemLogs(): Promise<SystemLog[]> {
+    return await db.select().from(systemLogs).orderBy(desc(systemLogs.timestamp));
+  }
+
+  async getAllCustomerRatings(): Promise<CustomerRating[]> {
+    return await db.select().from(customerRatings).orderBy(desc(customerRatings.createdAt));
   }
 }
 

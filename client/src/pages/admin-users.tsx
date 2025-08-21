@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { UserCheck, UserX, Users, Clock, UserPlus, Shield, Power, Trash2, Key } from "lucide-react";
+import { UserCheck, UserX, Users, Clock, UserPlus, Shield, Power, Trash2, Key, Download, Archive, FileSpreadsheet } from "lucide-react";
 import { AddUserForm } from "@/components/admin/add-user-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +38,8 @@ export default function AdminUsers() {
   const [showAddUser, setShowAddUser] = useState(false);
   const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
 
   // Get all users
   const { data: users = [], isLoading } = useQuery<User[]>({
@@ -210,6 +212,82 @@ export default function AdminUsers() {
     resetPasswordMutation.mutate({ userId: resetPasswordUser.id, newPassword });
   };
 
+  const handleExportCustomers = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/admin/export/customers', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('فشل في تصدير البيانات');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `customers_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "تم التصدير بنجاح",
+        description: "تم تصدير بيانات العملاء إلى ملف Excel",
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ في التصدير",
+        description: "حدث خطأ أثناء تصدير البيانات",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleFullBackup = async () => {
+    setIsBackingUp(true);
+    try {
+      const response = await fetch('/api/admin/backup/full', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('فشل في إنشاء النسخة الاحتياطية');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `backup_${new Date().toISOString().split('T')[0]}_${Date.now()}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "تم إنشاء النسخة الاحتياطية",
+        description: "تم إنشاء النسخة الاحتياطية الكاملة وتحميلها",
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ في النسخة الاحتياطية",
+        description: "حدث خطأ أثناء إنشاء النسخة الاحتياطية",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
+
   const pendingUsers = users.filter(user => user.isApproved === "pending");
   const approvedUsers = users.filter(user => user.isApproved === "approved");
   const rejectedUsers = users.filter(user => user.isApproved === "rejected");
@@ -244,14 +322,61 @@ export default function AdminUsers() {
         <h1 className="text-xl font-medium" data-testid="text-admin-users-title">
           إدارة المستخدمين
         </h1>
-        <Button
-          onClick={() => setShowAddUser(true)}
-          className="bg-green-600 hover:bg-green-700 text-white"
-          data-testid="button-add-user"
-        >
-          <UserPlus className="h-4 w-4 mr-2" />
-          إضافة مستخدم
-        </Button>
+        <div className="flex gap-2">
+          {/* Export Customers Button */}
+          <Button
+            onClick={handleExportCustomers}
+            disabled={isExporting}
+            variant="outline"
+            size="sm"
+            className="text-blue-600 border-blue-600 hover:bg-blue-50"
+            data-testid="button-export-customers"
+          >
+            {isExporting ? (
+              <>
+                <Download className="h-4 w-4 mr-1 animate-spin" />
+                جاري التصدير...
+              </>
+            ) : (
+              <>
+                <FileSpreadsheet className="h-4 w-4 mr-1" />
+                تصدير العملاء
+              </>
+            )}
+          </Button>
+          
+          {/* Full Backup Button */}
+          <Button
+            onClick={handleFullBackup}
+            disabled={isBackingUp}
+            variant="outline"
+            size="sm"
+            className="text-purple-600 border-purple-600 hover:bg-purple-50"
+            data-testid="button-full-backup"
+          >
+            {isBackingUp ? (
+              <>
+                <Archive className="h-4 w-4 mr-1 animate-spin" />
+                جاري النسخ...
+              </>
+            ) : (
+              <>
+                <Archive className="h-4 w-4 mr-1" />
+                نسخة احتياطية كاملة
+              </>
+            )}
+          </Button>
+          
+          <Button
+            onClick={() => setShowAddUser(true)}
+            className="bg-green-600 hover:bg-green-700 text-white"
+            size="sm"
+            data-testid="button-add-user"
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            إضافة مستخدم
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}

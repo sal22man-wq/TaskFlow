@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Users, Phone, Plus, Edit, Trash2, Search, X, Calendar, FileText, Eye, Mail, MapPin, Navigation } from 'lucide-react';
+import { Users, Phone, Plus, Edit, Trash2, Search, X, Calendar, FileText, Eye, Mail, MapPin, Navigation, Map, List } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Customer, Task } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
@@ -31,6 +31,118 @@ const customerSchema = z.object({
 
 type CustomerFormData = z.infer<typeof customerSchema>;
 
+// Map Component for displaying customers on a map
+const CustomersMap = ({ customers, onCustomerSelect }: { customers: Customer[], onCustomerSelect: (customer: Customer) => void }) => {
+  const customersWithGPS = customers.filter(c => c.gpsLatitude && c.gpsLongitude);
+  
+  if (customersWithGPS.length === 0) {
+    return (
+      <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+        <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد مواقع GPS</h3>
+        <p className="text-gray-500">لا يحتوي أي من العملاء المعروضين على إحداثيات GPS صحيحة</p>
+        <p className="text-sm text-gray-400 mt-2">يرجى إضافة إحداثيات GPS للعملاء لعرضهم على الخريطة</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center mb-2">
+          <MapPin className="h-5 w-5 text-blue-600 mr-2" />
+          <h3 className="text-lg font-medium text-blue-900">عملاء مع مواقع GPS</h3>
+        </div>
+        <p className="text-blue-700 mb-4">
+          يتم عرض {customersWithGPS.length} من العملاء الذين لديهم إحداثيات GPS صحيحة
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {customersWithGPS.map((customer) => (
+            <Card key={customer.id} className="border-l-4 border-l-green-500 bg-white hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 mb-2">{customer.name}</h4>
+                    <div className="space-y-1 text-sm text-gray-600">
+                      <div className="flex items-center">
+                        <Phone className="h-3 w-3 mr-1" />
+                        <span>{customer.phone}</span>
+                      </div>
+                      {customer.email && (
+                        <div className="flex items-center">
+                          <Mail className="h-3 w-3 mr-1" />
+                          <span className="truncate">{customer.email}</span>
+                        </div>
+                      )}
+                      {customer.address && (
+                        <div className="flex items-start">
+                          <span className="mr-1 text-xs">📍</span>
+                          <span className="text-xs leading-tight">{customer.address}</span>
+                        </div>
+                      )}
+                      {customer.gpsAddress && (
+                        <div className="flex items-start">
+                          <Navigation className="h-3 w-3 mr-1 text-green-600 mt-0.5" />
+                          <span className="text-xs leading-tight text-green-700">{customer.gpsAddress}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <div className="flex justify-between items-center">
+                    <div className="text-xs text-gray-500">
+                      GPS: {parseFloat(customer.gpsLatitude!).toFixed(4)}, {parseFloat(customer.gpsLongitude!).toFixed(4)}
+                    </div>
+                    <div className="flex space-x-1 space-x-reverse">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const url = `https://www.google.com/maps?q=${customer.gpsLatitude},${customer.gpsLongitude}`;
+                          window.open(url, '_blank');
+                        }}
+                        className="px-2 py-1 h-7"
+                        data-testid={`button-open-maps-${customer.id}`}
+                      >
+                        <Navigation className="h-3 w-3 mr-1" />
+                        <span className="text-xs">خرائط</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onCustomerSelect(customer)}
+                        className="px-2 py-1 h-7"
+                        data-testid={`button-details-${customer.id}`}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        <span className="text-xs">تفاصيل</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        {customersWithGPS.length > 0 && (
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center">
+              <div className="h-3 w-3 bg-green-500 rounded-full mr-2"></div>
+              <span className="text-sm text-green-800">
+                يمكنك النقر على "خرائط" لفتح الموقع في تطبيق الخرائط، أو "تفاصيل" لعرض معلومات العميل
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function Customers() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -38,6 +150,7 @@ export default function Customers() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -341,6 +454,30 @@ export default function Customers() {
               <CardTitle className="text-xl">إدارة العملاء</CardTitle>
             </div>
             <div className="flex items-center space-x-2">
+              {/* View Toggle Buttons */}
+              <div className="flex border rounded-lg p-1">
+                <Button
+                  onClick={() => setViewMode('list')}
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="px-3"
+                  data-testid="button-list-view"
+                >
+                  <List className="h-4 w-4 mr-1" />
+                  قائمة
+                </Button>
+                <Button
+                  onClick={() => setViewMode('map')}
+                  variant={viewMode === 'map' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="px-3"
+                  data-testid="button-map-view"
+                >
+                  <Map className="h-4 w-4 mr-1" />
+                  خريطة
+                </Button>
+              </div>
+              
               <Button
                 onClick={handleAddNew}
                 className="flex items-center space-x-2"
@@ -378,16 +515,17 @@ export default function Customers() {
             )}
           </div>
 
-          {/* قائمة العملاء */}
-          <div className="space-y-4">
-            {filteredCustomers.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">
-                  {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد عملاء حتى الآن'}
-                </p>
-              </div>
-            ) : (
+          {/* عرض القائمة أو الخريطة */}
+          {viewMode === 'list' ? (
+            <div className="space-y-4">
+              {filteredCustomers.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد عملاء حتى الآن'}
+                  </p>
+                </div>
+              ) : (
               filteredCustomers.map((customer) => (
                 <Card key={customer.id} className="border-l-4 border-l-blue-500">
                   <CardContent className="p-4">
@@ -455,8 +593,23 @@ export default function Customers() {
                   </CardContent>
                 </Card>
               ))
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            /* Map View */
+            <div className="space-y-4">
+              {filteredCustomers.length === 0 ? (
+                <div className="text-center py-8">
+                  <Map className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد عملاء لعرضهم على الخريطة'}
+                  </p>
+                </div>
+              ) : (
+                <CustomersMap customers={filteredCustomers} onCustomerSelect={showCustomerDetails} />
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

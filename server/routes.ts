@@ -8,6 +8,9 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 import { whatsappService } from "./whatsapp-service";
+import * as XLSX from 'xlsx';
+import archiver from 'archiver';
+import { Readable } from 'stream';
 
 // Extend Express session interface
 declare module 'express-session' {
@@ -1524,6 +1527,195 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching points history:", error);
       res.status(500).json({ message: "Failed to fetch points history" });
+    }
+  });
+
+  // Admin backup and export routes
+  app.get("/api/admin/export/customers", requireAdmin, async (req, res) => {
+    try {
+      const customers = await storage.getAllCustomers();
+      
+      // Prepare data for Excel
+      const excelData = customers.map(customer => ({
+        'اسم العميل': customer.name,
+        'رقم الهاتف': customer.phone || '',
+        'البريد الإلكتروني': customer.email || '',
+        'العنوان': customer.address || '',
+        'الموقع الجغرافي (خط الطول)': customer.longitude || '',
+        'الموقع الجغرافي (خط العرض)': customer.latitude || '',
+        'تاريخ الإضافة': customer.createdAt ? new Date(customer.createdAt).toLocaleDateString('en-GB') : ''
+      }));
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'العملاء');
+      
+      // Generate buffer
+      const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      
+      // Set headers for download
+      const fileName = `customers_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      
+      // Log the export action
+      await storage.logUserAction(
+        "customers_export",
+        req.session.userId!,
+        req.session.username!,
+        { exportedCount: customers.length, fileName },
+        req.ip,
+        req.get('User-Agent')
+      );
+      
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error exporting customers:", error);
+      res.status(500).json({ message: "Failed to export customers data" });
+    }
+  });
+
+  app.get("/api/admin/backup/full", requireAdmin, async (req, res) => {
+    try {
+      // Get all data
+      const [
+        users,
+        tasks,
+        customers,
+        teamMembers,
+        messages,
+        notifications,
+        systemLogs,
+        customerRatings,
+        pointsHistory
+      ] = await Promise.all([
+        storage.getAllUsers(),
+        storage.getAllTasks(),
+        storage.getAllCustomers(),
+        storage.getTeamMembers(),
+        storage.getAllMessages(),
+        storage.getAllNotifications(),
+        storage.getAllSystemLogs(),
+        storage.getAllCustomerRatings(),
+        storage.getPointsHistory(undefined, 1000)
+      ]);
+
+      // Create ZIP archive
+      const archive = archiver('zip', {
+        zlib: { level: 9 }
+      });
+
+      // Set headers for download
+      const fileName = `backup_${new Date().toISOString().split('T')[0]}_${Date.now()}.zip`;
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Type', 'application/zip');
+
+      // Pipe archive to response
+      archive.pipe(res);
+
+      // Add JSON files to archive
+      archive.append(JSON.stringify(users, null, 2), { name: 'users.json' });
+      archive.append(JSON.stringify(tasks, null, 2), { name: 'tasks.json' });
+      archive.append(JSON.stringify(customers, null, 2), { name: 'customers.json' });
+      archive.append(JSON.stringify(teamMembers, null, 2), { name: 'team_members.json' });
+      archive.append(JSON.stringify(messages, null, 2), { name: 'messages.json' });
+      archive.append(JSON.stringify(notifications, null, 2), { name: 'notifications.json' });
+      archive.append(JSON.stringify(systemLogs, null, 2), { name: 'system_logs.json' });
+      archive.append(JSON.stringify(customerRatings, null, 2), { name: 'customer_ratings.json' });
+      archive.append(JSON.stringify(pointsHistory, null, 2), { name: 'points_history.json' });
+
+      // Create Excel files for key data
+      // Users Excel
+      const usersExcel = users.map(user => ({
+        'اسم المستخدم': user.username,
+        'الاسم الأول': user.firstName || '',
+        'الاسم الأخير': user.lastName || '',
+        'البريد الإلكتروني': user.email || '',
+        'الهاتف': user.phone || '',
+        'الدور': user.role,
+        'حالة الموافقة': user.isApproved,
+        'تاريخ الإنشاء': user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-GB') : ''
+      }));
+      const usersWb = XLSX.utils.book_new();
+      const usersWs = XLSX.utils.json_to_sheet(usersExcel);
+      XLSX.utils.book_append_sheet(usersWb, usersWs, 'المستخدمين');
+      const usersBuffer = XLSX.write(usersWb, { type: 'buffer', bookType: 'xlsx' });
+      archive.append(usersBuffer, { name: 'users.xlsx' });
+
+      // Tasks Excel
+      const tasksExcel = tasks.map(task => ({
+        'رقم المهمة': task.taskNumber,
+        'عنوان المهمة': task.title,
+        'الوصف': task.description || '',
+        'المكلف بالمهمة': task.assignedTo,
+        'اسم العميل': task.customerName || '',
+        'هاتف العميل': task.customerPhone || '',
+        'عنوان العميل': task.customerAddress || '',
+        'الحالة': task.status,
+        'الأولوية': task.priority,
+        'النسبة المكتملة': task.progress + '%',
+        'تاريخ الاستحقاق': task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-GB') : '',
+        'تاريخ الإنشاء': task.createdAt ? new Date(task.createdAt).toLocaleDateString('en-GB') : ''
+      }));
+      const tasksWb = XLSX.utils.book_new();
+      const tasksWs = XLSX.utils.json_to_sheet(tasksExcel);
+      XLSX.utils.book_append_sheet(tasksWb, tasksWs, 'المهام');
+      const tasksBuffer = XLSX.write(tasksWb, { type: 'buffer', bookType: 'xlsx' });
+      archive.append(tasksBuffer, { name: 'tasks.xlsx' });
+
+      // Customers Excel
+      const customersExcel = customers.map(customer => ({
+        'اسم العميل': customer.name,
+        'رقم الهاتف': customer.phone || '',
+        'البريد الإلكتروني': customer.email || '',
+        'العنوان': customer.address || '',
+        'الموقع الجغرافي (خط الطول)': customer.longitude || '',
+        'الموقع الجغرافي (خط العرض)': customer.latitude || '',
+        'تاريخ الإضافة': customer.createdAt ? new Date(customer.createdAt).toLocaleDateString('en-GB') : ''
+      }));
+      const customersWb = XLSX.utils.book_new();
+      const customersWs = XLSX.utils.json_to_sheet(customersExcel);
+      XLSX.utils.book_append_sheet(customersWb, customersWs, 'العملاء');
+      const customersBuffer = XLSX.write(customersWb, { type: 'buffer', bookType: 'xlsx' });
+      archive.append(customersBuffer, { name: 'customers.xlsx' });
+
+      // Add backup info file
+      const backupInfo = {
+        backupDate: new Date().toISOString(),
+        backupVersion: '1.0',
+        dataCount: {
+          users: users.length,
+          tasks: tasks.length,
+          customers: customers.length,
+          teamMembers: teamMembers.length,
+          messages: messages.length,
+          notifications: notifications.length,
+          systemLogs: systemLogs.length,
+          customerRatings: customerRatings.length,
+          pointsHistory: pointsHistory.length
+        }
+      };
+      archive.append(JSON.stringify(backupInfo, null, 2), { name: 'backup_info.json' });
+
+      // Finalize archive
+      await archive.finalize();
+
+      // Log the backup action
+      await storage.logUserAction(
+        "full_backup_created",
+        req.session.userId!,
+        req.session.username!,
+        { fileName, ...backupInfo.dataCount },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+    } catch (error) {
+      console.error("Error creating backup:", error);
+      res.status(500).json({ message: "Failed to create backup" });
     }
   });
 
