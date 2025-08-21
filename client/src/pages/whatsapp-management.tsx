@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import QRCode from 'qrcode';
 import { useToast } from '@/hooks/use-toast';
 import { useErrorHandler } from '@/lib/error-handler';
 import { useLanguage } from '@/hooks/use-language';
@@ -47,6 +48,7 @@ export default function WhatsAppManagement() {
   const queryClient = useQueryClient();
   const [editingMessage, setEditingMessage] = useState(false);
   const [newMessage, setNewMessage] = useState('');
+  const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
 
   // جلب حالة الواتساب
   const { data: status, isLoading: statusLoading } = useQuery<WhatsAppStatus>({
@@ -73,6 +75,25 @@ export default function WhatsAppManagement() {
       handleError(error, {
         title: t('error.generic'),
         action: () => reconnectMutation.mutate(),
+        actionLabel: t('guidance.retry'),
+      });
+    },
+  });
+
+  // قطع اتصال الواتساب
+  const disconnectMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/whatsapp/disconnect'),
+    onSuccess: () => {
+      handleSuccess('whatsapp.disconnected', {
+        title: 'تم قطع الاتصال',
+        description: 'تم قطع الاتصال مع الواتساب بنجاح',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/status'] });
+    },
+    onError: (error) => {
+      handleError(error, {
+        title: t('error.generic'),
+        action: () => disconnectMutation.mutate(),
         actionLabel: t('guidance.retry'),
       });
     },
@@ -122,6 +143,32 @@ export default function WhatsAppManagement() {
       setNewMessage(settings.defaultMessage || '');
     }
   }, [settings, editingMessage]);
+
+  // توليد صورة QR Code عندما يكون متاحاً
+  useEffect(() => {
+    const generateQR = async () => {
+      if (status?.qrCode) {
+        try {
+          const qrImage = await QRCode.toDataURL(status.qrCode, {
+            width: 256,
+            margin: 2,
+            color: {
+              dark: '#000000',
+              light: '#FFFFFF'
+            }
+          });
+          setQrCodeImage(qrImage);
+        } catch (error) {
+          console.error('خطأ في توليد رمز QR:', error);
+          setQrCodeImage(null);
+        }
+      } else {
+        setQrCodeImage(null);
+      }
+    };
+
+    generateQR();
+  }, [status?.qrCode]);
 
   const handleUpdateMessage = () => {
     if (newMessage.trim()) {
@@ -217,14 +264,29 @@ export default function WhatsAppManagement() {
             </div>
           )}
 
-          <Button 
-            onClick={() => reconnectMutation.mutate()}
-            disabled={reconnectMutation.isPending}
-            className="w-full md:w-auto"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${reconnectMutation.isPending ? 'animate-spin' : ''}`} />
-            إعادة ربط الواتساب
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              onClick={() => reconnectMutation.mutate()}
+              disabled={reconnectMutation.isPending}
+              className="w-full sm:w-auto"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${reconnectMutation.isPending ? 'animate-spin' : ''}`} />
+              إعادة ربط الواتساب
+            </Button>
+            
+            {status?.isConnected && (
+              <Button 
+                variant="destructive"
+                onClick={() => disconnectMutation.mutate()}
+                disabled={disconnectMutation.isPending}
+                className="w-full sm:w-auto"
+                data-testid="button-disconnect-whatsapp"
+              >
+                <XCircle className={`h-4 w-4 mr-2 ${disconnectMutation.isPending ? 'animate-spin' : ''}`} />
+                قطع الاتصال
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -241,8 +303,32 @@ export default function WhatsAppManagement() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="bg-white p-4 rounded-lg text-center">
-              <pre className="font-mono text-xs">{status.qrCode}</pre>
+            <div className="flex flex-col items-center space-y-4">
+              {qrCodeImage ? (
+                <div className="bg-white p-4 rounded-lg shadow-sm border">
+                  <img 
+                    src={qrCodeImage} 
+                    alt="رمز QR للربط مع الواتساب"
+                    className="w-64 h-64"
+                    data-testid="img-qr-code"
+                  />
+                </div>
+              ) : (
+                <div className="bg-white p-4 rounded-lg text-center border">
+                  <div className="animate-pulse">
+                    <div className="w-64 h-64 bg-gray-200 rounded"></div>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">جاري تحميل رمز QR...</p>
+                </div>
+              )}
+              <div className="text-center space-y-2">
+                <p className="text-sm text-gray-600">
+                  📱 افتح واتساب على هاتفك
+                </p>
+                <p className="text-xs text-gray-500">
+                  اذهب إلى إعدادات → الأجهزة المتصلة → ربط جهاز
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

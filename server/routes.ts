@@ -633,13 +633,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/whatsapp/status", requireAdmin, async (req, res) => {
     try {
       const isReady = whatsappService.isServiceReady();
+      const status = whatsappService.getStatus();
       res.json({ 
+        isConnected: isReady,
         isReady,
         status: isReady ? "متصل" : "غير متصل",
-        message: isReady ? "خدمة الواتساب تعمل بشكل طبيعي" : "خدمة الواتساب غير متاحة حالياً"
+        message: isReady ? "خدمة الواتساب تعمل بشكل طبيعي" : "خدمة الواتساب غير متاحة حالياً",
+        senderNumber: status.senderNumber,
+        lastConnected: status.lastConnected,
+        qrCode: status.qrCode,
+        messagesCount: status.messagesCount || 0
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to check WhatsApp status" });
+    }
+  });
+
+  // WhatsApp disconnect endpoint
+  app.post("/api/whatsapp/disconnect", requireAdmin, async (req, res) => {
+    try {
+      await whatsappService.disconnect();
+      res.json({ 
+        message: "تم قطع الاتصال مع الواتساب بنجاح",
+        success: true
+      });
+    } catch (error) {
+      console.error("Error disconnecting WhatsApp:", error);
+      res.status(500).json({ message: "Failed to disconnect WhatsApp" });
     }
   });
 
@@ -1171,7 +1191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isReady: whatsappService?.isReady || false,
         senderNumber: whatsappService?.senderNumber || null,
         lastConnected: whatsappService?.lastConnected || null,
-        qrCode: whatsappService?.currentQRCode || null,
+        qrCode: whatsappService?.getCurrentQRCode ? whatsappService.getCurrentQRCode() : null,
         messagesCount: whatsappService?.messageCount || 0
       };
 

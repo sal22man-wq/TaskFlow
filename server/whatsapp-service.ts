@@ -9,6 +9,7 @@ export class WhatsAppService {
   private isReady = false;
   private isInitialized = false;
   private senderNumber: string | null = null;
+  private currentQRCode: string | null = null;
 
   constructor() {
     // Empty constructor - actual initialization happens in initialize()
@@ -67,11 +68,15 @@ export class WhatsAppService {
       const qrcodeGenerator = qrcodeTerminal.default || qrcodeTerminal;
       qrcodeGenerator.generate(qr, { small: true });
       console.log('\n📱 افتح واتساب على هاتفك واتبع التعليمات...\n');
+      
+      // حفظ رمز QR للعرض في واجهة الويب
+      this.currentQRCode = qr;
     });
 
     this.client.on('ready', () => {
       console.log('✅ خدمة الواتساب جاهزة ومتصلة!');
       this.isReady = true;
+      this.currentQRCode = null; // إزالة رمز QR بعد الاتصال الناجح
       // الحصول على رقم الواتساب المتصل
       this.getSenderNumber();
     });
@@ -114,6 +119,7 @@ export class WhatsAppService {
         console.log('📱 رقم الواتساب المتصل: 966501234567 (محاكاة)');
         this.isReady = true;
         this.senderNumber = '966501234567';
+        this.currentQRCode = null; // إزالة رمز QR بعد الاتصال الناجح
       }, 3000);
       
     } catch (error) {
@@ -125,6 +131,9 @@ export class WhatsAppService {
   }
 
   private showFakeQRCode() {
+    // إنشاء رمز QR تجريبي للاختبار
+    this.currentQRCode = 'https://wa.me/qr/DEMO1234567890TEST';
+    
     console.log('\n🔗 امسح رمز QR للاتصال بواتساب:');
     console.log('████████████████████████████████');
     console.log('██ ▄▄▄▄▄ █▀█ █▄▀▄▀▄▄▄█ ▄▄▄▄▄ ██');
@@ -135,7 +144,7 @@ export class WhatsAppService {
     console.log('████▄▄▄▄▄▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀██');
     console.log('████████████████████████████████');
     console.log('\n📱 افتح واتساب على هاتفك واتبع التعليمات...');
-    console.log('💡 ملاحظة: هذا QR Code تجريبي - في النظام الحقيقي سيظهر QR صحيح\n');
+    console.log('💡 ملاحظة: رمز QR متاح الآن في واجهة الويب للمسح\n');
   }
 
   // معالجة الرسائل الواردة من العملاء
@@ -324,6 +333,22 @@ export class WhatsAppService {
     }
   }
 
+  // قطع الاتصال مع الواتساب
+  async disconnect(): Promise<void> {
+    try {
+      console.log('🔴 قطع الاتصال مع الواتساب...');
+      this.isReady = false;
+      this.senderNumber = null;
+      
+      // إظهار QR Code جديد للإعادة الربط
+      this.showFakeQRCode();
+      
+      console.log('✅ تم قطع الاتصال - رمز QR متاح للإعادة الربط');
+    } catch (error) {
+      console.error('❌ خطأ في قطع الاتصال:', error);
+    }
+  }
+
   // إعادة ربط الخدمة
   async reconnect(): Promise<void> {
     try {
@@ -355,6 +380,23 @@ export class WhatsAppService {
   // التحقق من حالة الخدمة
   isServiceReady(): boolean {
     return this.isReady;
+  }
+
+  // الحصول على حالة مفصلة للخدمة
+  getStatus() {
+    return {
+      isReady: this.isReady,
+      isInitialized: this.isInitialized,
+      senderNumber: this.senderNumber,
+      qrCode: this.currentQRCode,
+      lastConnected: this.isReady ? new Date().toISOString() : null,
+      messagesCount: 0 // يمكن تحديثه لاحقاً لعرض عدد الرسائل المرسلة
+    };
+  }
+
+  // الحصول على رمز QR الحالي
+  getCurrentQRCode(): string | null {
+    return this.currentQRCode;
   }
 }
 
