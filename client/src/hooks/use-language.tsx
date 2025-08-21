@@ -346,9 +346,9 @@ const translations = {
     'profile.adminOptions': 'خيارات المدير',
 
     // Statistics
-    'stats.activeTasks': 'المهام النشطة',
-    'stats.completed': 'مكتملة',
-    'stats.overdue': 'متأخرة',
+    'stats.activeTasks': 'المهام الفعالة',
+    'stats.completed': 'المهام المكتملة',
+    'stats.overdue': 'في الانتظار',
     'stats.total': 'الإجمالي',
 
     // Error Messages
