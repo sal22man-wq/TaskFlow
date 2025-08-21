@@ -131,6 +131,50 @@ export default function WhatsAppSettings() {
     },
   });
 
+  // Enable real WhatsApp mutation
+  const enableRealMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("/api/whatsapp/enable-real", "POST");
+    },
+    onSuccess: () => {
+      toast({
+        title: "تم التفعيل",
+        description: "تم تفعيل الواتساب الحقيقي - امسح رمز QR الجديد",
+      });
+      refetchStatus();
+    },
+    onError: (error) => {
+      console.error("Error enabling real WhatsApp:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تفعيل الواتساب الحقيقي",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Disable real WhatsApp mutation
+  const disableRealMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("/api/whatsapp/disable-real", "POST");
+    },
+    onSuccess: () => {
+      toast({
+        title: "تم الإلغاء",
+        description: "تم العودة لوضع المحاكاة",
+      });
+      refetchStatus();
+    },
+    onError: (error) => {
+      console.error("Error disabling real WhatsApp:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في إلغاء تفعيل الواتساب الحقيقي",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (authLoading || statusLoading || settingsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -275,6 +319,58 @@ export default function WhatsAppSettings() {
             </CardContent>
           </Card>
         )}
+
+        {/* Real WhatsApp Toggle */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5" />
+              تفعيل الواتساب الحقيقي
+            </CardTitle>
+            <CardDescription>
+              تبديل بين وضع المحاكاة والواتساب الحقيقي
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800 mb-3">
+                <strong>ملاحظة:</strong> النظام حالياً في وضع المحاكاة. رمز QR المعروض تجريبي فقط.
+              </p>
+              <p className="text-sm text-yellow-700">
+                لتفعيل الواتساب الحقيقي، اضغط على الزر أدناه وامسح رمز QR الجديد بواتساب هاتفك.
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => enableRealMutation.mutate()}
+                disabled={enableRealMutation.isPending}
+                className="flex-1"
+              >
+                {enableRealMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <QrCode className="h-4 w-4 mr-2" />
+                )}
+                تفعيل الواتساب الحقيقي
+              </Button>
+              
+              <Button 
+                onClick={() => disableRealMutation.mutate()}
+                disabled={disableRealMutation.isPending}
+                variant="outline"
+                className="flex-1"
+              >
+                {disableRealMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                العودة للمحاكاة
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Test Message */}
         <Card>

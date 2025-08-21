@@ -110,8 +110,12 @@ export class WhatsAppService {
     try {
       console.log('🚀 محاولة ربط الواتساب...');
       
-      // إذا كان في بيئة الإنتاج، استخدم الواتساب الحقيقي
-      if (process.env.NODE_ENV === 'production' || process.env.ENABLE_REAL_WHATSAPP === 'true') {
+      // إذا كان في بيئة الإنتاج أو تم تفعيل الواتساب الحقيقي، استخدم الواتساب الحقيقي
+      const useRealWhatsApp = process.env.NODE_ENV === 'production' || 
+                             process.env.ENABLE_REAL_WHATSAPP === 'true' ||
+                             (global as any).forceRealWhatsApp === true;
+      
+      if (useRealWhatsApp) {
         await this.loadDependencies();
         this.initializeClient();
         await this.client.initialize();
@@ -178,21 +182,7 @@ export class WhatsAppService {
     console.log('💡 ملاحظة: رمز QR متاح الآن في واجهة الويب للمسح\n');
   }
 
-  // الحصول على رمز QR الحالي
-  getCurrentQRCode(): string | null {
-    return this.currentQRCode;
-  }
 
-  // الحصول على حالة الخدمة
-  getStatus() {
-    return {
-      isReady: this.isReady,
-      senderNumber: this.senderNumber,
-      qrCode: this.currentQRCode,
-      lastConnected: this.isReady ? new Date().toISOString() : null,
-      messagesCount: 0
-    };
-  }
 
   // معالجة الرسائل الواردة من العملاء
   private async handleIncomingMessage(message: any) {
@@ -459,6 +449,7 @@ export class WhatsAppService {
   // الحصول على حالة مفصلة للخدمة
   getStatus() {
     return {
+      isConnected: this.isReady && this.client,
       isReady: this.isReady,
       isInitialized: this.isInitialized,
       senderNumber: this.senderNumber,

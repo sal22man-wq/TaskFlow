@@ -1352,6 +1352,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // تفعيل الواتساب الحقيقي
+  app.post("/api/whatsapp/enable-real", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      // تعيين المتغير العام لتفعيل الواتساب الحقيقي
+      (global as any).forceRealWhatsApp = true;
+      
+      // إعادة تشغيل الخدمة مع الواتساب الحقيقي
+      const whatsappService = (global as any).whatsappService;
+      if (whatsappService) {
+        await whatsappService.restart();
+      }
+      
+      // Log the action
+      await storage.logUserAction(
+        "enable_real_whatsapp",
+        req.session.userId!,
+        req.session.username!,
+        { details: `تم تفعيل الواتساب الحقيقي` },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json({ 
+        message: "تم تفعيل الواتساب الحقيقي بنجاح - امسح الآن رمز QR الجديد",
+        success: true
+      });
+    } catch (error) {
+      console.error("Error enabling real WhatsApp:", error);
+      res.status(500).json({ message: "Failed to enable real WhatsApp" });
+    }
+  });
+
+  // إلغاء تفعيل الواتساب الحقيقي والعودة للمحاكاة
+  app.post("/api/whatsapp/disable-real", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      // إلغاء تفعيل الواتساب الحقيقي
+      (global as any).forceRealWhatsApp = false;
+      
+      // إعادة تشغيل الخدمة بوضع المحاكاة
+      const whatsappService = (global as any).whatsappService;
+      if (whatsappService) {
+        await whatsappService.restart();
+      }
+      
+      // Log the action
+      await storage.logUserAction(
+        "disable_real_whatsapp",
+        req.session.userId!,
+        req.session.username!,
+        { details: `تم إلغاء تفعيل الواتساب الحقيقي والعودة للمحاكاة` },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json({ 
+        message: "تم إلغاء تفعيل الواتساب الحقيقي والعودة لوضع المحاكاة",
+        success: true
+      });
+    } catch (error) {
+      console.error("Error disabling real WhatsApp:", error);
+      res.status(500).json({ message: "Failed to disable real WhatsApp" });
+    }
+  });
+
   // Team Points stats for dashboard
   app.get("/api/team-points/stats", requireAuth, async (req, res) => {
     try {
@@ -1683,7 +1757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'رقم المهمة': task.taskNumber,
         'عنوان المهمة': task.title,
         'الوصف': task.description || '',
-        'المكلف بالمهمة': task.assigneeNames || '',
+        'المكلف بالمهمة': task.assignees?.map(a => a.name).join(', ') || '',
         'اسم العميل': task.customerName || '',
         'هاتف العميل': task.customerPhone || '',
         'عنوان العميل': task.customerAddress || '',
