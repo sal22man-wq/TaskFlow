@@ -7,7 +7,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { TeamMember } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UserPlus, Trash2 } from "lucide-react";
+import { UserPlus, Trash2, UserCheck } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -61,6 +61,39 @@ export default function Team() {
     cleanupMutation.mutate();
   };
 
+  // Fix missing team members mutation
+  const fixMissingMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/admin/fix-missing-team-members', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to fix missing team members');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/team-members'] });
+      toast({
+        title: "تم الإصلاح بنجاح",
+        description: data.message,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ في الإصلاح",
+        description: error.message || "حدث خطأ أثناء إصلاح أعضاء الفريق المفقودين",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFixMissing = () => {
+    fixMissingMutation.mutate();
+  };
+
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
@@ -68,17 +101,32 @@ export default function Team() {
           {t('team.title')}
         </h2>
         <div className="flex items-center gap-2">
-          {isAdmin && teamMembers && teamMembers.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowCleanupDialog(true)}
-              disabled={cleanupMutation.isPending}
-              data-testid="button-cleanup-defaults"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              {cleanupMutation.isPending ? "جاري التنظيف..." : "تنظيف الأعضاء الافتراضيين"}
-            </Button>
+          {isAdmin && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleFixMissing}
+                disabled={fixMissingMutation.isPending}
+                data-testid="button-fix-missing"
+                className="text-green-600 border-green-600 hover:bg-green-50"
+              >
+                <UserCheck className="h-4 w-4 mr-2" />
+                {fixMissingMutation.isPending ? "جاري الإصلاح..." : "إصلاح أعضاء الفريق المفقودين"}
+              </Button>
+              {teamMembers && teamMembers.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCleanupDialog(true)}
+                  disabled={cleanupMutation.isPending}
+                  data-testid="button-cleanup-defaults"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {cleanupMutation.isPending ? "جاري التنظيف..." : "تنظيف الأعضاء الافتراضيين"}
+                </Button>
+              )}
+            </>
           )}
           <Button
             onClick={() => setShowAddMember(true)}

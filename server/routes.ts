@@ -728,6 +728,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fix missing team members for existing users (admin only)
+  app.post("/api/admin/fix-missing-team-members", requireAdmin, async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const allMembers = await storage.getTeamMembers();
+      
+      // Find users that don't have corresponding team members
+      const usersWithoutTeamMembers = allUsers.filter(user => 
+        !allMembers.some(member => member.userId === user.id)
+      );
+
+      if (usersWithoutTeamMembers.length === 0) {
+        return res.json({ 
+          message: "All users already have team member records",
+          created: 0
+        });
+      }
+
+      let createdCount = 0;
+      const createdMembers = [];
+
+      for (const user of usersWithoutTeamMembers) {
+        try {
+          // Create team member role based on user role
+          const teamMemberRole = 
+            user.role === 'admin' ? 'مدير النظام' : 
+            user.role === 'supervisor' ? 'مشرف' : 
+            'عضو فريق';
+
+          const teamMember = await storage.createTeamMember({
+            userId: user.id,
+            name: user.firstName && user.lastName ? 
+              `${user.firstName} ${user.lastName}` : user.username,
+            role: teamMemberRole,
+            email: user.email || `${user.username}@company.com`,
+            status: 'available',
+            avatar: user.username.charAt(0).toUpperCase(),
+          });
+
+          createdCount++;
+          createdMembers.push({
+            userId: user.id,
+            username: user.username,
+            teamMemberId: teamMember.id,
+            teamMemberName: teamMember.name
+          });
+
+          // Log the fix action
+          await storage.logUserAction(
+            "missing_team_member_created",
+            req.session.userId!,
+            req.session.username!,
+            { 
+              fixedUser: {
+                id: user.id,
+                username: user.username
+              },
+              createdTeamMember: {
+                id: teamMember.id,
+                name: teamMember.name
+              },
+              reason: "إنشاء عضو فريق مفقود"
+            },
+            req.ip,
+            req.get('User-Agent')
+          );
+        } catch (error) {
+          console.error(`Error creating team member for user ${user.username}:`, error);
+        }
+      }
+
+      res.json({ 
+        message: `تم إنشاء ${createdCount} عضو فريق للمستخدمين المفقودين`,
+        created: createdCount,
+        createdMembers
+      });
+    } catch (error) {
+      console.error("Error fixing missing team members:", error);
+      res.status(500).json({ message: "Failed to fix missing team members" });
+    }
+  });
+
   // Customer routes (protected)
   app.get("/api/customers", requireAuth, async (req, res) => {
     try {
