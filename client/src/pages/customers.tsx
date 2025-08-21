@@ -21,15 +21,18 @@ import { isUnauthorizedError } from '@/lib/authUtils';
 // نموذج التحقق للعميل
 const customerSchema = z.object({
   name: z.string().min(2, 'الاسم يجب أن يكون على الأقل حرفين'),
-  phone: z.string().min(10, 'رقم الهاتف يجب أن يكون على الأقل 10 أرقام'),
-  whatsappNumber: z.string().optional(),
+  phone: z.string()
+    .min(10, 'رقم الهاتف يجب أن يكون على الأقل 10 أرقام')
+    .regex(/^\+964\d{10}$/, 'رقم الهاتف يجب أن يبدأ بـ +964 ويتكون من 13 رقم'),
   address: z.string().optional(),
   gpsLatitude: z.string().optional(),
   gpsLongitude: z.string().optional(),
   gpsAddress: z.string().optional(),
 });
 
-type CustomerFormData = z.infer<typeof customerSchema>;
+type CustomerFormData = z.infer<typeof customerSchema> & {
+  whatsappNumber?: string; // للتوافق مع النموذج الحالي
+};
 
 export default function Customers() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -48,8 +51,7 @@ export default function Customers() {
     resolver: zodResolver(customerSchema),
     defaultValues: {
       name: '',
-      phone: '',
-      whatsappNumber: '',
+      phone: '+964',
       address: '',
       gpsLatitude: '',
       gpsLongitude: '',
@@ -60,11 +62,17 @@ export default function Customers() {
   // إضافة أو تحديث عميل
   const customerMutation = useMutation({
     mutationFn: async (data: CustomerFormData) => {
+      // إضافة whatsappNumber نفس phone للتوافق مع قاعدة البيانات
+      const customerData = {
+        ...data,
+        whatsappNumber: data.phone
+      };
+      
       if (editingCustomer) {
-        const response = await apiRequest('PUT', `/api/customers/${editingCustomer.id}`, data);
+        const response = await apiRequest('PUT', `/api/customers/${editingCustomer.id}`, customerData);
         return await response.json();
       } else {
-        const response = await apiRequest('POST', '/api/customers', data);
+        const response = await apiRequest('POST', '/api/customers', customerData);
         return await response.json();
       }
     },
@@ -212,8 +220,9 @@ export default function Customers() {
   const handleEdit = (customer: Customer) => {
     setEditingCustomer(customer);
     form.setValue('name', customer.name);
-    form.setValue('phone', customer.phone);
-    form.setValue('whatsappNumber', customer.whatsappNumber || '');
+    // تأكد من أن رقم الهاتف يبدأ بـ +964
+    const phoneNumber = customer.phone.startsWith('+964') ? customer.phone : `+964${customer.phone}`;
+    form.setValue('phone', phoneNumber);
     form.setValue('address', customer.address || '');
     form.setValue('gpsLatitude', customer.gpsLatitude || '');
     form.setValue('gpsLongitude', customer.gpsLongitude || '');
@@ -325,25 +334,35 @@ export default function Customers() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>رقم الهاتف *</FormLabel>
+                      <FormLabel>رقم الهاتف والواتساب *</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="05xxxxxxxx" data-testid="input-customer-phone" />
+                        <div className="relative">
+                          <Input 
+                            {...field} 
+                            placeholder="+9647xxxxxxxxx" 
+                            data-testid="input-customer-phone"
+                            onChange={(e) => {
+                              let value = e.target.value;
+                              // تأكد من أن القيمة تبدأ بـ +964
+                              if (!value.startsWith('+964')) {
+                                value = '+964' + value.replace(/^\+964/, '').replace(/[^\d]/g, '');
+                              }
+                              // اقتطع النص إذا كان أطول من اللازم
+                              if (value.length > 13) {
+                                value = value.substring(0, 13);
+                              }
+                              field.onChange(value);
+                            }}
+                          />
+                          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
+                            هاتف + واتساب
+                          </div>
+                        </div>
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="whatsappNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>رقم الواتساب</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="05xxxxxxxx" data-testid="input-customer-whatsapp" />
-                      </FormControl>
-                      <FormMessage />
+                      <p className="text-xs text-muted-foreground">
+                        سيتم استخدام نفس الرقم للهاتف والواتساب
+                      </p>
                     </FormItem>
                   )}
                 />
@@ -521,11 +540,9 @@ export default function Customers() {
                       <div className="flex items-center gap-2 text-sm">
                         <Phone className="h-4 w-4 text-muted-foreground" />
                         <span data-testid={`text-customer-phone-${customer.id}`}>{customer.phone}</span>
-                        {customer.whatsappNumber && (
-                          <Badge variant="secondary" className="text-xs">
-                            واتساب: {customer.whatsappNumber}
-                          </Badge>
-                        )}
+                        <Badge variant="secondary" className="text-xs">
+                          هاتف + واتساب
+                        </Badge>
                       </div>
 
                       {customer.address && (
