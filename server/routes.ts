@@ -1360,12 +1360,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied. Admin role required." });
       }
 
-      console.log('🔄 تفعيل الواتساب الحقيقي...');
+      console.log('🔄 تفعيل الواتساب الحقيقي من routes...');
       
       // استخدام الطريقة الجديدة لتفعيل الوضع الحقيقي
       const whatsappService = (global as any).whatsappService;
       if (whatsappService) {
+        console.log('✅ تم العثور على خدمة الواتساب - بدء التفعيل...');
         await whatsappService.enableRealMode();
+        console.log('✅ انتهى استدعاء enableRealMode()');
+      } else {
+        console.error('❌ خدمة الواتساب غير موجودة!');
       }
       
       // Log the action
