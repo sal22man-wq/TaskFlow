@@ -39,10 +39,12 @@ export const teamMembers = pgTable("team_members", {
 export const customers = pgTable("customers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
-  phone: text("phone"),
+  phone: text("phone").notNull(),
   whatsappNumber: text("whatsapp_number"), // رقم الواتساب
-  email: text("email"),
   address: text("address"),
+  gpsLatitude: text("gps_latitude"), // خط العرض
+  gpsLongitude: text("gps_longitude"), // خط الطول
+  gpsAddress: text("gps_address"), // العنوان المحدد من GPS
   createdAt: timestamp("created_at").default(sql`now()`),
 });
 

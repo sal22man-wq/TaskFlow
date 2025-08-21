@@ -947,13 +947,13 @@ export class DatabaseStorage implements IStorage {
 
     // إضافة سجل لكل عضو
     for (const point of allPoints) {
-      if (point.points > 0) {
+      if ((point.points || 0) > 0) {
         await db
           .insert(pointsHistory)
           .values({
             teamMemberId: point.teamMemberId,
             action: 'reset',
-            pointsChange: -point.points,
+            pointsChange: -(point.points || 0),
             reason: 'admin_reset_all',
             performedBy
           });
@@ -963,18 +963,21 @@ export class DatabaseStorage implements IStorage {
 
   // Points History
   async getPointsHistory(teamMemberId?: string, limit: number = 50): Promise<(PointsHistory & { teamMember: TeamMember; performedByUser?: User })[]> {
-    let query = db
+    let baseQuery = db
       .select()
       .from(pointsHistory)
       .innerJoin(teamMembers, eq(pointsHistory.teamMemberId, teamMembers.id))
       .leftJoin(users, eq(pointsHistory.performedBy, users.id))
       .orderBy(desc(pointsHistory.createdAt));
 
+    let result;
     if (teamMemberId) {
-      query = query.where(eq(pointsHistory.teamMemberId, teamMemberId));
+      result = await baseQuery
+        .where(eq(pointsHistory.teamMemberId, teamMemberId))
+        .limit(limit);
+    } else {
+      result = await baseQuery.limit(limit);
     }
-
-    const result = await query.limit(limit);
     
     return result.map(row => ({
       ...row.points_history,

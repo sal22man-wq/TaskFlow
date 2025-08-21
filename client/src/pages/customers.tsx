@@ -1,177 +1,450 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { AddCustomerDialog } from "@/components/customers/add-customer-dialog";
-import { Plus, Phone, MapPin, Mail, Search } from "lucide-react";
-import type { Customer } from "@shared/schema";
-import { useLanguage } from "@/hooks/use-language";
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Users, Phone, MapPin, Plus, Edit, Trash2, Navigation, Map } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Customer } from '@shared/schema';
+import { apiRequest } from '@/lib/queryClient';
 
-export default function CustomersPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const { t } = useLanguage();
+// نموذج التحقق للعميل
+const customerSchema = z.object({
+  name: z.string().min(2, 'الاسم يجب أن يكون على الأقل حرفين'),
+  phone: z.string().min(10, 'رقم الهاتف يجب أن يكون على الأقل 10 أرقام'),
+  whatsappNumber: z.string().optional(),
+  address: z.string().optional(),
+  gpsLatitude: z.string().optional(),
+  gpsLongitude: z.string().optional(),
+  gpsAddress: z.string().optional(),
+});
+
+type CustomerFormData = z.infer<typeof customerSchema>;
+
+export default function Customers() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: customers, isLoading } = useQuery<Customer[]>({
-    queryKey: ["/api/customers"],
+    queryKey: ['/api/customers'],
   });
 
-  const filteredCustomers = customers?.filter(customer =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (customer.phone && customer.phone.includes(searchTerm))
-  ) || [];
+  const form = useForm<CustomerFormData>({
+    resolver: zodResolver(customerSchema),
+    defaultValues: {
+      name: '',
+      phone: '',
+      whatsappNumber: '',
+      address: '',
+      gpsLatitude: '',
+      gpsLongitude: '',
+      gpsAddress: '',
+    },
+  });
 
-  if (isLoading) {
-    return (
-      <div className="p-4 space-y-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">{t('nav.customers')}</h1>
-        </div>
-        <div className="grid gap-4">
-          {[...Array(3)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-4">
-                <div className="h-4 bg-muted rounded w-1/4 mb-2"></div>
-                <div className="h-3 bg-muted rounded w-1/2"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+  // إضافة أو تحديث عميل
+  const customerMutation = useMutation({
+    mutationFn: async (data: CustomerFormData) => {
+      if (editingCustomer) {
+        return await fetch(`/api/customers/${editingCustomer.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }).then(res => res.json());
+      } else {
+        return await fetch('/api/customers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }).then(res => res.json());
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      setIsDialogOpen(false);
+      setEditingCustomer(null);
+      form.reset();
+      toast({
+        title: 'تم بنجاح',
+        description: editingCustomer ? 'تم تحديث العميل' : 'تم إضافة العميل',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'خطأ',
+        description: 'حدث خطأ في العملية',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // حذف عميل
+  const deleteMutation = useMutation({
+    mutationFn: async (customerId: string) => {
+      return await fetch(`/api/customers/${customerId}`, {
+        method: 'DELETE',
+      }).then(res => res.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      toast({
+        title: 'تم الحذف',
+        description: 'تم حذف العميل بنجاح',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'خطأ',
+        description: 'حدث خطأ في حذف العميل',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // الحصول على الموقع الحالي
+  const getCurrentLocation = () => {
+    setIsGettingLocation(true);
+    
+    if (!navigator.geolocation) {
+      toast({
+        title: 'خطأ',
+        description: 'المتصفح لا يدعم خدمة الموقع',
+        variant: 'destructive',
+      });
+      setIsGettingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude.toString();
+        const lng = position.coords.longitude.toString();
+        
+        form.setValue('gpsLatitude', lat);
+        form.setValue('gpsLongitude', lng);
+        
+        // محاولة الحصول على العنوان من الإحداثيات
+        fetch(`https://api.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.display_name) {
+              form.setValue('gpsAddress', data.display_name);
+            }
+          })
+          .catch(() => {
+            // فشل في الحصول على العنوان، لكن الإحداثيات محفوظة
+          });
+
+        setIsGettingLocation(false);
+        toast({
+          title: 'تم الحصول على الموقع',
+          description: 'تم حفظ إحداثيات GPS',
+        });
+      },
+      (error) => {
+        setIsGettingLocation(false);
+        toast({
+          title: 'خطأ في الموقع',
+          description: 'لم نتمكن من الحصول على موقعك',
+          variant: 'destructive',
+        });
+      }
     );
-  }
+  };
+
+  const onSubmit = (data: CustomerFormData) => {
+    customerMutation.mutate(data);
+  };
+
+  const handleEdit = (customer: Customer) => {
+    setEditingCustomer(customer);
+    form.setValue('name', customer.name);
+    form.setValue('phone', customer.phone);
+    form.setValue('whatsappNumber', customer.whatsappNumber || '');
+    form.setValue('address', customer.address || '');
+    form.setValue('gpsLatitude', customer.gpsLatitude || '');
+    form.setValue('gpsLongitude', customer.gpsLongitude || '');
+    form.setValue('gpsAddress', customer.gpsAddress || '');
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (customerId: string) => {
+    if (confirm('هل أنت متأكد من حذف هذا العميل؟')) {
+      deleteMutation.mutate(customerId);
+    }
+  };
+
+  const openInMaps = (lat: string, lng: string) => {
+    const url = `https://www.google.com/maps?q=${lat},${lng}`;
+    window.open(url, '_blank');
+  };
 
   return (
-    <div className="p-4 space-y-4">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold" data-testid="page-customers-title">{t('nav.customers')}</h1>
-        <Dialog>
+    <div className="space-y-6 p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Users className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold">قائمة العملاء</h1>
+        </div>
+        
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-add-customer">
-              <Plus className="w-4 h-4 mr-2" />
+            <Button 
+              onClick={() => {
+                setEditingCustomer(null);
+                form.reset();
+              }}
+              data-testid="button-add-customer"
+            >
+              <Plus className="h-4 w-4 mr-2" />
               إضافة عميل
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>إضافة عميل جديد</DialogTitle>
+              <DialogTitle>
+                {editingCustomer ? 'تعديل العميل' : 'إضافة عميل جديد'}
+              </DialogTitle>
             </DialogHeader>
-            <AddCustomerDialog />
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>اسم العميل *</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="اسم العميل" data-testid="input-customer-name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>رقم الهاتف *</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="05xxxxxxxx" data-testid="input-customer-phone" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="whatsappNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>رقم الواتساب</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="05xxxxxxxx" data-testid="input-customer-whatsapp" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>العنوان</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} placeholder="عنوان العميل" rows={2} data-testid="input-customer-address" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">موقع GPS</label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={getCurrentLocation}
+                      disabled={isGettingLocation}
+                      data-testid="button-get-location"
+                    >
+                      <Navigation className="h-4 w-4 mr-2" />
+                      {isGettingLocation ? 'جاري التحديد...' : 'تحديد الموقع'}
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <FormField
+                      control={form.control}
+                      name="gpsLatitude"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input {...field} placeholder="خط العرض" data-testid="input-gps-lat" />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="gpsLongitude"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input {...field} placeholder="خط الطول" data-testid="input-gps-lng" />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="gpsAddress"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Textarea {...field} placeholder="العنوان من GPS" rows={2} data-testid="input-gps-address" />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsDialogOpen(false)}
+                    className="flex-1"
+                    data-testid="button-cancel-customer"
+                  >
+                    إلغاء
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={customerMutation.isPending}
+                    className="flex-1"
+                    data-testid="button-save-customer"
+                  >
+                    {customerMutation.isPending ? 'جاري الحفظ...' : 'حفظ'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Search */}
-      <div className="flex items-center space-x-2">
-        <Search className="w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="البحث عن العملاء..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-md"
-          data-testid="input-search-customers"
-        />
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {isLoading ? (
+        <div className="text-center py-8">
+          <p>جاري التحميل...</p>
+        </div>
+      ) : !customers || customers.length === 0 ? (
         <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold" data-testid="stat-total-customers">
-              {customers?.length || 0}
+          <CardContent className="py-8">
+            <div className="text-center text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>لا توجد عملاء مضافين بعد</p>
+              <p className="text-sm">ابدأ بإضافة عميل جديد</p>
             </div>
-            <p className="text-sm text-muted-foreground">Total Customers</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold" data-testid="stat-customers-with-phone">
-              {customers?.filter(c => c.phone).length || 0}
-            </div>
-            <p className="text-sm text-muted-foreground">With Phone Numbers</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold" data-testid="stat-customers-with-email">
-              {customers?.filter(c => c.email).length || 0}
-            </div>
-            <p className="text-sm text-muted-foreground">With Email Addresses</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Customer List */}
-      {filteredCustomers.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="text-muted-foreground" data-testid="text-no-customers">
-              {searchTerm ? "No customers found matching your search." : "No customers added yet. Add your first customer to get started."}
-            </div>
-            {!searchTerm && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="mt-4" data-testid="button-add-first-customer">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add First Customer
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Customer</DialogTitle>
-                  </DialogHeader>
-                  <AddCustomerDialog />
-                </DialogContent>
-              </Dialog>
-            )}
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4">
-          {filteredCustomers.map((customer) => (
-            <Card key={customer.id} className="hover:shadow-md transition-shadow" data-testid={`card-customer-${customer.id}`}>
+          {customers.map((customer) => (
+            <Card key={customer.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2 flex-1">
-                    <h3 className="font-semibold text-lg" data-testid={`text-customer-name-${customer.id}`}>
-                      {customer.name}
-                    </h3>
-                    
-                    <div className="space-y-1">
-                      {customer.email && (
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Mail className="w-4 h-4 mr-2" />
-                          <span data-testid={`text-customer-email-${customer.id}`}>{customer.email}</span>
-                        </div>
-                      )}
-                      
-                      {customer.phone && (
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Phone className="w-4 h-4 mr-2" />
-                          <span data-testid={`text-customer-phone-${customer.id}`}>{customer.phone}</span>
-                        </div>
-                      )}
-                      
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-lg" data-testid={`text-customer-name-${customer.id}`}>
+                        {customer.name}
+                      </h3>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span data-testid={`text-customer-phone-${customer.id}`}>{customer.phone}</span>
+                        {customer.whatsappNumber && (
+                          <Badge variant="secondary" className="text-xs">
+                            واتساب: {customer.whatsappNumber}
+                          </Badge>
+                        )}
+                      </div>
+
                       {customer.address && (
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <MapPin className="w-4 h-4 mr-2" />
-                          <span data-testid={`text-customer-address-${customer.id}`}>{customer.address}</span>
+                        <div className="flex items-center gap-2 text-sm">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground" data-testid={`text-customer-address-${customer.id}`}>
+                            {customer.address}
+                          </span>
+                        </div>
+                      )}
+
+                      {customer.gpsLatitude && customer.gpsLongitude && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Navigation className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">
+                            {customer.gpsLatitude}, {customer.gpsLongitude}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openInMaps(customer.gpsLatitude!, customer.gpsLongitude!)}
+                            data-testid={`button-open-maps-${customer.id}`}
+                          >
+                            <Map className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+
+                      {customer.gpsAddress && (
+                        <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
+                          {customer.gpsAddress}
                         </div>
                       )}
                     </div>
                   </div>
-                  
-                  <div className="flex flex-col items-end space-y-2">
-                    <div className="flex gap-1">
-                      {customer.email && <Badge variant="secondary">Email</Badge>}
-                      {customer.phone && <Badge variant="secondary">Phone</Badge>}
-                      {customer.address && <Badge variant="secondary">Address</Badge>}
-                    </div>
+
+                  <div className="flex gap-2 ml-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(customer)}
+                      data-testid={`button-edit-customer-${customer.id}`}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(customer.id)}
+                      className="text-destructive hover:text-destructive"
+                      data-testid={`button-delete-customer-${customer.id}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>

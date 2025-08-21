@@ -1,6 +1,6 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Home, ListTodo, CheckSquare, Users, User, UserCheck, MessageCircle, Bell } from "lucide-react";
+import { Home, ListTodo, CheckSquare, Users, User, UserCheck, MessageCircle, Bell, UserPlus } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
 
 export function BottomNavigation() {
@@ -10,8 +10,8 @@ export function BottomNavigation() {
   const navItems = [
     { path: "/", icon: Home, label: "الرئيسية", testId: "nav-dashboard" },
     { path: "/tasks", icon: ListTodo, label: "المهام", testId: "nav-tasks" },
+    { path: "/customers", icon: UserPlus, label: "العملاء", testId: "nav-customers" },
     { path: "/messages", icon: MessageCircle, label: "الرسائل", testId: "nav-messages" },
-    { path: "/notifications", icon: Bell, label: "الإشعارات", testId: "nav-notifications" },
     { path: "/team", icon: Users, label: "الفريق", testId: "nav-team" },
     { path: "/profile", icon: User, label: "الملف الشخصي", testId: "nav-profile" },
   ];
