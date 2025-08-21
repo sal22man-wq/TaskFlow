@@ -8,6 +8,8 @@ import {
   notifications,
   systemLogs,
   whatsappSettings,
+  teamMemberPoints,
+  pointsHistory,
   type User,
   type InsertUser,
   type Customer,
@@ -29,6 +31,10 @@ import {
   type InsertSystemLog,
   type WhatsAppSettings,
   type UpsertWhatsAppSettings,
+  type TeamMemberPoints,
+  type InsertTeamMemberPoints,
+  type PointsHistory,
+  type InsertPointsHistory,
 } from "@shared/schema";
 import { eq, desc, and, or, ne, sql } from "drizzle-orm";
 import { db } from "./db";
@@ -105,6 +111,17 @@ export interface IStorage {
   // WhatsApp Settings
   getWhatsAppSettings(): Promise<WhatsAppSettings>;
   updateWhatsAppSettings(updates: Partial<UpsertWhatsAppSettings>): Promise<WhatsAppSettings>;
+
+  // Team Member Points
+  getTeamMemberPoints(teamMemberId: string): Promise<TeamMemberPoints | undefined>;
+  getAllTeamMemberPoints(): Promise<(TeamMemberPoints & { teamMember: TeamMember })[]>;
+  initializeTeamMemberPoints(teamMemberId: string): Promise<TeamMemberPoints>;
+  addPointsToTeamMember(teamMemberId: string, points: number, reason: string, taskId?: string, ratingId?: string, performedBy?: string): Promise<void>;
+  resetTeamMemberPoints(teamMemberId: string, performedBy: string): Promise<void>;
+  resetAllTeamMemberPoints(performedBy: string): Promise<void>;
+
+  // Points History
+  getPointsHistory(teamMemberId?: string, limit?: number): Promise<(PointsHistory & { teamMember: TeamMember; performedByUser?: User })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -811,6 +828,159 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updated;
+  }
+
+  // Team Member Points
+  async getTeamMemberPoints(teamMemberId: string): Promise<TeamMemberPoints | undefined> {
+    const [points] = await db
+      .select()
+      .from(teamMemberPoints)
+      .where(eq(teamMemberPoints.teamMemberId, teamMemberId));
+    return points;
+  }
+
+  async getAllTeamMemberPoints(): Promise<(TeamMemberPoints & { teamMember: TeamMember })[]> {
+    const result = await db
+      .select()
+      .from(teamMemberPoints)
+      .innerJoin(teamMembers, eq(teamMemberPoints.teamMemberId, teamMembers.id))
+      .orderBy(desc(teamMemberPoints.points), teamMembers.name);
+    
+    return result.map(row => ({
+      ...row.team_member_points,
+      teamMember: row.team_members
+    }));
+  }
+
+  async initializeTeamMemberPoints(teamMemberId: string): Promise<TeamMemberPoints> {
+    const existing = await this.getTeamMemberPoints(teamMemberId);
+    if (existing) return existing;
+
+    const [newPoints] = await db
+      .insert(teamMemberPoints)
+      .values({
+        teamMemberId,
+        points: 0,
+        totalEarned: 0
+      })
+      .returning();
+    
+    return newPoints;
+  }
+
+  async addPointsToTeamMember(
+    teamMemberId: string, 
+    points: number, 
+    reason: string, 
+    taskId?: string, 
+    ratingId?: string, 
+    performedBy?: string
+  ): Promise<void> {
+    // تأكد من وجود سجل النقاط
+    await this.initializeTeamMemberPoints(teamMemberId);
+
+    // تحديث النقاط
+    await db
+      .update(teamMemberPoints)
+      .set({
+        points: sql`${teamMemberPoints.points} + ${points}`,
+        totalEarned: sql`${teamMemberPoints.totalEarned} + ${points}`,
+        lastUpdated: new Date()
+      })
+      .where(eq(teamMemberPoints.teamMemberId, teamMemberId));
+
+    // إضافة سجل في التاريخ
+    await db
+      .insert(pointsHistory)
+      .values({
+        teamMemberId,
+        action: 'earned',
+        pointsChange: points,
+        reason,
+        taskId,
+        ratingId,
+        performedBy
+      });
+  }
+
+  async resetTeamMemberPoints(teamMemberId: string, performedBy: string): Promise<void> {
+    // الحصول على النقاط الحالية
+    const currentPoints = await this.getTeamMemberPoints(teamMemberId);
+    const pointsToReset = currentPoints?.points || 0;
+
+    // تصفير النقاط
+    await db
+      .update(teamMemberPoints)
+      .set({
+        points: 0,
+        lastUpdated: new Date(),
+        updatedBy: performedBy
+      })
+      .where(eq(teamMemberPoints.teamMemberId, teamMemberId));
+
+    // إضافة سجل في التاريخ
+    if (pointsToReset > 0) {
+      await db
+        .insert(pointsHistory)
+        .values({
+          teamMemberId,
+          action: 'reset',
+          pointsChange: -pointsToReset,
+          reason: 'admin_reset',
+          performedBy
+        });
+    }
+  }
+
+  async resetAllTeamMemberPoints(performedBy: string): Promise<void> {
+    // الحصول على جميع النقاط
+    const allPoints = await this.getAllTeamMemberPoints();
+
+    // تصفير جميع النقاط
+    await db
+      .update(teamMemberPoints)
+      .set({
+        points: 0,
+        lastUpdated: new Date(),
+        updatedBy: performedBy
+      });
+
+    // إضافة سجل لكل عضو
+    for (const point of allPoints) {
+      if (point.points > 0) {
+        await db
+          .insert(pointsHistory)
+          .values({
+            teamMemberId: point.teamMemberId,
+            action: 'reset',
+            pointsChange: -point.points,
+            reason: 'admin_reset_all',
+            performedBy
+          });
+      }
+    }
+  }
+
+  // Points History
+  async getPointsHistory(teamMemberId?: string, limit: number = 50): Promise<(PointsHistory & { teamMember: TeamMember; performedByUser?: User })[]> {
+    let query = db
+      .select()
+      .from(pointsHistory)
+      .innerJoin(teamMembers, eq(pointsHistory.teamMemberId, teamMembers.id))
+      .leftJoin(users, eq(pointsHistory.performedBy, users.id))
+      .orderBy(desc(pointsHistory.createdAt));
+
+    if (teamMemberId) {
+      query = query.where(eq(pointsHistory.teamMemberId, teamMemberId));
+    }
+
+    const result = await query.limit(limit);
+    
+    return result.map(row => ({
+      ...row.points_history,
+      teamMember: row.team_members,
+      performedByUser: row.users || undefined
+    }));
   }
 }
 

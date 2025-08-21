@@ -20,6 +20,7 @@ import AdminLogs from "@/pages/admin-logs";
 import AdminUsers from "@/pages/admin-users";
 import CustomerRatings from "@/pages/customer-ratings";
 import WhatsAppManagement from "@/pages/whatsapp-management";
+import TeamPoints from "@/pages/team-points";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 import { AdminGuard } from "@/components/admin/admin-guard";
@@ -61,6 +62,7 @@ function ProtectedRouter() {
             <Route path="/admin/users" component={() => <AdminGuard><AdminUsers /></AdminGuard>} />
             <Route path="/admin/customer-ratings" component={CustomerRatings} />
             <Route path="/admin/whatsapp" component={WhatsAppManagement} />
+            <Route path="/admin/team-points" component={() => <AdminGuard><TeamPoints /></AdminGuard>} />
             <Route component={NotFound} />
           </Switch>
         </MobileLayout>

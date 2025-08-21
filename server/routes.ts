@@ -1316,6 +1316,168 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Team Points routes
+  app.get("/api/team-points", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Admin can see all points, others only their own
+      if (currentUser.role === 'admin') {
+        const allPoints = await storage.getAllTeamMemberPoints();
+        res.json(allPoints);
+      } else {
+        const teamMember = await storage.getTeamMemberByUserId(req.session.userId!);
+        if (!teamMember) {
+          return res.status(404).json({ message: "Team member not found" });
+        }
+        
+        const points = await storage.getTeamMemberPoints(teamMember.id);
+        if (!points) {
+          // تهيئة النقاط إذا لم تكن موجودة
+          const newPoints = await storage.initializeTeamMemberPoints(teamMember.id);
+          res.json([{ ...newPoints, teamMember }]);
+        } else {
+          res.json([{ ...points, teamMember }]);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching team points:", error);
+      res.status(500).json({ message: "Failed to fetch team points" });
+    }
+  });
+
+  app.post("/api/team-points/:teamMemberId/add", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      const { teamMemberId } = req.params;
+      const { points, reason } = req.body;
+
+      if (typeof points !== 'number' || points <= 0) {
+        return res.status(400).json({ message: "Points must be a positive number" });
+      }
+
+      if (!reason || typeof reason !== 'string') {
+        return res.status(400).json({ message: "Reason is required" });
+      }
+
+      await storage.addPointsToTeamMember(
+        teamMemberId,
+        points,
+        reason,
+        undefined,
+        undefined,
+        req.session.userId!
+      );
+
+      // تسجيل العملية
+      await storage.logUserAction(
+        "add_team_points",
+        req.session.userId!,
+        req.session.username!,
+        { teamMemberId, points, reason },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json({ message: "Points added successfully" });
+    } catch (error) {
+      console.error("Error adding team points:", error);
+      res.status(500).json({ message: "Failed to add team points" });
+    }
+  });
+
+  app.post("/api/team-points/:teamMemberId/reset", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      const { teamMemberId } = req.params;
+      await storage.resetTeamMemberPoints(teamMemberId, req.session.userId!);
+
+      // تسجيل العملية
+      await storage.logUserAction(
+        "reset_team_member_points",
+        req.session.userId!,
+        req.session.username!,
+        { teamMemberId },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json({ message: "Team member points reset successfully" });
+    } catch (error) {
+      console.error("Error resetting team member points:", error);
+      res.status(500).json({ message: "Failed to reset team member points" });
+    }
+  });
+
+  app.post("/api/team-points/reset-all", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      await storage.resetAllTeamMemberPoints(req.session.userId!);
+
+      // تسجيل العملية
+      await storage.logUserAction(
+        "reset_all_team_points",
+        req.session.userId!,
+        req.session.username!,
+        { details: "تم تصفير جميع نقاط أعضاء الفريق" },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json({ message: "All team points reset successfully" });
+    } catch (error) {
+      console.error("Error resetting all team points:", error);
+      res.status(500).json({ message: "Failed to reset all team points" });
+    }
+  });
+
+  app.get("/api/points-history", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const { teamMemberId, limit } = req.query;
+      const limitNum = limit ? parseInt(limit as string) : 50;
+
+      // Admin can see all history, others only their own
+      if (currentUser.role === 'admin') {
+        const history = await storage.getPointsHistory(
+          teamMemberId as string | undefined,
+          limitNum
+        );
+        res.json(history);
+      } else {
+        const teamMember = await storage.getTeamMemberByUserId(req.session.userId!);
+        if (!teamMember) {
+          return res.status(404).json({ message: "Team member not found" });
+        }
+        
+        const history = await storage.getPointsHistory(teamMember.id, limitNum);
+        res.json(history);
+      }
+    } catch (error) {
+      console.error("Error fetching points history:", error);
+      res.status(500).json({ message: "Failed to fetch points history" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

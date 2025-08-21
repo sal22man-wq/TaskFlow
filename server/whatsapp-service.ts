@@ -184,6 +184,33 @@ export class WhatsAppService {
           responseReceived: 'true'
         });
 
+        // منح النقاط لأعضاء الفريق عند التقييم الإيجابي (راضي جداً)
+        if (rating === '3') {
+          try {
+            // الحصول على المهمة والأعضاء المكلفين بها
+            const task = await storage.getTask(existingRating.taskId);
+            if (task && task.assigneeIds && task.assigneeIds.length > 0) {
+              // منح نقطة واحدة لكل عضو مكلف بالمهمة
+              for (const assigneeId of task.assigneeIds) {
+                const teamMember = await storage.getTeamMemberByUserId(assigneeId);
+                if (teamMember) {
+                  await storage.addPointsToTeamMember(
+                    teamMember.id,
+                    1,
+                    'تقييم عميل إيجابي (راضي جداً)',
+                    task.id,
+                    existingRating.id,
+                    'system'
+                  );
+                  console.log(`🌟 تم منح نقطة لعضو الفريق: ${teamMember.name} بسبب التقييم الإيجابي`);
+                }
+              }
+            }
+          } catch (pointsError) {
+            console.error('❌ خطأ في منح النقاط:', pointsError);
+          }
+        }
+
         // إرسال رسالة شكر
         const thankYouMessage = `شكراً لك على تقييمك: ${ratingData.text} ${this.getRatingEmoji(rating)}
 

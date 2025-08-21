@@ -236,3 +236,62 @@ export const whatsappSettings = pgTable("whatsapp_settings", {
 
 export type WhatsAppSettings = typeof whatsappSettings.$inferSelect;
 export type UpsertWhatsAppSettings = typeof whatsappSettings.$inferInsert;
+
+// جدول نقاط أعضاء الفريق
+export const teamMemberPoints = pgTable("team_member_points", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  teamMemberId: varchar("team_member_id").notNull().references(() => teamMembers.id),
+  points: integer("points").default(0),
+  totalEarned: integer("total_earned").default(0), // إجمالي النقاط المكتسبة على الإطلاق
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  updatedBy: varchar("updated_by").references(() => users.id), // من قام بالتحديث (للتصفير)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const teamMemberPointsRelations = relations(teamMemberPoints, ({ one }) => ({
+  teamMember: one(teamMembers, {
+    fields: [teamMemberPoints.teamMemberId],
+    references: [teamMembers.id],
+  }),
+  updatedByUser: one(users, {
+    fields: [teamMemberPoints.updatedBy],
+    references: [users.id],
+  }),
+}));
+
+// جدول سجل النقاط لتتبع التغييرات
+export const pointsHistory = pgTable("points_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  teamMemberId: varchar("team_member_id").notNull().references(() => teamMembers.id),
+  action: varchar("action").notNull(), // 'earned', 'reset'
+  pointsChange: integer("points_change").notNull(), // +1 للكسب، -X للتصفير
+  reason: varchar("reason").notNull(), // 'customer_satisfaction', 'admin_reset'
+  taskId: varchar("task_id").references(() => tasks.id), // إذا كان بسبب مهمة
+  ratingId: varchar("rating_id").references(() => customerRatings.id), // إذا كان بسبب تقييم
+  performedBy: varchar("performed_by").references(() => users.id), // من قام بالعملية
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const pointsHistoryRelations = relations(pointsHistory, ({ one }) => ({
+  teamMember: one(teamMembers, {
+    fields: [pointsHistory.teamMemberId],
+    references: [teamMembers.id],
+  }),
+  task: one(tasks, {
+    fields: [pointsHistory.taskId],
+    references: [tasks.id],
+  }),
+  rating: one(customerRatings, {
+    fields: [pointsHistory.ratingId],
+    references: [customerRatings.id],
+  }),
+  performedByUser: one(users, {
+    fields: [pointsHistory.performedBy],
+    references: [users.id],
+  }),
+}));
+
+export type TeamMemberPoints = typeof teamMemberPoints.$inferSelect;
+export type InsertTeamMemberPoints = typeof teamMemberPoints.$inferInsert;
+export type PointsHistory = typeof pointsHistory.$inferSelect;
+export type InsertPointsHistory = typeof pointsHistory.$inferInsert;
