@@ -246,12 +246,14 @@ const translations = {
 
     // Status
     'status.pending': 'في الانتظار',
+    'status.todo': 'في الانتظار',
     'status.start': 'بدأ',
     'status.complete': 'مكتمل',
 
     // Priority
     'priority.low': 'منخفض',
     'priority.medium': 'متوسط',
+    'priority.متوسطة': 'متوسط',
     'priority.high': 'عالي',
 
     // Actions
@@ -414,10 +416,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<'en' | 'ar'>('ar');
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('language') as 'en' | 'ar' | null;
-    if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'ar')) {
-      setLanguageState(savedLanguage);
-    }
+    // Force Arabic language by default and override any saved language
+    setLanguageState('ar');
   }, []);
 
   useEffect(() => {
