@@ -337,6 +337,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+
   // Admin routes (protected)
   app.get("/api/admin/users", requireAdmin, async (req, res) => {
     try {

@@ -629,7 +629,7 @@ export class DatabaseStorage implements IStorage {
       
       for (const assigneeId of task.assigneeIds) {
         const assignee = teamMembers.find(member => member.id === assigneeId);
-        if (assignee) {
+        if (assignee && assignee.userId) {
           let title = "";
           let content = "";
           
@@ -648,8 +648,9 @@ export class DatabaseStorage implements IStorage {
               break;
           }
           
+          // إرسال الإشعار إلى معرف المستخدم وليس معرف عضو الفريق
           await this.createNotification({
-            userId: assigneeId,
+            userId: assignee.userId, // استخدام userId بدلاً من assigneeId
             title,
             content,
             type: type as any,
