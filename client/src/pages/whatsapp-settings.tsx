@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Smartphone, MessageSquare, RefreshCw, QrCode, Loader2, Settings, Send } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { QRCodeCanvas } from "@/components/QRCodeCanvas";
 
 interface WhatsAppStatus {
   isConnected: boolean;
@@ -315,22 +316,24 @@ export default function WhatsAppSettings() {
             </CardHeader>
             <CardContent>
               <div className="bg-gray-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-gray-600 mb-2">افتح الواتساب على هاتفك واختر "الأجهزة المرتبطة" ثم امسح الرمز</p>
-                <div className="bg-white p-4 rounded border inline-block">
-                  <pre className="text-xs font-mono whitespace-pre">
-████████████████████████████████
-██ ▄▄▄▄▄ █▀█ █▄▀▄▀▄▄▄█ ▄▄▄▄▄ ██
-██ █   █ █▀▀▀█ ▄▄  ▄▄█ █   █ ██
-██ █▄▄▄█ █▀ █▀ ▀▀▀ ▄▀█ █▄▄▄█ ██
-██▄▄▄▄▄▄▄█▄▀ ▀▄█▄█ █▄█▄▄▄▄▄▄▄██
-██▄▄  ▄▀▄  ▄ ▄▀▄▄▄▄  ▀ ▀▄█▄▄▄██
-████▄▄▄▄▄▄▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀██
-████████████████████████████████
-                  </pre>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  رمز QR يتم تجديده تلقائياً كل مرة يتم إعادة تشغيل الخدمة
+                <p className="text-sm text-gray-600 mb-4">
+                  افتح الواتساب على هاتفك واختر "الأجهزة المرتبطة" ثم امسح الرمز أدناه
                 </p>
+                
+                {/* عرض رمز QR الحقيقي */}
+                <div className="bg-white p-4 rounded border inline-block">
+                  <QRCodeCanvas qrCodeData={status.qrCode} />
+                </div>
+                
+                <p className="text-xs text-gray-500 mt-2">
+                  رمز QR حقيقي يتم تحديثه من الخادم
+                </p>
+                
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                  <p className="text-sm text-blue-800">
+                    <strong>تعليمات:</strong> في الواتساب اذهب لـ: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
