@@ -11,35 +11,26 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Users, Phone, MapPin, Plus, Edit, Trash2, Navigation, Map, Search, X, Calendar, FileText, Eye } from 'lucide-react';
+import { Users, Phone, Plus, Edit, Trash2, Search, X, Calendar, FileText, Eye, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Customer, Task } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
-import { CustomerMap } from '@/components/customers/customer-map';
 import { useAuth } from '@/hooks/useAuth';
 import { isUnauthorizedError } from '@/lib/authUtils';
 
 // نموذج التحقق للعميل
 const customerSchema = z.object({
   name: z.string().min(2, 'الاسم يجب أن يكون على الأقل حرفين'),
-  phone: z.string()
-    .min(11, 'رقم الهاتف يجب أن يكون على الأقل 11 رقم')
-    .regex(/^\+964\d{10,11}$/, 'رقم الهاتف يجب أن يبدأ بـ +964 ويتكون من 13-14 رقم'),
+  phone: z.string().min(1, 'رقم الهاتف مطلوب'),
+  email: z.string().email('البريد الإلكتروني غير صحيح').optional().or(z.literal('')),
   address: z.string().optional(),
-  gpsLatitude: z.string().optional(),
-  gpsLongitude: z.string().optional(),
-  gpsAddress: z.string().optional(),
 });
 
-type CustomerFormData = z.infer<typeof customerSchema> & {
-  whatsappNumber?: string; // للتوافق مع النموذج الحالي
-};
+type CustomerFormData = z.infer<typeof customerSchema>;
 
 export default function Customers() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [showMap, setShowMap] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -68,754 +59,470 @@ export default function Customers() {
     resolver: zodResolver(customerSchema),
     defaultValues: {
       name: '',
-      phone: '+964',
+      phone: '',
+      email: '',
       address: '',
-      gpsLatitude: '',
-      gpsLongitude: '',
-      gpsAddress: '',
     },
   });
 
-  // إضافة أو تحديث عميل
-  const customerMutation = useMutation({
+  const createCustomerMutation = useMutation({
     mutationFn: async (data: CustomerFormData) => {
-      // إضافة whatsappNumber نفس phone للتوافق مع قاعدة البيانات
       const customerData = {
-        ...data,
-        whatsappNumber: data.phone
+        name: data.name,
+        phone: data.phone,
+        email: data.email || undefined,
+        address: data.address || undefined,
       };
-      
-      if (editingCustomer) {
-        const response = await apiRequest('PUT', `/api/customers/${editingCustomer.id}`, customerData);
-        return await response.json();
-      } else {
-        const response = await apiRequest('POST', '/api/customers', customerData);
-        return await response.json();
-      }
+      const response = await apiRequest('POST', '/api/customers', customerData);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
-      setIsDialogOpen(false);
-      setEditingCustomer(null);
-      setIsGettingLocation(false); // إعادة تعيين حالة تحديد الموقع
-      form.reset({
-        name: '',
-        phone: '+964',
-        address: '',
-        gpsLatitude: '',
-        gpsLongitude: '',
-        gpsAddress: '',
-      });
       toast({
-        title: 'تم بنجاح',
-        description: editingCustomer ? 'تم تحديث العميل' : 'تم إضافة العميل',
+        title: 'تم إضافة العميل بنجاح',
+        description: 'تم حفظ معلومات العميل في النظام.',
+      });
+      form.reset();
+      setIsDialogOpen(false);
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "غير مخول",
+          description: "انت غير مسجل الدخول. جاري تسجيل الدخول مرة أخرى...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: 'خطأ في إضافة العميل',
+        description: 'حدث خطأ أثناء إضافة العميل. يرجى المحاولة مرة أخرى.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updateCustomerMutation = useMutation({
+    mutationFn: async (data: CustomerFormData & { id: string }) => {
+      const customerData = {
+        name: data.name,
+        phone: data.phone,
+        email: data.email || undefined,
+        address: data.address || undefined,
+      };
+      const response = await apiRequest('PUT', `/api/customers/${data.id}`, customerData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      toast({
+        title: 'تم تحديث العميل بنجاح',
+        description: 'تم حفظ التغييرات في النظام.',
+      });
+      form.reset();
+      setEditingCustomer(null);
+      setIsDialogOpen(false);
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "غير مخول",
+          description: "انت غير مسجل الدخول. جاري تسجيل الدخول مرة أخرى...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: 'خطأ في تحديث العميل',
+        description: 'حدث خطأ أثناء تحديث معلومات العميل.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteCustomerMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest('DELETE', `/api/customers/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      toast({
+        title: 'تم حذف العميل بنجاح',
+        description: 'تم حذف العميل من النظام.',
       });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
         toast({
-          title: "يتطلب تسجيل الدخول",
-          description: "جاري إعادة توجيهك لتسجيل الدخول...",
+          title: "غير مخول",
+          description: "انت غير مسجل الدخول. جاري تسجيل الدخول مرة أخرى...",
           variant: "destructive",
         });
         setTimeout(() => {
           window.location.href = "/api/login";
-        }, 1000);
+        }, 500);
         return;
       }
       toast({
-        title: 'خطأ',
-        description: 'حدث خطأ في العملية',
+        title: 'خطأ في حذف العميل',
+        description: 'حدث خطأ أثناء حذف العميل.',
         variant: 'destructive',
       });
     },
   });
-
-  // حذف عميل
-  const deleteMutation = useMutation({
-    mutationFn: async (customerId: string) => {
-      const response = await apiRequest('DELETE', `/api/customers/${customerId}`);
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
-      toast({
-        title: 'تم الحذف',
-        description: 'تم حذف العميل بنجاح',
-      });
-    },
-    onError: () => {
-      toast({
-        title: 'خطأ',
-        description: 'حدث خطأ في حذف العميل',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // الحصول على الموقع الحالي
-  const getCurrentLocation = () => {
-    setIsGettingLocation(true);
-    
-    if (!navigator.geolocation) {
-      toast({
-        title: 'خطأ',
-        description: 'المتصفح لا يدعم خدمة الموقع',
-        variant: 'destructive',
-      });
-      setIsGettingLocation(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude.toString();
-        const lng = position.coords.longitude.toString();
-        
-        form.setValue('gpsLatitude', lat);
-        form.setValue('gpsLongitude', lng);
-        
-        // محاولة الحصول على العنوان من الإحداثيات مع User-Agent
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`, {
-          headers: {
-            'User-Agent': 'TaskFlow App (task@example.com)'
-          }
-        })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error('فشل في الحصول على العنوان');
-            }
-            return response.json();
-          })
-          .then(data => {
-            if (data && data.display_name) {
-              form.setValue('gpsAddress', data.display_name);
-            }
-          })
-          .catch((error) => {
-            console.log('فشل في الحصول على العنوان:', error);
-            // فشل في الحصول على العنوان، لكن الإحداثيات محفوظة
-          });
-
-        setIsGettingLocation(false);
-        toast({
-          title: 'تم الحصول على الموقع',
-          description: `تم حفظ الإحداثيات: ${lat.substring(0, 8)}, ${lng.substring(0, 8)}`,
-        });
-      },
-      (error) => {
-        console.error('خطأ في الموقع:', error);
-        setIsGettingLocation(false);
-        
-        let errorMessage = 'لم نتمكن من الحصول على موقعك';
-        
-        switch(error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'تم رفض الإذن للوصول للموقع. يرجى السماح بالوصول في إعدادات المتصفح';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'معلومات الموقع غير متاحة';
-            break;
-          case error.TIMEOUT:
-            errorMessage = 'انتهت مهلة البحث عن الموقع';
-            break;
-          default:
-            errorMessage = 'حدث خطأ غير معروف في تحديد الموقع';
-            break;
-        }
-        
-        toast({
-          title: 'خطأ في الموقع',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000
-      }
-    );
-  };
 
   const onSubmit = (data: CustomerFormData) => {
-    customerMutation.mutate(data);
+    if (editingCustomer) {
+      updateCustomerMutation.mutate({ ...data, id: editingCustomer.id });
+    } else {
+      createCustomerMutation.mutate(data);
+    }
   };
 
   const handleEdit = (customer: Customer) => {
     setEditingCustomer(customer);
-    form.setValue('name', customer.name);
-    // تأكد من أن رقم الهاتف يبدأ بـ +964
-    const phoneNumber = customer.phone.startsWith('+964') ? customer.phone : `+964${customer.phone}`;
-    form.setValue('phone', phoneNumber);
-    form.setValue('address', customer.address || '');
-    form.setValue('gpsLatitude', customer.gpsLatitude || '');
-    form.setValue('gpsLongitude', customer.gpsLongitude || '');
-    form.setValue('gpsAddress', customer.gpsAddress || '');
+    form.reset({
+      name: customer.name,
+      phone: customer.phone,
+      email: customer.email || '',
+      address: customer.address || '',
+    });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (customerId: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا العميل؟')) {
-      deleteMutation.mutate(customerId);
+  const handleDelete = (customer: Customer) => {
+    if (confirm(`هل أنت متأكد من حذف العميل "${customer.name}"؟`)) {
+      deleteCustomerMutation.mutate(customer.id);
     }
   };
 
-  const openInMaps = (lat: string, lng: string) => {
-    const url = `https://www.google.com/maps?q=${lat},${lng}`;
-    window.open(url, '_blank');
+  const handleAddNew = () => {
+    setEditingCustomer(null);
+    form.reset();
+    setIsDialogOpen(true);
   };
 
-  const handleViewDetails = (customer: Customer) => {
+  const showCustomerDetails = (customer: Customer) => {
     setSelectedCustomer(customer);
     setIsDetailsOpen(true);
   };
 
-  // التحقق من المصادقة
-  if (authLoading) {
+  if (authLoading || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p>جاري التحميل...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>جاري تحميل قائمة العملاء...</p>
         </div>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">تسجيل الدخول مطلوب</h2>
-          <p className="text-muted-foreground mb-4">يجب تسجيل الدخول للوصول إلى قائمة العملاء</p>
-          <Button onClick={() => window.location.href = '/api/login'}>
-            تسجيل الدخول
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  if (!isAuthenticated) return null;
 
   return (
-    <div className="space-y-6 p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Users className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">قائمة العملاء</h1>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button 
-            variant={showMap ? "default" : "outline"} 
-            onClick={() => setShowMap(!showMap)} 
-            data-testid="button-toggle-map"
-          >
-            <Map className="h-4 w-4 mr-2" />
-            {showMap ? "إخفاء الخريطة" : "عرض الخريطة"}
-          </Button>
-        </div>
-      </div>
-
-      {/* شريط البحث */}
-      <div className="relative">
-        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-        <Input
-          placeholder="البحث في العملاء (الاسم، الهاتف، العنوان)..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pr-10"
-          data-testid="input-search-customers"
-        />
-        {searchTerm && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSearchTerm('')}
-            className="absolute left-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-            data-testid="button-clear-search"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-
-      {searchTerm && (
-        <div className="text-sm text-muted-foreground">
-          تم العثور على {filteredCustomers.length} عميل من أصل {customers?.length || 0}
-        </div>
-      )}
-
-      {showMap && customers && (
-        <CustomerMap customers={customers} />
-      )}
-
-      <div className="flex justify-end">
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              onClick={() => {
-                setEditingCustomer(null);
-                setIsGettingLocation(false); // إعادة تعيين حالة تحديد الموقع
-                form.reset({
-                  name: '',
-                  phone: '+964',
-                  address: '',
-                  gpsLatitude: '',
-                  gpsLongitude: '',
-                  gpsAddress: '',
-                });
-              }}
-              data-testid="button-add-customer"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              إضافة عميل
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingCustomer ? 'تعديل العميل' : 'إضافة عميل جديد'}
-              </DialogTitle>
-            </DialogHeader>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>اسم العميل *</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="اسم العميل" data-testid="input-customer-name" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>رقم الهاتف والواتساب *</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input 
-                            {...field} 
-                            placeholder="+9647xxxxxxxxxx" 
-                            data-testid="input-customer-phone"
-                            onChange={(e) => {
-                              let value = e.target.value;
-                              // تأكد من أن القيمة تبدأ بـ +964
-                              if (!value.startsWith('+964')) {
-                                value = '+964' + value.replace(/^\+964/, '').replace(/[^\d]/g, '');
-                              }
-                              // اقتطع النص إذا كان أطول من اللازم
-                              if (value.length > 14) {
-                                value = value.substring(0, 14);
-                              }
-                              field.onChange(value);
-                            }}
-                          />
-                          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
-                            هاتف + واتساب
-                          </div>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                      <p className="text-xs text-muted-foreground">
-                        سيتم استخدام نفس الرقم للهاتف والواتساب
-                      </p>
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>العنوان</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} placeholder="عنوان العميل" rows={2} data-testid="input-customer-address" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">موقع GPS</label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={getCurrentLocation}
-                      disabled={isGettingLocation}
-                      data-testid="button-get-location"
-                    >
-                      <Navigation className="h-4 w-4 mr-2" />
-                      {isGettingLocation ? 'جاري التحديد...' : 'تحديد الموقع'}
-                    </Button>
-                  </div>
-
-                  {/* Hidden GPS fields */}
-                  <div className="hidden">
-                    <FormField
-                      control={form.control}
-                      name="gpsLatitude"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input {...field} data-testid="input-gps-lat" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="gpsLongitude"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input {...field} data-testid="input-gps-lng" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="gpsAddress"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input {...field} data-testid="input-gps-address" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Map preview */}
-                  {form.watch('gpsLatitude') && form.watch('gpsLongitude') && (
-                    <div className="border rounded-lg overflow-hidden bg-muted">
-                      <div 
-                        className="relative h-32 cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => {
-                          const lat = form.watch('gpsLatitude');
-                          const lng = form.watch('gpsLongitude');
-                          if (lat && lng) openInMaps(lat, lng);
-                        }}
-                        data-testid="map-preview"
-                      >
-                        <iframe
-                          src={`https://maps.google.com/maps?q=${form.watch('gpsLatitude')},${form.watch('gpsLongitude')}&t=m&z=15&output=embed`}
-                          width="100%"
-                          height="100%"
-                          style={{ border: 0, pointerEvents: 'none' }}
-                          allowFullScreen
-                          loading="lazy"
-                          referrerPolicy="no-referrer-when-downgrade"
-                          title="معاينة الموقع"
-                        />
-                        <div className="absolute inset-0 bg-transparent hover:bg-black/10 transition-colors flex items-center justify-center">
-                          <div className="bg-white/90 px-3 py-1.5 rounded-md text-sm font-medium shadow-sm opacity-0 hover:opacity-100 transition-opacity">
-                            انقر لفتح في خرائط جوجل
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-3 bg-background">
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4 text-green-600" />
-                          <span className="font-medium">تم تحديد الموقع</span>
-                        </div>
-                        {form.watch('gpsAddress') && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {form.watch('gpsAddress')}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {!form.watch('gpsLatitude') && (
-                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                      <MapPin className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">اضغط "تحديد الموقع" لإضافة موقع العميل</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-2 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsDialogOpen(false)}
-                    className="flex-1"
-                    data-testid="button-cancel-customer"
-                  >
-                    إلغاء
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={customerMutation.isPending}
-                    className="flex-1"
-                    data-testid="button-save-customer"
-                  >
-                    {customerMutation.isPending ? 'جاري الحفظ...' : 'حفظ'}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {isLoading ? (
-        <div className="text-center py-8">
-          <p>جاري التحميل...</p>
-        </div>
-      ) : !customers || customers.length === 0 ? (
-        <Card>
-          <CardContent className="py-8">
-            <div className="text-center text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>لا توجد عملاء مضافين بعد</p>
-              <p className="text-sm">ابدأ بإضافة عميل جديد</p>
+    <div className="container mx-auto p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Users className="h-6 w-6" />
+              <CardTitle className="text-xl">إدارة العملاء</CardTitle>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {filteredCustomers.map((customer) => (
-            <Card key={customer.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-lg" data-testid={`text-customer-name-${customer.id}`}>
-                        {customer.name}
-                      </h3>
-                    </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                onClick={handleAddNew}
+                className="flex items-center space-x-2"
+                data-testid="button-add-customer-main"
+              >
+                <Plus className="h-4 w-4" />
+                <span>إضافة عميل جديد</span>
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
 
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span data-testid={`text-customer-phone-${customer.id}`}>{customer.phone}</span>
-                        <Badge variant="secondary" className="text-xs">
-                          هاتف + واتساب
-                        </Badge>
-                      </div>
+        <CardContent>
+          {/* شريط البحث */}
+          <div className="flex items-center space-x-2 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="البحث في العملاء..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+                data-testid="input-search-customers"
+              />
+            </div>
+            {searchTerm && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSearchTerm('')}
+                data-testid="button-clear-search"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
 
-                      {customer.address && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground" data-testid={`text-customer-address-${customer.id}`}>
-                            {customer.address}
-                          </span>
-                        </div>
-                      )}
-
-                      {customer.gpsLatitude && customer.gpsLongitude && (
-                        <div className="mt-3">
-                          <div 
-                            className="relative h-24 rounded-lg overflow-hidden cursor-pointer border hover:opacity-90 transition-opacity"
-                            onClick={() => openInMaps(customer.gpsLatitude!, customer.gpsLongitude!)}
-                            data-testid={`map-preview-${customer.id}`}
-                          >
-                            <iframe
-                              src={`https://maps.google.com/maps?q=${customer.gpsLatitude},${customer.gpsLongitude}&t=m&z=15&output=embed`}
-                              width="100%"
-                              height="100%"
-                              style={{ border: 0, pointerEvents: 'none' }}
-                              allowFullScreen
-                              loading="lazy"
-                              referrerPolicy="no-referrer-when-downgrade"
-                              title={`موقع ${customer.name}`}
-                            />
-                            <div className="absolute inset-0 bg-transparent hover:bg-black/10 transition-colors flex items-center justify-center">
-                              <div className="bg-white/90 px-2 py-1 rounded text-xs font-medium shadow-sm opacity-0 hover:opacity-100 transition-opacity">
-                                <Map className="h-3 w-3 inline mr-1" />
-                                فتح في خرائط جوجل
-                              </div>
-                            </div>
+          {/* قائمة العملاء */}
+          <div className="space-y-4">
+            {filteredCustomers.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">
+                  {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد عملاء حتى الآن'}
+                </p>
+              </div>
+            ) : (
+              filteredCustomers.map((customer) => (
+                <Card key={customer.id} className="border-l-4 border-l-blue-500">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold mb-2">{customer.name}</h3>
+                        <div className="space-y-1">
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Phone className="h-4 w-4 mr-2" />
+                            <span>{customer.phone}</span>
                           </div>
-                          {customer.gpsAddress && (
-                            <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/30 rounded">
-                              <MapPin className="h-3 w-3 inline mr-1" />
-                              {customer.gpsAddress}
+                          {customer.email && (
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <Mail className="h-4 w-4 mr-2" />
+                              <span>{customer.email}</span>
+                            </div>
+                          )}
+                          {customer.address && (
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <span className="mr-2">📍</span>
+                              <span>{customer.address}</span>
                             </div>
                           )}
                         </div>
-                      )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => showCustomerDetails(customer)}
+                          data-testid={`button-view-customer-${customer.id}`}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(customer)}
+                          data-testid={`button-edit-customer-${customer.id}`}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(customer)}
+                          className="text-red-600 hover:text-red-700"
+                          data-testid={`button-delete-customer-${customer.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-                  <div className="flex gap-2 ml-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewDetails(customer)}
-                      data-testid={`button-view-customer-${customer.id}`}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(customer)}
-                      data-testid={`button-edit-customer-${customer.id}`}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(customer.id)}
-                      className="text-destructive hover:text-destructive"
-                      data-testid={`button-delete-customer-${customer.id}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      {/* نافذة إضافة/تعديل العميل */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCustomer ? 'تعديل بيانات العميل' : 'إضافة عميل جديد'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>اسم العميل *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="أدخل اسم العميل"
+                        {...field}
+                        data-testid="input-customer-name"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>رقم الهاتف *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="tel"
+                        placeholder="أدخل رقم الهاتف"
+                        {...field}
+                        data-testid="input-customer-phone"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>البريد الإلكتروني</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="أدخل البريد الإلكتروني"
+                        {...field}
+                        data-testid="input-customer-email"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>العنوان</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="أدخل عنوان العميل"
+                        rows={2}
+                        {...field}
+                        data-testid="textarea-customer-address"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsDialogOpen(false)}
+                  data-testid="button-cancel-customer"
+                >
+                  إلغاء
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createCustomerMutation.isPending || updateCustomerMutation.isPending}
+                  data-testid="button-save-customer"
+                >
+                  {createCustomerMutation.isPending || updateCustomerMutation.isPending
+                    ? 'جاري الحفظ...'
+                    : editingCustomer
+                    ? 'تحديث العميل'
+                    : 'إضافة العميل'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
       {/* نافذة تفاصيل العميل */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>تفاصيل العميل - {selectedCustomer?.name}</DialogTitle>
+            <DialogTitle>تفاصيل العميل</DialogTitle>
           </DialogHeader>
-          
-          {selectedCustomer && (
-            <div className="space-y-6">
-              {/* معلومات العميل الأساسية */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    المعلومات الأساسية
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">الاسم</label>
-                      <p className="text-sm">{selectedCustomer.name}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">الهاتف</label>
-                      <p className="text-sm">{selectedCustomer.phone}</p>
-                    </div>
-                  </div>
-                  {selectedCustomer.address && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">العنوان</label>
-                      <p className="text-sm">{selectedCustomer.address}</p>
-                    </div>
-                  )}
-                  {selectedCustomer.gpsLatitude && selectedCustomer.gpsLongitude && (
-                    <div>
-                      <label className="text-sm font-medium text-muted-foreground">الموقع</label>
-                      <div 
-                        className="h-24 rounded-lg overflow-hidden cursor-pointer border hover:opacity-90 transition-opacity mt-2"
-                        onClick={() => openInMaps(selectedCustomer.gpsLatitude!, selectedCustomer.gpsLongitude!)}
-                      >
-                        <iframe
-                          src={`https://maps.google.com/maps?q=${selectedCustomer.gpsLatitude},${selectedCustomer.gpsLongitude}&t=m&z=15&output=embed`}
-                          width="100%"
-                          height="100%"
-                          style={{ border: 0, pointerEvents: 'none' }}
-                          allowFullScreen
-                          loading="lazy"
-                          title={`موقع ${selectedCustomer.name}`}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
 
-              {/* المهام والخدمات */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    تاريخ الخدمات والمهام
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {tasksLoading ? (
-                    <div className="text-center py-4">
-                      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                      <p className="text-sm text-muted-foreground">جاري تحميل المهام...</p>
-                    </div>
-                  ) : !customerTasks || customerTasks.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>لا توجد مهام مسجلة لهذا العميل بعد</p>
-                      <p className="text-sm">ستظهر هنا جميع الخدمات المقدمة للعميل</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {customerTasks.map((task) => (
-                        <div key={task.id} className="border rounded-lg p-3 hover:bg-muted/50 transition-colors">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h4 className="font-medium">{task.title}</h4>
-                              {task.description && (
-                                <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
-                              )}
-                              <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                                <span>تاريخ الإنشاء: {new Date(task.createdAt!).toLocaleDateString('ar-EG')}</span>
-                                {task.dueDate && (
-                                  <span>موعد الانتهاء: {new Date(task.dueDate).toLocaleDateString('ar-EG')}</span>
-                                )}
-                              </div>
-                            </div>
-                            <Badge 
-                              variant={
-                                task.status === 'completed' ? 'default' : 
-                                task.status === 'in_progress' ? 'secondary' : 
-                                'outline'
-                              }
-                              className="text-xs"
-                            >
-                              {task.status === 'completed' ? 'مكتملة' :
-                               task.status === 'in_progress' ? 'قيد التنفيذ' :
-                               task.status === 'pending' ? 'معلقة' : 'جديدة'}
-                            </Badge>
-                          </div>
-                          {task.progress > 0 && (
-                            <div className="mt-2">
-                              <div className="flex items-center justify-between text-xs">
-                                <span>التقدم</span>
-                                <span>{task.progress}%</span>
-                              </div>
-                              <div className="w-full bg-muted rounded-full h-2 mt-1">
-                                <div 
-                                  className="bg-primary h-2 rounded-full transition-all"
-                                  style={{ width: `${task.progress}%` }}
-                                />
-                              </div>
-                            </div>
-                          )}
+          {selectedCustomer && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">{selectedCustomer.name}</h3>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div className="flex items-center">
+                  <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <span>{selectedCustomer.phone}</span>
+                </div>
+
+                {selectedCustomer.email && (
+                  <div className="flex items-center">
+                    <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span>{selectedCustomer.email}</span>
+                  </div>
+                )}
+
+                {selectedCustomer.address && (
+                  <div className="flex items-start">
+                    <span className="mr-2 mt-0.5 text-muted-foreground">📍</span>
+                    <span>{selectedCustomer.address}</span>
+                  </div>
+                )}
+
+                {selectedCustomer.createdAt && (
+                  <div className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span>تم الإضافة: {new Date(selectedCustomer.createdAt).toLocaleDateString('ar-SA')}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* المهام المرتبطة */}
+              <Separator />
+              <div>
+                <h4 className="font-medium mb-2 flex items-center">
+                  <FileText className="h-4 w-4 mr-2" />
+                  المهام المرتبطة
+                </h4>
+                {tasksLoading ? (
+                  <p className="text-sm text-muted-foreground">جاري تحميل المهام...</p>
+                ) : customerTasks && customerTasks.length > 0 ? (
+                  <div className="space-y-2">
+                    {customerTasks.map((task) => (
+                      <div key={task.id} className="text-sm p-2 bg-muted rounded">
+                        <div className="font-medium">{task.title}</div>
+                        <div className="text-muted-foreground">
+                          {task.taskNumber} - {task.status}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">لا توجد مهام مرتبطة بهذا العميل</p>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
