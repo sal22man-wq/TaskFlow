@@ -319,6 +319,49 @@ export class WhatsAppService {
     return emojiMap[rating as keyof typeof emojiMap] || '😊';
   }
 
+  // إرسال رسالة تأكيد عند إنشاء مهمة جديدة
+  async sendTaskConfirmationMessage(
+    customerPhone: string,
+    customerName: string, 
+    taskTitle: string,
+    taskNumber: string,
+    customerAddress?: string
+  ): Promise<boolean> {
+    if (!this.isReady) {
+      console.log('❌ خدمة الواتساب غير جاهزة لإرسال رسالة التأكيد');
+      return false;
+    }
+
+    try {
+      const formattedNumber = this.formatPhoneNumber(customerPhone);
+      
+      const message = `مرحباً ${customerName || 'عزيزي العميل'} 👋
+
+✅ *تأكيد استلام طلبكم*
+
+تم تسجيل طلبكم بنجاح في قائمة مهامنا:
+📋 *رقم المهمة:* ${taskNumber}
+🏷️ *العنوان:* ${taskTitle}${customerAddress ? `\n📍 *الموقع:* ${customerAddress}` : ''}
+
+🔥 *سيتوجه إليكم فريقنا المتخصص في أسرع وقت ممكن*
+
+للتواصل المباشر:
+📞 ${process.env.COMPANY_PHONE || '966501234567'}
+
+نشكركم لثقتكم في خدماتنا 🙏
+*شركة اشراق الودق لتكنولوجيا المعلومات*`;
+
+      await this.client.sendMessage(formattedNumber, message);
+      
+      console.log(`✅ تم إرسال رسالة تأكيد المهمة للعميل: ${customerName} - ${customerPhone}`);
+      console.log(`📱 رقم المهمة: ${taskNumber}`);
+      return true;
+    } catch (error) {
+      console.error('❌ خطأ في إرسال رسالة تأكيد المهمة:', error);
+      return false;
+    }
+  }
+
   // إرسال رسالة تقييم العميل عبر الواتساب
   async sendCustomerRatingRequest(
     phoneNumber: string, 

@@ -980,6 +980,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create notifications for assigned team members
       await storage.createTaskNotifications(task, "task_assigned");
       
+      // Send WhatsApp confirmation message to customer
+      if (task.customerPhone && task.customerName) {
+        try {
+          const confirmationSent = await whatsappService.sendTaskConfirmationMessage(
+            task.customerPhone,
+            task.customerName,
+            task.title,
+            task.taskNumber,
+            task.customerAddress
+          );
+          
+          if (confirmationSent) {
+            console.log(`📱 تم إرسال رسالة تأكيد المهمة للعميل: ${task.customerName}`);
+          } else {
+            console.log(`❌ فشل في إرسال رسالة تأكيد المهمة للعميل: ${task.customerName}`);
+          }
+        } catch (error) {
+          console.error('❌ خطأ في إرسال رسالة تأكيد المهمة:', error);
+        }
+      }
+
       // Log task creation
       await storage.logUserAction(
         "task_created",
@@ -989,9 +1010,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           taskId: task.id, 
           taskTitle: task.title,
           customerName: task.customerName,
+          customerPhone: task.customerPhone || 'غير محدد',
           priority: task.priority,
           assignees: task.assigneeIds?.length || 0,
-          dueDate: task.dueDate?.toISOString().split('T')[0] || 'غير محدد'
+          dueDate: task.dueDate?.toISOString().split('T')[0] || 'غير محدد',
+          confirmationSent: task.customerPhone ? 'تم المحاولة' : 'رقم الهاتف غير متوفر'
         },
         req.ip,
         req.get('User-Agent')
