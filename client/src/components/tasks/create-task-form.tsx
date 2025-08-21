@@ -172,6 +172,7 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
                 setCustomerName(customer.name);
                 if (customer.phone) setCustomerPhone(customer.phone);
                 if (customer.email) setCustomerEmail(customer.email);
+                if (customer.address) setCustomerAddress(customer.address);
               }}
             />
           </div>

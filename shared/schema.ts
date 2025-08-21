@@ -40,6 +40,7 @@ export const customers = pgTable("customers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   phone: text("phone").notNull(),
+  email: text("email"), // البريد الإلكتروني
   whatsappNumber: text("whatsapp_number"), // رقم الواتساب
   address: text("address"),
   gpsLatitude: text("gps_latitude"), // خط العرض
