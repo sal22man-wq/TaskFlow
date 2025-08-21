@@ -255,7 +255,7 @@ export default function AdminLogs() {
                     </div>
                     <div className="flex items-center text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4 mr-1" />
-                      {new Date(log.timestamp).toLocaleString('ar-EG')}
+                      {new Date(log.timestamp).toLocaleString('en-GB')}
                     </div>
                   </div>
 

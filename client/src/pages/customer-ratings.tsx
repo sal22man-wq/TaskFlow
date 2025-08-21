@@ -32,6 +32,11 @@ export default function CustomerRatingsPage() {
     const aValue = a[sortBy as keyof CustomerRating];
     const bValue = b[sortBy as keyof CustomerRating];
     
+    // Handle null/undefined values
+    if (aValue == null && bValue == null) return 0;
+    if (aValue == null) return sortOrder === "asc" ? -1 : 1;
+    if (bValue == null) return sortOrder === "asc" ? 1 : -1;
+    
     if (sortOrder === "asc") {
       return aValue > bValue ? 1 : -1;
     } else {
@@ -60,7 +65,7 @@ export default function CustomerRatingsPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('ar-SA', {
+    return new Date(dateString).toLocaleString('en-GB', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -83,7 +88,7 @@ export default function CustomerRatingsPage() {
   }
 
   return (
-    <AdminGuard requiredRole="supervisor">
+    <AdminGuard>
       <div className="container mx-auto px-4 py-8" dir="rtl">
         <div className="flex flex-col space-y-6">
           {/* Header */}

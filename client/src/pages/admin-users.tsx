@@ -296,7 +296,7 @@ export default function AdminUsers() {
                         {user.username}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        {getRoleText(user.role)} • تسجل في: {new Date(user.createdAt).toLocaleDateString('ar-EG')}
+                        {getRoleText(user.role)} • تسجل في: {new Date(user.createdAt).toLocaleDateString('en-GB')}
                       </p>
                       <div className="mt-2">
                         {getStatusBadge(user.isApproved)}
@@ -348,7 +348,7 @@ export default function AdminUsers() {
                       {user.username}
                     </h3>
                     <p className="text-sm text-muted-foreground mb-2">
-                      تسجل في: {new Date(user.createdAt).toLocaleDateString('ar-EG')}
+                      تسجل في: {new Date(user.createdAt).toLocaleDateString('en-GB')}
                     </p>
                     <div className="flex items-center space-x-2 space-x-reverse">
                       {getStatusBadge(user.isApproved)}

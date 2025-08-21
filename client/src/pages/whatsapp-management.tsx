@@ -260,7 +260,7 @@ export default function WhatsAppManagement() {
 
           {status?.lastConnected && (
             <div className="text-sm text-gray-500">
-              آخر اتصال: {new Date(status.lastConnected).toLocaleString('ar-SA')}
+              آخر اتصال: {new Date(status.lastConnected).toLocaleString('en-GB')}
             </div>
           )}
 

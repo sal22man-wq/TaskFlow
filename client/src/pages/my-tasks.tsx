@@ -85,7 +85,7 @@ export default function MyTasksPage() {
             {task.dueDate && (
               <span className={`flex items-center gap-1 ${new Date(task.dueDate) < new Date() ? 'text-red-600' : 'text-muted-foreground'}`}>
                 <Calendar className="w-3 h-3" />
-                {new Date(task.dueDate).toLocaleDateString()}
+                {new Date(task.dueDate).toLocaleDateString('en-GB')}
               </span>
             )}
           </div>

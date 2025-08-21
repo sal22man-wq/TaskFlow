@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Users, Phone, Plus, Edit, Trash2, Search, X, Calendar, FileText, Eye, Mail } from 'lucide-react';
+import { Users, Phone, Plus, Edit, Trash2, Search, X, Calendar, FileText, Eye, Mail, MapPin, Navigation } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Customer, Task } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
@@ -24,6 +24,9 @@ const customerSchema = z.object({
   phone: z.string().min(1, 'رقم الهاتف مطلوب'),
   email: z.string().email('البريد الإلكتروني غير صحيح').optional().or(z.literal('')),
   address: z.string().optional(),
+  gpsLatitude: z.string().optional(),
+  gpsLongitude: z.string().optional(),
+  gpsAddress: z.string().optional(),
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -34,6 +37,7 @@ export default function Customers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -62,6 +66,9 @@ export default function Customers() {
       phone: '',
       email: '',
       address: '',
+      gpsLatitude: '',
+      gpsLongitude: '',
+      gpsAddress: '',
     },
   });
 
@@ -72,6 +79,9 @@ export default function Customers() {
         phone: data.phone,
         email: data.email || undefined,
         address: data.address || undefined,
+        gpsLatitude: data.gpsLatitude || undefined,
+        gpsLongitude: data.gpsLongitude || undefined,
+        gpsAddress: data.gpsAddress || undefined,
       };
       const response = await apiRequest('POST', '/api/customers', customerData);
       return response.json();
@@ -112,6 +122,9 @@ export default function Customers() {
         phone: data.phone,
         email: data.email || undefined,
         address: data.address || undefined,
+        gpsLatitude: data.gpsLatitude || undefined,
+        gpsLongitude: data.gpsLongitude || undefined,
+        gpsAddress: data.gpsAddress || undefined,
       };
       const response = await apiRequest('PUT', `/api/customers/${data.id}`, customerData);
       return response.json();
@@ -192,6 +205,9 @@ export default function Customers() {
       phone: customer.phone,
       email: customer.email || '',
       address: customer.address || '',
+      gpsLatitude: customer.gpsLatitude || '',
+      gpsLongitude: customer.gpsLongitude || '',
+      gpsAddress: customer.gpsAddress || '',
     });
     setIsDialogOpen(true);
   };
@@ -206,6 +222,95 @@ export default function Customers() {
     setEditingCustomer(null);
     form.reset();
     setIsDialogOpen(true);
+  };
+
+  // الحصول على الموقع الحالي
+  const getCurrentLocation = () => {
+    setIsGettingLocation(true);
+    
+    if (!navigator.geolocation) {
+      toast({
+        title: 'خطأ',
+        description: 'المتصفح لا يدعم خدمة الموقع',
+        variant: 'destructive',
+      });
+      setIsGettingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude.toString();
+        const lng = position.coords.longitude.toString();
+        
+        form.setValue('gpsLatitude', lat);
+        form.setValue('gpsLongitude', lng);
+        
+        // محاولة الحصول على العنوان من الإحداثيات
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`, {
+          headers: {
+            'User-Agent': 'TaskFlow App (task@example.com)'
+          }
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('فشل في الحصول على العنوان');
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data && data.display_name) {
+              form.setValue('gpsAddress', data.display_name);
+            }
+          })
+          .catch((error) => {
+            console.log('فشل في الحصول على العنوان:', error);
+          });
+
+        setIsGettingLocation(false);
+        toast({
+          title: 'تم الحصول على الموقع',
+          description: `تم حفظ الإحداثيات: ${lat.substring(0, 8)}, ${lng.substring(0, 8)}`,
+        });
+      },
+      (error) => {
+        console.error('خطأ في الموقع:', error);
+        setIsGettingLocation(false);
+        
+        let errorMessage = 'لم نتمكن من الحصول على موقعك';
+        
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'تم رفض الإذن للوصول للموقع. يرجى السماح بالوصول في إعدادات المتصفح';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'معلومات الموقع غير متاحة';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'انتهت مهلة البحث عن الموقع';
+            break;
+          default:
+            errorMessage = 'حدث خطأ غير معروف في تحديد الموقع';
+            break;
+        }
+        
+        toast({
+          title: 'خطأ في الموقع',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    );
+  };
+
+  const openInMaps = (lat: string, lng: string) => {
+    const url = `https://www.google.com/maps?q=${lat},${lng}`;
+    window.open(url, '_blank');
   };
 
   const showCustomerDetails = (customer: Customer) => {
@@ -306,6 +411,17 @@ export default function Customers() {
                               <span>{customer.address}</span>
                             </div>
                           )}
+                          {customer.gpsLatitude && customer.gpsLongitude && (
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <MapPin className="h-4 w-4 mr-2 text-green-600" />
+                              <button
+                                onClick={() => openInMaps(customer.gpsLatitude!, customer.gpsLongitude!)}
+                                className="text-blue-600 hover:text-blue-700 underline"
+                              >
+                                عرض على الخريطة
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -346,7 +462,7 @@ export default function Customers() {
 
       {/* نافذة إضافة/تعديل العميل */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingCustomer ? 'تعديل بيانات العميل' : 'إضافة عميل جديد'}
@@ -430,6 +546,73 @@ export default function Customers() {
                 )}
               />
 
+              {/* قسم الموقع الجغرافي */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-medium">الموقع الجغرافي (GPS)</label>
+                  <Button
+                    type="button"
+                    onClick={getCurrentLocation}
+                    disabled={isGettingLocation}
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
+                    data-testid="button-get-location"
+                  >
+                    <Navigation className="h-3 w-3 mr-1" />
+                    {isGettingLocation ? 'جاري التحديد...' : 'تحديد الموقع'}
+                  </Button>
+                </div>
+
+                {form.watch('gpsLatitude') && form.watch('gpsLongitude') && (
+                  <div className="border rounded-lg overflow-hidden bg-muted">
+                    <div 
+                      className="relative h-32 cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => {
+                        const lat = form.watch('gpsLatitude');
+                        const lng = form.watch('gpsLongitude');
+                        if (lat && lng) openInMaps(lat, lng);
+                      }}
+                      data-testid="map-preview"
+                    >
+                      <iframe
+                        src={`https://maps.google.com/maps?q=${form.watch('gpsLatitude')},${form.watch('gpsLongitude')}&t=m&z=15&output=embed`}
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0, pointerEvents: 'none' }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="معاينة الموقع"
+                      />
+                      <div className="absolute inset-0 bg-transparent hover:bg-black/10 transition-colors flex items-center justify-center">
+                        <div className="bg-white/90 px-3 py-1.5 rounded-md text-sm font-medium shadow-sm opacity-0 hover:opacity-100 transition-opacity">
+                          انقر لفتح في خرائط جوجل
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-background">
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPin className="h-4 w-4 text-green-600" />
+                        <span className="font-medium">تم تحديد الموقع</span>
+                      </div>
+                      {form.watch('gpsAddress') && (
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {form.watch('gpsAddress')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {!form.watch('gpsLatitude') && (
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 text-center">
+                    <MapPin className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">اضغط "تحديد الموقع" لإضافة موقع العميل</p>
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end space-x-2">
                 <Button
                   type="button"
@@ -494,7 +677,7 @@ export default function Customers() {
                 {selectedCustomer.createdAt && (
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>تم الإضافة: {new Date(selectedCustomer.createdAt).toLocaleDateString('ar-SA')}</span>
+                    <span>تم الإضافة: {new Date(selectedCustomer.createdAt).toLocaleDateString('en-GB')}</span>
                   </div>
                 )}
               </div>
