@@ -17,13 +17,13 @@ export function BottomNavigation() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-surface border-t border-surface-variant">
-      <div className="grid grid-cols-6 h-16">
+    <nav className="fixed bottom-0 left-0 right-0 w-full bg-surface border-t border-surface-variant z-50 safe-area-bottom">
+      <div className="grid grid-cols-6 h-14 sm:h-16 lg:h-18 max-w-full mx-auto">
         {navItems.map(({ path, icon: Icon, label, testId }) => (
           <Button
             key={path}
             variant="ghost"
-            className={`flex flex-col items-center justify-center space-y-1 h-full rounded-none touch-manipulation ${
+            className={`flex flex-col items-center justify-center space-y-0.5 sm:space-y-1 h-full rounded-none touch-manipulation touch-target px-1 ${
               location === path
                 ? "text-primary"
                 : "text-gray-400 hover:text-on-surface"
@@ -31,8 +31,8 @@ export function BottomNavigation() {
             onClick={() => setLocation(path)}
             data-testid={testId}
           >
-            <Icon className="h-5 w-5" />
-            <span className="text-xs font-medium">{label}</span>
+            <Icon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 flex-shrink-0" />
+            <span className="text-[10px] sm:text-xs lg:text-sm font-medium truncate max-w-full text-center leading-tight">{label}</span>
           </Button>
         ))}
       </div>
