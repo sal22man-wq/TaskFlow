@@ -22,8 +22,8 @@ import { isUnauthorizedError } from '@/lib/authUtils';
 const customerSchema = z.object({
   name: z.string().min(2, 'الاسم يجب أن يكون على الأقل حرفين'),
   phone: z.string()
-    .min(10, 'رقم الهاتف يجب أن يكون على الأقل 10 أرقام')
-    .regex(/^\+964\d{10}$/, 'رقم الهاتف يجب أن يبدأ بـ +964 ويتكون من 13 رقم'),
+    .min(11, 'رقم الهاتف يجب أن يكون على الأقل 11 رقم')
+    .regex(/^\+964\d{10,11}$/, 'رقم الهاتف يجب أن يبدأ بـ +964 ويتكون من 13-14 رقم'),
   address: z.string().optional(),
   gpsLatitude: z.string().optional(),
   gpsLongitude: z.string().optional(),
@@ -339,7 +339,7 @@ export default function Customers() {
                         <div className="relative">
                           <Input 
                             {...field} 
-                            placeholder="+9647xxxxxxxxx" 
+                            placeholder="+9647xxxxxxxxxx" 
                             data-testid="input-customer-phone"
                             onChange={(e) => {
                               let value = e.target.value;
@@ -348,8 +348,8 @@ export default function Customers() {
                                 value = '+964' + value.replace(/^\+964/, '').replace(/[^\d]/g, '');
                               }
                               // اقتطع النص إذا كان أطول من اللازم
-                              if (value.length > 13) {
-                                value = value.substring(0, 13);
+                              if (value.length > 14) {
+                                value = value.substring(0, 14);
                               }
                               field.onChange(value);
                             }}
