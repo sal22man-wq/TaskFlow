@@ -15,7 +15,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   const [showCreateTask, setShowCreateTask] = useState(false);
 
   return (
-    <div className="mobile-container crisp-text">
+    <div className="min-h-screen flex flex-col w-full bg-surface crisp-text">
       <TopAppBar />
       
       <main className="flex-1 overflow-y-auto pb-20 touch-manipulation responsive-padding">
