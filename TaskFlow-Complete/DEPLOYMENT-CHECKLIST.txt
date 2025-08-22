@@ -1,0 +1,54 @@
+TaskFlow Deployment Checklist
+============================
+
+PRE-DEPLOYMENT CHECKLIST:
+□ Windows Server 2016 or later
+□ Administrator access to the server
+□ PostgreSQL 12+ installed
+□ Port 5000 available
+□ Internet connection for initial setup
+
+DEPLOYMENT STEPS:
+□ 1. Copy TaskFlow-Complete folder to server
+□ 2. Right-click setup-database.bat → Run as Administrator
+□ 3. Enter PostgreSQL password when prompted
+□ 4. Wait for "Database Setup Complete!" message
+□ 5. Double-click start-taskflow.bat
+□ 6. Wait for server startup message
+
+VERIFICATION:
+□ Command window shows "TaskFlow server started"
+□ Can access http://localhost:5000
+□ Can login with administrator / wdq@#$
+□ Arabic interface displays correctly
+□ Can create and view tasks
+
+NETWORK ACCESS (OPTIONAL):
+□ Test access from other computers: http://[server-ip]:5000
+□ Windows Firewall rule automatically created
+□ Router/firewall configuration if needed
+
+TROUBLESHOOTING:
+If deployment fails:
+□ Run diagnostics.bat to identify issues
+□ Check PostgreSQL service is running
+□ Verify port 5000 is not in use
+□ Check Windows Event Viewer for errors
+□ Ensure all files copied correctly
+
+PRODUCTION NOTES:
+□ Keep command window open during operation
+□ Database is automatically created and managed
+□ All user data stored in PostgreSQL
+□ System supports multiple concurrent users
+□ Arabic language interface enabled by default
+
+POST-DEPLOYMENT:
+□ Change default administrator password
+□ Create additional user accounts
+□ Configure backup procedures
+□ Set up monitoring if required
+
+SUPPORT CONTACT:
+Ashraf Al-Wadq IT Solutions
+============================
