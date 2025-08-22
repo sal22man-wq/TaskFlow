@@ -12,7 +12,7 @@ export function BottomNavigation() {
     { path: "/tasks", icon: ListTodo, label: "المهام", testId: "nav-tasks" },
     { path: "/customers", icon: UserPlus, label: "العملاء", testId: "nav-customers" },
     { path: "/messages", icon: MessageCircle, label: "الرسائل", testId: "nav-messages" },
-    { path: "/team", icon: Users, label: "الفريق", testId: "nav-team" },
+    { path: "/team-members", icon: Users, label: "أعضاء الفريق", testId: "nav-team-members" },
     { path: "/profile", icon: User, label: "الملف الشخصي", testId: "nav-profile" },
   ];
 

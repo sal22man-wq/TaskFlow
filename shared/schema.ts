@@ -34,6 +34,7 @@ export const teamMembers = pgTable("team_members", {
   status: text("status").notNull().default("available"), // available, busy, offline
   activeTasks: integer("active_tasks").notNull().default(0),
   avatar: text("avatar"), // optional avatar URL or initials
+  profileImage: text("profile_image"), // profile image URL from object storage
 });
 
 export const customers = pgTable("customers", {

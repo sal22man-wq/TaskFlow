@@ -12,6 +12,7 @@ import Dashboard from "@/pages/dashboard";
 import Tasks from "@/pages/tasks";
 import MyTasks from "@/pages/my-tasks";
 import Team from "@/pages/team.tsx";
+import TeamMembers from "@/pages/team-members";
 import Profile from "@/pages/profile.tsx";
 import Customers from "@/pages/customers";
 import Messages from "@/pages/messages";
@@ -55,6 +56,7 @@ function ProtectedRouter() {
             <Route path="/tasks" component={Tasks} />
             <Route path="/my-tasks" component={MyTasks} />
             <Route path="/team" component={Team} />
+            <Route path="/team-members" component={TeamMembers} />
             <Route path="/customers" component={Customers} />
             <Route path="/messages" component={Messages} />
             <Route path="/notifications" component={Notifications} />
