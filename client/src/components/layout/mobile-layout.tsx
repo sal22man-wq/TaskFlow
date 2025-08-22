@@ -18,7 +18,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
     <div className="min-h-screen flex flex-col w-full bg-surface crisp-text">
       <TopAppBar />
       
-      <main className="flex-1 overflow-y-auto pb-20 touch-manipulation responsive-padding">
+      <main className="flex-1 overflow-y-auto pb-20 touch-manipulation responsive-padding" data-scroll-container>
         <div className="w-full max-w-full">
           {children}
         </div>
@@ -48,7 +48,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       <ChatButton variant="floating" />
 
       <Dialog open={showCreateTask} onOpenChange={setShowCreateTask}>
-        <DialogContent className="w-[95vw] max-w-md sm:max-w-lg lg:max-w-xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-lg lg:max-w-xl max-h-[85vh] overflow-y-auto" data-scroll-container>
           <CreateTaskForm onSuccess={() => setShowCreateTask(false)} />
         </DialogContent>
       </Dialog>

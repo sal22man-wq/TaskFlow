@@ -27,6 +27,7 @@ import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
 import { AdminGuard } from "@/components/admin/admin-guard";
 import { WelcomeModal } from "@/components/welcome-modal";
+import { ScrollToTop } from "@/components/ScrollToTop";
 
 function ProtectedRouter() {
   const { user, isLoading, login } = useAuth();
@@ -50,6 +51,7 @@ function ProtectedRouter() {
   return (
     <ErrorBoundary>
       <LanguageProvider>
+        <ScrollToTop />
         <MobileLayout>
           <Switch>
             <Route path="/" component={Dashboard} />

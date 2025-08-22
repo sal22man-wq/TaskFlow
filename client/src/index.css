@@ -583,3 +583,28 @@ body {
     touch-action: manipulation;
   }
 }
+
+/* Scroll to top utility classes for all containers */
+[data-scroll-container],
+[role="dialog"],
+.overflow-auto,
+.overflow-y-auto,
+main {
+  scroll-behavior: smooth;
+}
+
+/* Reset scroll position for new routes */
+.route-transition {
+  animation: fadeInFromTop 0.2s ease-in-out;
+}
+
+@keyframes fadeInFromTop {
+  from {
+    opacity: 0.95;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
