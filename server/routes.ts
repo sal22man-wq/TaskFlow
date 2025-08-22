@@ -617,6 +617,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profileImage: objectPath,
       });
       
+      // Also update the user's profile image since they are linked
+      if (updatedMember && updatedMember.userId) {
+        await storage.updateUser(updatedMember.userId, {
+          profileImageUrl: objectPath,
+        });
+        console.log('Updated user profile image for userId:', updatedMember.userId);
+      }
+      
       console.log('Profile image updated:', {
         memberId: req.params.id,
         originalURL: req.body.profileImageURL,
