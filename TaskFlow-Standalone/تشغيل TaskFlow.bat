@@ -79,10 +79,25 @@ echo - أغلق النافذة لإيقاف الخادم
 echo ===============================================
 echo.
 
-:: تشغيل التطبيق
+:: تشغيل التطبيق مع معالجة الأخطاء
 TaskFlow.exe
+set EXIT_CODE=%errorlevel%
 
 echo.
-echo [%time%] تم إيقاف خادم TaskFlow
+if %EXIT_CODE% neq 0 (
+    echo ❌ [%time%] حدث خطأ أثناء تشغيل TaskFlow
+    echo رمز الخطأ: %EXIT_CODE%
+    echo.
+    echo الأسباب المحتملة:
+    echo 1. مشكلة في قاعدة البيانات
+    echo 2. المنفذ 5000 مستخدم من تطبيق آخر
+    echo 3. ملف .env يحتوي على إعدادات خاطئة
+    echo 4. PostgreSQL غير متصل
+    echo.
+    echo للمساعدة في التشخيص، شغل: تشخيص المشاكل.bat
+) else (
+    echo ✅ [%time%] تم إيقاف خادم TaskFlow بشكل طبيعي
+)
+echo.
 echo اضغط أي مفتاح للإغلاق...
 pause
