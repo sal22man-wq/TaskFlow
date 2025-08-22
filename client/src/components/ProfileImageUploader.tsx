@@ -28,18 +28,25 @@ export function ProfileImageUploader({
 
   const updateProfileImageMutation = useMutation({
     mutationFn: async (profileImageURL: string) => {
-      return await apiRequest(`/api/team-members/${teamMemberId}/profile-image`, {
-        method: "PUT",
-        body: { profileImageURL },
+      console.log('Updating profile image with URL:', profileImageURL);
+      const response = await apiRequest("PUT", `/api/team-members/${teamMemberId}/profile-image`, {
+        profileImageURL,
       });
+      return response.json();
     },
     onSuccess: (data) => {
+      console.log('Profile image update response:', data);
       toast({
         title: "تم تحديث الصورة الشخصية",
         description: "تم تحديث الصورة الشخصية بنجاح",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/team-members"] });
       onImageUpdated?.(data.objectPath);
+      
+      // Force refresh the page data
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ["/api/team-members"] });
+      }, 1000);
     },
     onError: (error) => {
       console.error("Error updating profile image:", error);
