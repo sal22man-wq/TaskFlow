@@ -51,12 +51,18 @@ export function ProfileImageUploader({
     },
   });
 
-  const handleGetUploadParameters = async () => {
-    const response = await apiRequest("/api/objects/upload", { method: "POST" });
-    return {
-      method: "PUT" as const,
-      url: response.uploadURL,
-    };
+  const handleGetUploadParameters = async (file: any) => {
+    try {
+      const response = await apiRequest("POST", "/api/objects/upload", {});
+      const data = await response.json();
+      return {
+        method: "PUT" as const,
+        url: data.uploadURL,
+      };
+    } catch (error) {
+      console.error('Error getting upload parameters:', error);
+      throw error;
+    }
   };
 
   const handleUploadComplete = (result: any) => {
