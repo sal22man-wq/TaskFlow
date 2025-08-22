@@ -67,9 +67,9 @@ export function ProfileImageUploader({
   };
 
   const sizeClasses = {
-    sm: "w-12 h-12",
-    md: "w-18 h-18", 
-    lg: "w-20 h-20",
+    sm: "w-14 h-14",
+    md: "w-20 h-20", 
+    lg: "w-24 h-24",
   };
 
   const getInitials = (name: string) => {
@@ -83,13 +83,17 @@ export function ProfileImageUploader({
 
   return (
     <div className="relative group">
-      <Avatar className={`${sizeClasses[size]} ring-2 ring-blue-100 ring-offset-2 transition-all duration-200 group-hover:ring-blue-300`}>
+      <Avatar className={`${sizeClasses[size]} ring-4 ring-blue-200/60 ring-offset-2 transition-all duration-300 group-hover:ring-blue-400/80 shadow-lg`}>
         <AvatarImage 
-          src={currentProfileImage ? `${currentProfileImage}` : undefined} 
+          src={currentProfileImage ? `${window.location.origin}${currentProfileImage}` : undefined} 
           alt={`صورة ${memberName}`}
           className="object-cover"
+          onError={(e) => {
+            console.log('Image failed to load:', currentProfileImage);
+            e.currentTarget.style.display = 'none';
+          }}
         />
-        <AvatarFallback className="bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600 font-semibold border border-blue-200">
+        <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-bold text-lg border-2 border-blue-300 shadow-inner">
           {getInitials(memberName)}
         </AvatarFallback>
       </Avatar>

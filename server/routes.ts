@@ -610,6 +610,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedMember = await storage.updateTeamMember(req.params.id, {
         profileImage: objectPath,
       });
+      
+      console.log('Profile image updated:', {
+        memberId: req.params.id,
+        objectPath,
+        updatedMember: updatedMember?.name
+      });
 
       // Log the profile image update
       if (updatedMember) {

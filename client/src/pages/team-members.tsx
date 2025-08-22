@@ -253,12 +253,17 @@ export default function TeamMembersPage() {
         )}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {teamMembers.map((member) => (
-          <Card key={member.id} className="hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border-l-4 border-l-blue-400 bg-gradient-to-br from-white to-blue-50/30">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-4">
-                <div className="flex-shrink-0">
+          <Card key={member.id} className="group hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 border-0 bg-white rounded-3xl overflow-hidden relative">
+            {/* Decorative gradient border */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ padding: '2px' }}>
+              <div className="bg-white rounded-3xl h-full w-full" />
+            </div>
+            
+            <div className="relative z-10 bg-white rounded-3xl">
+              <CardHeader className="pb-6 pt-8 text-center">
+                <div className="flex justify-center mb-4">
                   <ProfileImageUploader
                     teamMemberId={member.id}
                     currentProfileImage={member.profileImage}
@@ -267,58 +272,60 @@ export default function TeamMembersPage() {
                     showUploadIcon={canManageMembers}
                   />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-xl mb-2 truncate text-gray-800">{member.name}</CardTitle>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <Badge 
-                      variant="outline" 
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-500 font-medium px-3 py-1"
-                    >
-                      {getRoleText(member.role)}
-                    </Badge>
-                    <Badge className={`${getStatusColor(member.status)} px-3 py-1 font-medium`}>
-                      {getStatusText(member.status)}
-                    </Badge>
-                  </div>
+                <CardTitle className="text-2xl mb-3 text-gray-800 font-bold">{member.name}</CardTitle>
+                <div className="flex flex-wrap justify-center gap-2 mb-4">
+                  <Badge 
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 font-semibold px-4 py-2 rounded-full text-sm shadow-md"
+                  >
+                    {getRoleText(member.role)}
+                  </Badge>
+                  <Badge className={`${getStatusColor(member.status)} px-4 py-2 font-semibold rounded-full text-sm shadow-md border-0`}>
+                    {getStatusText(member.status)}
+                  </Badge>
                 </div>
+                
                 {canManageMembers && (
-                  <div className="flex gap-2 flex-shrink-0">
+                  <div className="flex justify-center gap-3 mt-4">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-10 w-10 rounded-full hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                      className="h-12 w-12 rounded-full bg-blue-50 hover:bg-blue-100 hover:scale-110 transition-all duration-200 text-blue-600"
                       onClick={() => setEditingMember(member)}
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="w-5 h-5" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-10 w-10 rounded-full hover:bg-red-100 hover:text-red-600 transition-colors"
+                      className="h-12 w-12 rounded-full bg-red-50 hover:bg-red-100 hover:scale-110 transition-all duration-200 text-red-600"
                       onClick={() => deleteMemberMutation.mutate(member.id)}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-5 h-5" />
                     </Button>
                   </div>
                 )}
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm text-muted-foreground bg-gray-50 p-3 rounded-lg">
-                  <Mail className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                  <span className="truncate">{member.email}</span>
-                </div>
-                <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg">
-                  <span className="font-medium text-gray-700">المهام النشطة</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                      {member.activeTasks}
+              </CardHeader>
+              
+              <CardContent className="pt-0 pb-8">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 text-sm bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-2xl border border-gray-100">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <span className="truncate text-gray-700 font-medium">{member.email}</span>
+                  </div>
+                  
+                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-2xl text-white">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-lg">المهام النشطة</span>
+                      <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                        <span className="text-2xl font-bold">{member.activeTasks}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
+              </CardContent>
+            </div>
           </Card>
         ))}
       </div>
