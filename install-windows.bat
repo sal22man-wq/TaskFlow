@@ -1,5 +1,5 @@
 @echo off
-title TaskFlow Installation - Windows Server
+title TaskFlow Installation - Windows Server 2019/2022
 color 0B
 
 echo ===============================================
@@ -85,10 +85,21 @@ echo [5/6] بناء التطبيق...
 call npm run build
 if %errorlevel% neq 0 (
     echo خطأ في بناء التطبيق
+    echo تحقق من وجود جميع الملفات المطلوبة
     pause
     exit /b 1
 )
 echo ✓ تم بناء التطبيق بنجاح
+
+echo.
+echo [5.1/6] إعداد Windows Firewall...
+echo إضافة استثناء للمنفذ 5000...
+netsh advfirewall firewall add rule name="TaskFlow Application" dir=in action=allow protocol=TCP localport=5000 >nul 2>&1
+if %errorlevel% equ 0 (
+    echo ✓ تم إعداد Windows Firewall بنجاح
+) else (
+    echo تحذير: فشل في إعداد Windows Firewall - قد تحتاج صلاحيات مدير
+)
 
 echo.
 echo [6/6] إنشاء سكريپتات التشغيل...
