@@ -67,9 +67,9 @@ export function ProfileImageUploader({
   };
 
   const sizeClasses = {
-    sm: "w-10 h-10",
-    md: "w-16 h-16",
-    lg: "w-24 h-24",
+    sm: "w-12 h-12",
+    md: "w-18 h-18", 
+    lg: "w-20 h-20",
   };
 
   const getInitials = (name: string) => {
@@ -83,33 +83,34 @@ export function ProfileImageUploader({
 
   return (
     <div className="relative group">
-      <Avatar className={sizeClasses[size]}>
+      <Avatar className={`${sizeClasses[size]} ring-2 ring-blue-100 ring-offset-2 transition-all duration-200 group-hover:ring-blue-300`}>
         <AvatarImage 
           src={currentProfileImage ? `${currentProfileImage}` : undefined} 
           alt={`صورة ${memberName}`}
+          className="object-cover"
         />
-        <AvatarFallback className="bg-blue-100 text-blue-700 font-medium">
-          <User className="w-1/2 h-1/2" />
+        <AvatarFallback className="bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600 font-semibold border border-blue-200">
+          {getInitials(memberName)}
         </AvatarFallback>
       </Avatar>
       
       {showUploadIcon && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center backdrop-blur-sm">
           <ObjectUploader
             maxNumberOfFiles={1}
             maxFileSize={5 * 1024 * 1024} // 5MB
             onGetUploadParameters={handleGetUploadParameters}
             onComplete={handleUploadComplete}
-            buttonClassName="bg-transparent hover:bg-transparent p-0 h-auto border-none shadow-none"
+            buttonClassName="bg-transparent hover:bg-transparent p-2 h-auto border-none shadow-none rounded-full hover:bg-white/20 transition-colors"
           >
-            <Camera className="w-4 h-4 text-white" />
+            <Camera className="w-5 h-5 text-white drop-shadow-sm" />
           </ObjectUploader>
         </div>
       )}
       
       {updateProfileImageMutation.isPending && (
-        <div className="absolute inset-0 bg-white bg-opacity-75 rounded-full flex items-center justify-center">
-          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div className="absolute inset-0 bg-white bg-opacity-80 rounded-full flex items-center justify-center backdrop-blur-sm">
+          <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
     </div>

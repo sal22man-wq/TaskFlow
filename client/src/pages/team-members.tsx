@@ -255,32 +255,38 @@ export default function TeamMembersPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {teamMembers.map((member) => (
-          <Card key={member.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start gap-4">
-                <ProfileImageUploader
-                  teamMemberId={member.id}
-                  currentProfileImage={member.profileImage}
-                  memberName={member.name}
-                  size="lg"
-                  showUploadIcon={canManageMembers}
-                />
+          <Card key={member.id} className="hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border-l-4 border-l-blue-400 bg-gradient-to-br from-white to-blue-50/30">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0">
+                  <ProfileImageUploader
+                    teamMemberId={member.id}
+                    currentProfileImage={member.profileImage}
+                    memberName={member.name}
+                    size="lg"
+                    showUploadIcon={canManageMembers}
+                  />
+                </div>
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-lg mb-1 truncate">{member.name}</CardTitle>
-                  <Badge variant="outline" className="mb-2">
-                    {getRoleText(member.role)}
-                  </Badge>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge className={getStatusColor(member.status)}>
+                  <CardTitle className="text-xl mb-2 truncate text-gray-800">{member.name}</CardTitle>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <Badge 
+                      variant="outline" 
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-500 font-medium px-3 py-1"
+                    >
+                      {getRoleText(member.role)}
+                    </Badge>
+                    <Badge className={`${getStatusColor(member.status)} px-3 py-1 font-medium`}>
                       {getStatusText(member.status)}
                     </Badge>
                   </div>
                 </div>
                 {canManageMembers && (
-                  <div className="flex gap-1">
+                  <div className="flex gap-2 flex-shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="h-10 w-10 rounded-full hover:bg-blue-100 hover:text-blue-600 transition-colors"
                       onClick={() => setEditingMember(member)}
                     >
                       <Edit2 className="w-4 h-4" />
@@ -288,6 +294,7 @@ export default function TeamMembersPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="h-10 w-10 rounded-full hover:bg-red-100 hover:text-red-600 transition-colors"
                       onClick={() => deleteMemberMutation.mutate(member.id)}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -296,15 +303,19 @@ export default function TeamMembersPage() {
                 )}
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Mail className="w-4 h-4" />
-                  {member.email}
+            <CardContent className="pt-0">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground bg-gray-50 p-3 rounded-lg">
+                  <Mail className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <span className="truncate">{member.email}</span>
                 </div>
-                <div className="text-sm">
-                  <span className="font-medium">المهام النشطة: </span>
-                  <span className="text-blue-600">{member.activeTasks}</span>
+                <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg">
+                  <span className="font-medium text-gray-700">المهام النشطة</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                      {member.activeTasks}
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
