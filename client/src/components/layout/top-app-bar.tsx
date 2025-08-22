@@ -1,6 +1,7 @@
 import { Bell, UserCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLanguage } from "@/hooks/use-language";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -77,10 +78,19 @@ export function TopAppBar() {
           <Button
             variant="ghost"
             size="icon"
-            className="text-primary-foreground hover:bg-primary-dark rounded-full touch-target w-9 h-9 sm:w-10 sm:h-10 lg:w-11 lg:h-11"
+            className="text-primary-foreground hover:bg-primary-dark rounded-full touch-target w-9 h-9 sm:w-10 sm:h-10 lg:w-11 lg:h-11 p-1"
             data-testid="button-profile-menu"
           >
-            <UserCircle className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7" />
+            <Avatar className="h-7 w-7 sm:h-8 sm:w-8 lg:h-9 lg:w-9">
+              <AvatarImage 
+                src={user?.profileImageUrl || ''} 
+                alt={user?.firstName || 'المستخدم'}
+                className="object-cover"
+              />
+              <AvatarFallback className="bg-primary-dark text-primary-foreground text-xs sm:text-sm font-medium">
+                {user?.firstName ? user.firstName.charAt(0) : <UserCircle className="h-4 w-4" />}
+              </AvatarFallback>
+            </Avatar>
           </Button>
           <Button
             variant="ghost"
