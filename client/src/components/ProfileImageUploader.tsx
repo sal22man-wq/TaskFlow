@@ -25,34 +25,41 @@ export function ProfileImageUploader({
 }: ProfileImageUploaderProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [localProfileImage, setLocalProfileImage] = useState(currentProfileImage);
 
   const updateProfileImageMutation = useMutation({
     mutationFn: async (profileImageURL: string) => {
-      console.log('Updating profile image with URL:', profileImageURL);
+      console.log('Updating profile image for member:', teamMemberId, 'with URL:', profileImageURL);
       const response = await apiRequest("PUT", `/api/team-members/${teamMemberId}/profile-image`, {
         profileImageURL,
       });
-      return response.json();
+      const data = await response.json();
+      console.log('Profile image update response:', data);
+      return data;
     },
     onSuccess: (data) => {
-      console.log('Profile image update response:', data);
+      console.log('Profile image successfully updated:', data);
       toast({
-        title: "تم تحديث الصورة الشخصية",
+        title: "نجح الرفع",
         description: "تم تحديث الصورة الشخصية بنجاح",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/team-members"] });
-      onImageUpdated?.(data.objectPath);
       
-      // Force refresh the page data
-      setTimeout(() => {
-        queryClient.refetchQueries({ queryKey: ["/api/team-members"] });
-      }, 1000);
+      // Update local state immediately
+      if (data.objectPath) {
+        setLocalProfileImage(data.objectPath);
+      }
+      
+      // Invalidate and refetch queries
+      queryClient.invalidateQueries({ queryKey: ["/api/team-members"] });
+      queryClient.refetchQueries({ queryKey: ["/api/team-members"] });
+      
+      onImageUpdated?.(data.objectPath);
     },
     onError: (error) => {
       console.error("Error updating profile image:", error);
       toast({
-        title: "خطأ",
-        description: "فشل في تحديث الصورة الشخصية",
+        title: "خطأ في الرفع", 
+        description: "فشل في تحديث الصورة الشخصية: " + error.message,
         variant: "destructive",
       });
     },
@@ -60,14 +67,21 @@ export function ProfileImageUploader({
 
   const handleGetUploadParameters = async (file: any) => {
     try {
+      console.log('Getting upload parameters for file:', file.name, file.type, file.size);
       const response = await apiRequest("POST", "/api/objects/upload", {});
       const data = await response.json();
+      console.log('Got upload parameters:', data);
       return {
         method: "PUT" as const,
         url: data.uploadURL,
       };
     } catch (error) {
       console.error('Error getting upload parameters:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في الحصول على رابط الرفع",
+        variant: "destructive",
+      });
       throw error;
     }
   };
@@ -117,14 +131,14 @@ export function ProfileImageUploader({
     <div className="relative group">
       <Avatar className={`${sizeClasses[size]} ring-4 ring-blue-200/60 ring-offset-2 transition-all duration-300 group-hover:ring-blue-400/80 shadow-lg`}>
         <AvatarImage 
-          src={currentProfileImage || undefined} 
+          src={localProfileImage || currentProfileImage || undefined} 
           alt={`صورة ${memberName}`}
           className="object-cover"
           onError={(e) => {
-            console.log('Image failed to load:', currentProfileImage);
+            console.log('Image failed to load:', localProfileImage || currentProfileImage);
           }}
           onLoad={() => {
-            console.log('Image loaded successfully:', currentProfileImage);
+            console.log('Image loaded successfully:', localProfileImage || currentProfileImage);
           }}
         />
         <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-bold text-lg border-2 border-blue-300 shadow-inner">

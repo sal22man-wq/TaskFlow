@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Upload Test</title>
+</head>
+<body>
+    <h1>Test Upload Functionality</h1>
+    <input type="file" id="fileInput" accept="image/*">
+    <button onclick="testUpload()">Test Upload</button>
+    <div id="result"></div>
+    
+    <script>
+    async function testUpload() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+        if (!file) {
+            alert('Please select a file');
+            return;
+        }
+        
+        console.log('Selected file:', file.name, file.size, file.type);
+        
+        try {
+            // Step 1: Get upload URL
+            const uploadResponse = await fetch('/api/objects/upload', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            });
+            
+            if (!uploadResponse.ok) {
+                throw new Error('Failed to get upload URL: ' + uploadResponse.statusText);
+            }
+            
+            const uploadData = await uploadResponse.json();
+            console.log('Got upload URL:', uploadData.uploadURL);
+            
+            // Step 2: Upload file directly
+            const uploadFileResponse = await fetch(uploadData.uploadURL, {
+                method: 'PUT',
+                body: file,
+                headers: {
+                    'Content-Type': file.type
+                }
+            });
+            
+            if (!uploadFileResponse.ok) {
+                throw new Error('File upload failed: ' + uploadFileResponse.statusText);
+            }
+            
+            console.log('File uploaded successfully');
+            
+            // Step 3: Update team member (using first available member)
+            const membersResponse = await fetch('/api/team-members', {
+                credentials: 'include'
+            });
+            const members = await membersResponse.json();
+            const firstMember = members[0];
+            
+            const updateResponse = await fetch(`/api/team-members/${firstMember.id}/profile-image`, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    profileImageURL: uploadData.uploadURL
+                })
+            });
+            
+            const updateResult = await updateResponse.json();
+            console.log('Update result:', updateResult);
+            
+            document.getElementById('result').innerHTML = `
+                <h3>Success!</h3>
+                <p>File uploaded and member updated</p>
+                <p>Object path: ${updateResult.objectPath}</p>
+                <img src="${updateResult.objectPath}" style="max-width: 200px;">
+            `;
+            
+        } catch (error) {
+            console.error('Upload failed:', error);
+            document.getElementById('result').innerHTML = `<h3>Error: ${error.message}</h3>`;
+        }
+    }
+    </script>
+</body>
+</html>

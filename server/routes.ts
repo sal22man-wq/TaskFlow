@@ -10,6 +10,7 @@ import { pool } from "./db";
 import { whatsappService } from "./whatsapp-service";
 import * as XLSX from 'xlsx';
 import archiver from 'archiver';
+import path from 'path';
 import { Readable } from 'stream';
 import {
   ObjectStorageService,
@@ -566,6 +567,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug upload page - remove in production
+  app.get("/debug-upload.html", (req, res) => {
+    res.sendFile(path.join(process.cwd(), "debug-upload.html"));
+  });
+
   // Object storage endpoints for profile images
   app.get("/objects/:objectPath(*)", async (req, res) => {
     const objectStorageService = new ObjectStorageService();
@@ -613,8 +619,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('Profile image updated:', {
         memberId: req.params.id,
+        originalURL: req.body.profileImageURL,
         objectPath,
-        updatedMember: updatedMember?.name
+        updatedMember: updatedMember?.name,
+        memberData: updatedMember
       });
 
       // Log the profile image update
