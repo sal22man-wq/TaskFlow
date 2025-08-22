@@ -1485,6 +1485,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/messages/conversation/:participantId/:type", requireAuth, async (req, res) => {
+    try {
+      const currentUserId = req.session.userId!;
+      const { participantId, type } = req.params;
+      
+      let messages;
+      if (type === "group") {
+        // Get group messages
+        messages = await storage.getGroupMessages();
+      } else {
+        // Get private messages between current user and participant
+        messages = await storage.getConversationMessages(currentUserId, participantId);
+      }
+      
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching conversation messages:", error);
+      res.status(500).json({ message: "Failed to fetch conversation messages" });
+    }
+  });
+
   // Notifications routes
   app.get("/api/notifications", requireAuth, async (req, res) => {
     try {

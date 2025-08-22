@@ -36,7 +36,7 @@ import {
   type PointsHistory,
   type InsertPointsHistory,
 } from "@shared/schema";
-import { eq, desc, and, or, ne, sql } from "drizzle-orm";
+import { eq, desc, and, or, ne, sql, asc } from "drizzle-orm";
 import { db } from "./db";
 import bcrypt from "bcryptjs";
 
@@ -302,41 +302,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async toggleUserStatus(userId: string): Promise<User | undefined> {
-    // Get current user status
-    const [currentUser] = await db
-      .select({ isActive: users.isActive })
-      .from(users)
-      .where(eq(users.id, userId));
-    
-    if (!currentUser) return undefined;
-    
-    // Toggle status
-    const newStatus = currentUser.isActive === "true" ? "false" : "true";
-    
-    const [user] = await db
-      .update(users)
-      .set({ isActive: newStatus })
-      .where(eq(users.id, userId))
-      .returning();
-    
-    return user;
-  }
 
-  async deleteUser(userId: string): Promise<boolean> {
-    try {
-      // Delete user's team member record first
-      await db.delete(teamMembers).where(eq(teamMembers.userId, userId));
-      
-      // Delete user
-      await db.delete(users).where(eq(users.id, userId));
-      
-      return true;
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      return false;
-    }
-  }
 
   // Team Member by User
   async getTeamMemberByUserId(userId: string): Promise<TeamMember | undefined> {
@@ -645,6 +611,57 @@ export class DatabaseStorage implements IStorage {
         )
       );
     return unreadMessages.length;
+  }
+
+  async getConversationMessages(userId1: string, userId2: string): Promise<MessageWithSender[]> {
+    try {
+      const query = db.select().from(messages).where(
+        or(
+          and(eq(messages.senderId, userId1), eq(messages.receiverId, userId2)),
+          and(eq(messages.senderId, userId2), eq(messages.receiverId, userId1))
+        )
+      ).orderBy(asc(messages.createdAt));
+      
+      const conversationMessages = await query;
+      const allMembers = await this.getTeamMembers();
+      const allUsers = await this.getAllUsers();
+      
+      return conversationMessages.map((message) => {
+        let sender = allMembers.find(member => member.id === message.senderId) || 
+                    allUsers.find(user => user.id === message.senderId);
+        return {
+          ...message,
+          sender
+        };
+      });
+    } catch (error) {
+      console.error("Error getting conversation messages:", error);
+      return [];
+    }
+  }
+
+  async getGroupMessages(): Promise<MessageWithSender[]> {
+    try {
+      const query = db.select().from(messages).where(
+        eq(messages.messageScope, "group")
+      ).orderBy(asc(messages.createdAt));
+      
+      const groupMessages = await query;
+      const allMembers = await this.getTeamMembers();
+      const allUsers = await this.getAllUsers();
+      
+      return groupMessages.map((message) => {
+        let sender = allMembers.find(member => member.id === message.senderId) || 
+                    allUsers.find(user => user.id === message.senderId);
+        return {
+          ...message,
+          sender
+        };
+      });
+    } catch (error) {
+      console.error("Error getting group messages:", error);
+      return [];
+    }
   }
 
   // Notification methods
