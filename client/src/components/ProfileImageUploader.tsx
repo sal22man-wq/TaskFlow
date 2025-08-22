@@ -26,6 +26,7 @@ export function ProfileImageUploader({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [localProfileImage, setLocalProfileImage] = useState(currentProfileImage);
+  const [imageKey, setImageKey] = useState(0); // Force re-render of image
 
   const updateProfileImageMutation = useMutation({
     mutationFn: async (profileImageURL: string) => {
@@ -44,9 +45,14 @@ export function ProfileImageUploader({
         description: "تم تحديث الصورة الشخصية بنجاح",
       });
       
-      // Update local state immediately
+      // Update local state immediately and force re-render
       if (data.objectPath) {
         setLocalProfileImage(data.objectPath);
+        setImageKey(prev => prev + 1); // Force image re-render
+        
+        // Add cache buster to image URL
+        const imageWithCacheBuster = `${data.objectPath}?t=${Date.now()}`;
+        setLocalProfileImage(imageWithCacheBuster);
       }
       
       // Invalidate and refetch queries
@@ -131,11 +137,17 @@ export function ProfileImageUploader({
     <div className="relative group">
       <Avatar className={`${sizeClasses[size]} ring-4 ring-blue-200/60 ring-offset-2 transition-all duration-300 group-hover:ring-blue-400/80 shadow-lg`}>
         <AvatarImage 
+          key={imageKey} // Force re-render when image changes
           src={localProfileImage || currentProfileImage || undefined} 
           alt={`صورة ${memberName}`}
           className="object-cover"
           onError={(e) => {
             console.log('Image failed to load:', localProfileImage || currentProfileImage);
+            // Fallback to original image without cache buster
+            if (localProfileImage && localProfileImage.includes('?t=')) {
+              const originalImage = localProfileImage.split('?t=')[0];
+              setLocalProfileImage(originalImage);
+            }
           }}
           onLoad={() => {
             console.log('Image loaded successfully:', localProfileImage || currentProfileImage);

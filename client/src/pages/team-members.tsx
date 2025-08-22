@@ -270,6 +270,12 @@ export default function TeamMembersPage() {
                     memberName={member.name}
                     size="lg"
                     showUploadIcon={canManageMembers}
+                    onImageUpdated={(newImagePath) => {
+                      // Force refresh of team members data
+                      queryClient.invalidateQueries({ queryKey: ["/api/team-members"] });
+                      queryClient.refetchQueries({ queryKey: ["/api/team-members"] });
+                    }}
+                    key={`${member.id}-${member.profileImage || 'no-image'}`}
                   />
                 </div>
                 <CardTitle className="text-2xl mb-3 text-gray-800 font-bold">{member.name}</CardTitle>
