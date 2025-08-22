@@ -211,6 +211,80 @@ export class WhatsAppService {
 
 
 
+  // إرسال رسالة تكليف بمهمة لعضو الفريق
+  async sendTaskAssignmentMessage(memberPhone: string, taskNumber: string, taskTitle: string, memberName: string): Promise<boolean> {
+    try {
+      if (!this.isReady) {
+        console.log('🔄 خدمة الواتساب غير جاهزة - محاكاة إرسال رسالة تكليف المهمة');
+        await this.logTaskAssignmentMessage(memberPhone, taskNumber, taskTitle, memberName, true);
+        return true;
+      }
+
+      // تنسيق رقم الهاتف
+      const formattedPhone = this.formatPhoneNumber(memberPhone);
+      if (!formattedPhone) {
+        console.error('❌ رقم هاتف غير صحيح:', memberPhone);
+        return false;
+      }
+
+      const message = `🔔 *تكليف بمهمة جديدة*
+
+مرحباً ${memberName}! 👋
+
+تم تكليفك بمهمة جديدة:
+
+📋 *رقم المهمة:* ${taskNumber}
+📝 *عنوان المهمة:* ${taskTitle}
+
+⏰ يرجى مراجعة النظام لمعرفة تفاصيل المهمة الكاملة والبدء في تنفيذها.
+
+🚀 نتمنى لك التوفيق!
+
+---
+نظام إدارة المهام - شركة اشراق الودق لتكنولوجيا المعلومات`;
+
+      if (this.isRealMode) {
+        // إرسال حقيقي
+        await this.client.sendMessage(`${formattedPhone}@c.us`, message);
+        console.log(`✅ تم إرسال رسالة تكليف المهمة ${taskNumber} إلى ${memberName} (${formattedPhone})`);
+      } else {
+        // وضع المحاكاة
+        console.log(`📱 محاكاة إرسال رسالة تكليف المهمة إلى ${memberName} (${formattedPhone}):`);
+        console.log(message);
+      }
+
+      // تسجيل الرسالة في قاعدة البيانات
+      await this.logTaskAssignmentMessage(memberPhone, taskNumber, taskTitle, memberName, true);
+      
+      return true;
+    } catch (error) {
+      console.error('❌ خطأ في إرسال رسالة تكليف المهمة:', error);
+      await this.logTaskAssignmentMessage(memberPhone, taskNumber, taskTitle, memberName, false);
+      return false;
+    }
+  }
+
+  // تسجيل رسالة تكليف المهمة في النظام
+  private async logTaskAssignmentMessage(memberPhone: string, taskNumber: string, taskTitle: string, memberName: string, success: boolean) {
+    try {
+      await storage.createSystemLog({
+        action: 'whatsapp_task_assignment',
+        details: `إرسال رسالة تكليف المهمة ${taskNumber} إلى ${memberName} (${memberPhone}) - ${success ? 'نجح' : 'فشل'}`,
+        userId: 'system',
+        metadata: JSON.stringify({
+          memberPhone,
+          taskNumber,
+          taskTitle,
+          memberName,
+          success,
+          timestamp: new Date().toISOString()
+        })
+      });
+    } catch (error) {
+      console.error('❌ خطأ في تسجيل رسالة تكليف المهمة:', error);
+    }
+  }
+
   // معالجة الرسائل الواردة من العملاء
   private async handleIncomingMessage(message: any) {
     try {

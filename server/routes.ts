@@ -1062,6 +1062,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create notifications for assigned team members
       await storage.createTaskNotifications(task, "task_assigned");
+
+      // Send WhatsApp messages to assigned team members
+      if (task.assigneeIds && task.assigneeIds.length > 0) {
+        for (const assigneeId of task.assigneeIds) {
+          try {
+            const teamMember = await storage.getTeamMemberByUserId(assigneeId);
+            if (teamMember && teamMember.phone) {
+              console.log(`📱 إرسال رسالة واتساب لعضو الفريق: ${teamMember.name}`);
+              await whatsappService.sendTaskAssignmentMessage(
+                teamMember.phone,
+                task.taskNumber || `TSK-${task.id.slice(-4).toUpperCase()}`,
+                task.title,
+                teamMember.name
+              );
+            } else if (teamMember && !teamMember.phone) {
+              console.log(`⚠️ لا يوجد رقم هاتف لعضو الفريق: ${teamMember.name}`);
+            }
+          } catch (whatsappError) {
+            console.error('❌ خطأ في إرسال رسالة الواتساب:', whatsappError);
+            // Don't fail the task creation if WhatsApp fails
+          }
+        }
+      }
       
       // Send WhatsApp confirmation message to customer
       if (task.customerPhone && task.customerName) {

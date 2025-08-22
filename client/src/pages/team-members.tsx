@@ -24,6 +24,7 @@ interface TeamMember {
   name: string;
   role: string;
   email: string;
+  phone?: string;
   status: string;
   activeTasks: number;
   avatar?: string;
@@ -43,7 +44,7 @@ export default function TeamMembersPage() {
   });
 
   // Check if user has admin or supervisor permissions
-  const canManageMembers = user?.role === "admin" || user?.role === "supervisor";
+  const canManageMembers = (user as any)?.role === "admin" || (user as any)?.role === "supervisor";
 
   const { data: teamMembers = [], isLoading } = useQuery<TeamMember[]>({
     queryKey: ["/api/team-members"],
@@ -51,10 +52,7 @@ export default function TeamMembersPage() {
 
   const createMemberMutation = useMutation({
     mutationFn: async (member: { name: string; role: string; email: string }) => {
-      return await apiRequest("/api/team-members", {
-        method: "POST",
-        body: member,
-      });
+      return await apiRequest("/api/team-members", "POST", member);
     },
     onSuccess: () => {
       toast({
@@ -76,10 +74,7 @@ export default function TeamMembersPage() {
 
   const updateMemberMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<TeamMember> }) => {
-      return await apiRequest(`/api/team-members/${id}`, {
-        method: "PATCH",
-        body: updates,
-      });
+      return await apiRequest(`/api/team-members/${id}`, "PATCH", updates);
     },
     onSuccess: () => {
       toast({
@@ -100,9 +95,7 @@ export default function TeamMembersPage() {
 
   const deleteMemberMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/team-members/${id}`, {
-        method: "DELETE",
-      });
+      return await apiRequest(`/api/team-members/${id}`, "DELETE");
     },
     onSuccess: () => {
       toast({
@@ -235,7 +228,7 @@ export default function TeamMembersPage() {
                     <SelectContent>
                       <SelectItem value="user">مستخدم</SelectItem>
                       <SelectItem value="supervisor">مشرف</SelectItem>
-                      {user?.role === "admin" && <SelectItem value="admin">مدير النظام</SelectItem>}
+                      {(user as any)?.role === "admin" && <SelectItem value="admin">مدير النظام</SelectItem>}
                     </SelectContent>
                   </Select>
                 </div>
@@ -321,6 +314,15 @@ export default function TeamMembersPage() {
                     <span className="truncate text-gray-700 font-medium">{member.email}</span>
                   </div>
                   
+                  {member.phone && (
+                    <div className="flex items-center gap-3 text-sm bg-gradient-to-r from-gray-50 to-green-50 p-4 rounded-2xl border border-gray-100">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <span className="text-green-600 text-lg">📱</span>
+                      </div>
+                      <span className="truncate text-gray-700 font-medium">{member.phone}</span>
+                    </div>
+                  )}
+                  
                   <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-2xl text-white">
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-lg">المهام النشطة</span>
@@ -362,6 +364,16 @@ export default function TeamMembersPage() {
                 />
               </div>
               <div>
+                <Label htmlFor="edit-phone">رقم الهاتف (للواتساب)</Label>
+                <Input
+                  id="edit-phone"
+                  type="text"
+                  placeholder="مثال: 966501234567"
+                  value={editingMember.phone || ""}
+                  onChange={(e) => setEditingMember({ ...editingMember, phone: e.target.value })}
+                />
+              </div>
+              <div>
                 <Label htmlFor="edit-role">الدور</Label>
                 <Select 
                   value={editingMember.role} 
@@ -373,7 +385,7 @@ export default function TeamMembersPage() {
                   <SelectContent>
                     <SelectItem value="user">مستخدم</SelectItem>
                     <SelectItem value="supervisor">مشرف</SelectItem>
-                    {user?.role === "admin" && <SelectItem value="admin">مدير النظام</SelectItem>}
+                    {(user as any)?.role === "admin" && <SelectItem value="admin">مدير النظام</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>

@@ -31,6 +31,7 @@ export const teamMembers = pgTable("team_members", {
   name: text("name").notNull(),
   role: text("role").notNull(),
   email: text("email").notNull().unique(),
+  phone: text("phone"), // phone number for WhatsApp notifications
   status: text("status").notNull().default("available"), // available, busy, offline
   activeTasks: integer("active_tasks").notNull().default(0),
   avatar: text("avatar"), // optional avatar URL or initials
