@@ -121,7 +121,7 @@ export function ProfileImageUploader({
   const sizeClasses = {
     sm: "w-14 h-14",
     md: "w-20 h-20", 
-    lg: "w-24 h-24",
+    lg: "w-32 h-32",
   };
 
   const getInitials = (name: string) => {

@@ -12,9 +12,10 @@ import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { User, Settings, Bell, Shield, HelpCircle, LogOut, UserCheck, Activity, Edit, Save, X, MessageCircle, Trophy } from "lucide-react";
+import { User, Settings, Bell, Shield, HelpCircle, LogOut, UserCheck, Activity, Edit, Save, X, MessageCircle, Trophy, Camera } from "lucide-react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
+import { ProfileImageUploader } from "@/components/ProfileImageUploader";
 
 // Profile update schema
 const profileUpdateSchema = z.object({
@@ -176,8 +177,18 @@ export default function Profile() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-xl">
-              {(user as any)?.teamMember?.avatar || (user as any)?.username?.charAt(0).toUpperCase() || "U"}
+            <div className="relative">
+              <ProfileImageUploader
+                teamMemberId={(user as any)?.teamMember?.id || ''}
+                currentProfileImage={(user as any)?.profileImageUrl}
+                memberName={(user as any)?.firstName || (user as any)?.username || 'مستخدم'}
+                size="lg"
+                showUploadIcon={true}
+                onImageUpdated={(newUrl) => {
+                  // Force re-fetch user data to update the avatar in top bar
+                  queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                }}
+              />
             </div>
             <div>
               <h3 className="font-medium text-lg" data-testid="text-user-name">{(user as any)?.teamMember?.name || (user as any)?.username || "مستخدم"}</h3>
