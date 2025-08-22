@@ -1494,12 +1494,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (type === "group") {
         // Get group messages
         messages = await storage.getGroupMessages();
-      } else {
+      } else if (participantId && participantId !== "undefined") {
         // Get private messages between current user and participant
         messages = await storage.getConversationMessages(currentUserId, participantId);
+      } else {
+        messages = [];
       }
       
-      res.json(messages);
+      res.json(messages || []);
     } catch (error) {
       console.error("Error fetching conversation messages:", error);
       res.status(500).json({ message: "Failed to fetch conversation messages" });

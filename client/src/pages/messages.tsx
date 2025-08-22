@@ -117,8 +117,17 @@ export default function Messages() {
       
       // Add the new message to conversation messages immediately for real-time display
       if (selectedConversation && data && typeof data === 'object' && 'id' in data) {
-        const newMessage = {
-          ...data as Message,
+        const messageData = data as any;
+        const newMessage: Message = {
+          id: messageData.id,
+          senderId: messageData.senderId || user?.id || '',
+          receiverId: messageData.receiverId,
+          content: messageData.content,
+          messageType: messageData.messageType || 'text',
+          messageScope: messageData.messageScope,
+          taskId: messageData.taskId || null,
+          isRead: messageData.isRead || 'true',
+          createdAt: messageData.createdAt || new Date().toISOString(),
           sender: {
             id: user?.id || '',
             name: user?.username,
@@ -199,6 +208,28 @@ export default function Messages() {
         content: newMessage.trim(),
         messageScope,
       };
+    }
+    
+    // Create optimistic message for immediate display
+    if (selectedConversation) {
+      const optimisticMessage: Message = {
+        id: `temp-${Date.now()}`,
+        senderId: user?.id || '',
+        receiverId: messageData.receiverId || null,
+        content: messageData.content,
+        messageType: 'text',
+        messageScope: messageData.messageScope,
+        taskId: null,
+        isRead: 'true',
+        createdAt: new Date().toISOString(),
+        sender: {
+          id: user?.id || '',
+          name: user?.username,
+          username: user?.username
+        }
+      };
+      
+      setConversationMessages(prev => [...prev, optimisticMessage]);
     }
     
     sendMessageMutation.mutate(messageData);
