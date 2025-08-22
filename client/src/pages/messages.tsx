@@ -112,12 +112,30 @@ export default function Messages() {
     mutationFn: async (messageData: { receiverId?: string; content: string; messageScope: string }) => {
       return await apiRequest("POST", "/api/messages", messageData);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setNewMessage("");
-      if (selectedConversation) {
-        refetchConversation(); // Refresh conversation messages
+      
+      // Add the new message to conversation messages immediately for real-time display
+      if (selectedConversation && data && typeof data === 'object' && 'id' in data) {
+        const newMessage = {
+          ...data as Message,
+          sender: {
+            id: user?.id || '',
+            name: user?.username,
+            username: user?.username
+          }
+        };
+        setConversationMessages(prev => [...prev, newMessage]);
       }
+      
+      // Invalidate queries to refresh all data
       queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
+      if (selectedConversation) {
+        queryClient.invalidateQueries({ 
+          queryKey: ["/api/messages/conversation", selectedConversation.participantId, selectedConversation.type] 
+        });
+      }
+      
       toast({
         title: "تم الإرسال",
         description: selectedConversation ? "تم إرسال الرسالة بنجاح" : (messageScope === "group" ? "تم إرسال الرسالة الجماعية بنجاح" : "تم إرسال الرسالة بنجاح"),
@@ -145,6 +163,13 @@ export default function Messages() {
       setConversationMessages(fetchedConversationMessages);
     }
   }, [fetchedConversationMessages, selectedConversation]);
+
+  // Clear conversation messages when no conversation is selected
+  useEffect(() => {
+    if (!selectedConversation) {
+      setConversationMessages([]);
+    }
+  }, [selectedConversation]);
 
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
@@ -182,6 +207,7 @@ export default function Messages() {
   const openConversation = (conversation: Conversation) => {
     setSelectedConversation(conversation);
     setShowConversations(false);
+    setConversationMessages([]); // Clear current messages
     refetchConversation();
   };
 
@@ -214,8 +240,9 @@ export default function Messages() {
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-6xl h-[calc(100vh-8rem)]" dir="rtl">
-      <div className="flex items-center gap-3 mb-4">
+    <div className="flex flex-col h-screen md:h-[calc(100vh-2rem)] md:container md:mx-auto md:p-4 md:max-w-6xl" dir="rtl">
+      {/* Header - Mobile and Desktop */}
+      <div className="flex items-center gap-3 p-4 md:p-0 md:mb-4 border-b md:border-0 bg-background md:bg-transparent">
         {selectedConversation && (
           <Button
             variant="ghost"
@@ -232,15 +259,16 @@ export default function Messages() {
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-full">
+      {/* Main Content */}
+      <div className="flex-1 flex md:grid md:grid-cols-12 md:gap-4 overflow-hidden">
         {/* Conversations List */}
-        <div className={`md:col-span-4 ${showConversations ? 'block' : 'hidden md:block'}`}>
-          <Card className="h-full">
-            <CardHeader className="pb-3">
+        <div className={`${showConversations ? 'flex' : 'hidden'} md:flex md:col-span-4 flex-col w-full md:w-auto`}>
+          <Card className="h-full flex flex-col">
+            <CardHeader className="pb-3 flex-shrink-0">
               <CardTitle className="text-lg">المحادثات</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[400px]">
+            <CardContent className="p-0 flex-1 flex flex-col">
+              <ScrollArea className="flex-1">
                 {conversations.length === 0 ? (
                   <div className="text-center text-muted-foreground py-8 px-4">
                     <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -293,7 +321,7 @@ export default function Messages() {
         </div>
 
         {/* Chat Area */}
-        <div className={`md:col-span-8 ${!showConversations ? 'block' : 'hidden md:block'} flex flex-col`}>
+        <div className={`${!showConversations ? 'flex' : 'hidden'} md:flex md:col-span-8 flex-col w-full md:w-auto`}>
           {selectedConversation ? (
             <Card className="h-full flex flex-col">
               <CardHeader className="pb-3 border-b">
@@ -313,46 +341,53 @@ export default function Messages() {
               </CardHeader>
               
               {/* Messages Area */}
-              <CardContent className="flex-1 p-0 flex flex-col">
-                <ScrollArea className="flex-1 p-4">
+              <CardContent className="flex-1 p-0 flex flex-col min-h-0">
+                <ScrollArea className="flex-1 p-4 min-h-0">
                   <div className="space-y-3">
-                    {conversationMessages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div className={`max-w-[70%] rounded-lg p-3 ${
-                          message.senderId === user?.id 
-                            ? 'bg-primary text-primary-foreground' 
-                            : 'bg-muted'
-                        }`}>
-                          {message.senderId !== user?.id && (
-                            <div className="flex items-center gap-2 mb-1">
-                              <User className="h-3 w-3" />
-                              <span className="text-xs font-medium">
-                                {message.sender?.name || message.sender?.username || "مجهول"}
+                    {conversationMessages.length === 0 ? (
+                      <div className="text-center text-muted-foreground py-8">
+                        <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p>ابدأ محادثتك الآن</p>
+                      </div>
+                    ) : (
+                      conversationMessages.map((message, index) => (
+                        <div
+                          key={message.id || `temp-${index}`}
+                          className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div className={`max-w-[70%] rounded-lg p-3 ${
+                            message.senderId === user?.id 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-muted'
+                          }`}>
+                            {message.senderId !== user?.id && (
+                              <div className="flex items-center gap-2 mb-1">
+                                <User className="h-3 w-3" />
+                                <span className="text-xs font-medium">
+                                  {message.sender?.name || message.sender?.username || "مجهول"}
+                                </span>
+                              </div>
+                            )}
+                            <p className="text-sm">{message.content}</p>
+                            <div className={`flex items-center justify-end gap-1 mt-1 ${
+                              message.senderId === user?.id ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                            }`}>
+                              <Clock className="h-3 w-3" />
+                              <span className="text-xs">
+                                {message.createdAt ? format(new Date(message.createdAt), "HH:mm") : "الآن"}
                               </span>
                             </div>
-                          )}
-                          <p className="text-sm">{message.content}</p>
-                          <div className={`flex items-center justify-end gap-1 mt-1 ${
-                            message.senderId === user?.id ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                          }`}>
-                            <Clock className="h-3 w-3" />
-                            <span className="text-xs">
-                              {format(new Date(message.createdAt), "HH:mm")}
-                            </span>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                     <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
                 
                 {/* Message Input */}
-                <div className="border-t p-4">
-                  <div className="flex gap-2">
+                <div className="border-t p-4 flex-shrink-0">
+                  <div className="flex gap-2 items-end">
                     <Textarea
                       placeholder="اكتب رسالتك هنا..."
                       value={newMessage}
@@ -364,13 +399,13 @@ export default function Messages() {
                         }
                       }}
                       rows={2}
-                      className="flex-1 resize-none"
+                      className="flex-1 resize-none min-h-[2.5rem] max-h-24"
                     />
                     <Button
                       onClick={handleSendMessage}
                       disabled={sendMessageMutation.isPending || !newMessage.trim()}
                       size="icon"
-                      className="self-end"
+                      className="flex-shrink-0"
                     >
                       <Send className="h-4 w-4" />
                     </Button>
@@ -379,16 +414,16 @@ export default function Messages() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 gap-4 h-full">
+            <div className="flex flex-col h-full">
               {/* Send New Message */}
-              <Card className="h-full">
-                <CardHeader>
+              <Card className="flex-1 flex flex-col">
+                <CardHeader className="flex-shrink-0">
                   <CardTitle className="flex items-center gap-2">
                     <Send className="h-5 w-5" />
                     محادثة جديدة
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 flex-1 flex flex-col justify-center">
                   {/* Message Type Selection */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">
@@ -446,7 +481,7 @@ export default function Messages() {
                     </div>
                   )}
 
-                  <div>
+                  <div className="flex-1">
                     <label className="text-sm font-medium mb-2 block">
                       الرسالة
                     </label>
@@ -454,7 +489,8 @@ export default function Messages() {
                       placeholder="اكتب رسالتك هنا..."
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
-                      rows={4}
+                      rows={6}
+                      className="min-h-32"
                       onKeyPress={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
@@ -467,7 +503,7 @@ export default function Messages() {
                   <Button
                     onClick={handleSendMessage}
                     disabled={sendMessageMutation.isPending}
-                    className="w-full"
+                    className="w-full mt-auto"
                   >
                     {sendMessageMutation.isPending ? "جاري الإرسال..." : "إرسال الرسالة"}
                   </Button>
