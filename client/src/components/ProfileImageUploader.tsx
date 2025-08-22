@@ -111,7 +111,6 @@ export function ProfileImageUploader({
           className="object-cover"
           onError={(e) => {
             console.log('Image failed to load:', currentProfileImage);
-            e.currentTarget.style.display = 'none';
           }}
           onLoad={() => {
             console.log('Image loaded successfully:', currentProfileImage);
