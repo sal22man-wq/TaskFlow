@@ -73,7 +73,9 @@ export default function Messages() {
   const { data: fetchedConversationMessages = [], refetch: refetchConversation } = useQuery<Message[]>({
     queryKey: ["/api/messages/conversation", selectedConversation?.participantId, selectedConversation?.type],
     enabled: !!selectedConversation,
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchInterval: 3000, // Auto-refresh every 3 seconds
+    staleTime: 1000, // Consider data stale after 1 second
+    cacheTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 
   // Extract conversations from messages
@@ -115,26 +117,11 @@ export default function Messages() {
     onSuccess: (data) => {
       setNewMessage("");
       
-      // Add the new message to conversation messages immediately for real-time display
-      if (selectedConversation && data && typeof data === 'object' && 'id' in data) {
-        const messageData = data as any;
-        const newMessage: Message = {
-          id: messageData.id,
-          senderId: messageData.senderId || user?.id || '',
-          receiverId: messageData.receiverId,
-          content: messageData.content,
-          messageType: messageData.messageType || 'text',
-          messageScope: messageData.messageScope,
-          taskId: messageData.taskId || null,
-          isRead: messageData.isRead || 'true',
-          createdAt: messageData.createdAt || new Date().toISOString(),
-          sender: {
-            id: user?.id || '',
-            name: user?.username,
-            username: user?.username
-          }
-        };
-        setConversationMessages(prev => [...prev, newMessage]);
+      // Refresh conversation data after successful send
+      if (selectedConversation) {
+        setTimeout(() => {
+          refetchConversation();
+        }, 100); // Small delay to ensure server has processed the message
       }
       
       // Invalidate queries to refresh all data
@@ -168,17 +155,14 @@ export default function Messages() {
 
   // Update conversation messages when data changes
   useEffect(() => {
-    if (selectedConversation && fetchedConversationMessages.length > 0) {
+    if (selectedConversation) {
+      // Always update with fetched messages, even if empty
       setConversationMessages(fetchedConversationMessages);
-    }
-  }, [fetchedConversationMessages, selectedConversation]);
-
-  // Clear conversation messages when no conversation is selected
-  useEffect(() => {
-    if (!selectedConversation) {
+    } else {
+      // Clear messages only when no conversation is selected
       setConversationMessages([]);
     }
-  }, [selectedConversation]);
+  }, [fetchedConversationMessages, selectedConversation]);
 
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
@@ -229,7 +213,17 @@ export default function Messages() {
         }
       };
       
-      setConversationMessages(prev => [...prev, optimisticMessage]);
+      setConversationMessages(prev => {
+        // Check if message already exists to avoid duplicates
+        const exists = prev.some(msg => msg.content === messageData.content && 
+          (msg.id.startsWith('temp-') || msg.senderId === user?.id) && 
+          Math.abs(new Date(msg.createdAt).getTime() - Date.now()) < 5000
+        );
+        
+        if (exists) return prev;
+        
+        return [...prev, optimisticMessage];
+      });
     }
     
     sendMessageMutation.mutate(messageData);
@@ -238,14 +232,12 @@ export default function Messages() {
   const openConversation = (conversation: Conversation) => {
     setSelectedConversation(conversation);
     setShowConversations(false);
-    setConversationMessages([]); // Clear current messages
     refetchConversation();
   };
 
   const backToConversations = () => {
     setSelectedConversation(null);
     setShowConversations(true);
-    setConversationMessages([]);
   };
 
   const formatMessageTime = (timestamp: string) => {
