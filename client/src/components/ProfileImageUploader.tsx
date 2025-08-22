@@ -68,7 +68,15 @@ export function ProfileImageUploader({
   const handleUploadComplete = (result: any) => {
     if (result.successful && result.successful.length > 0) {
       const uploadURL = result.successful[0].uploadURL;
+      console.log('Upload completed, URL:', uploadURL);
       updateProfileImageMutation.mutate(uploadURL);
+    } else {
+      console.error('Upload failed:', result);
+      toast({
+        title: "خطأ",
+        description: "فشل في رفع الصورة",
+        variant: "destructive",
+      });
     }
   };
 
@@ -91,12 +99,15 @@ export function ProfileImageUploader({
     <div className="relative group">
       <Avatar className={`${sizeClasses[size]} ring-4 ring-blue-200/60 ring-offset-2 transition-all duration-300 group-hover:ring-blue-400/80 shadow-lg`}>
         <AvatarImage 
-          src={currentProfileImage ? `${window.location.origin}${currentProfileImage}` : undefined} 
+          src={currentProfileImage || undefined} 
           alt={`صورة ${memberName}`}
           className="object-cover"
           onError={(e) => {
             console.log('Image failed to load:', currentProfileImage);
             e.currentTarget.style.display = 'none';
+          }}
+          onLoad={() => {
+            console.log('Image loaded successfully:', currentProfileImage);
           }}
         />
         <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-bold text-lg border-2 border-blue-300 shadow-inner">
