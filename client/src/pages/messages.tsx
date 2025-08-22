@@ -75,7 +75,7 @@ export default function Messages() {
     enabled: !!selectedConversation,
     refetchInterval: 3000, // Auto-refresh every 3 seconds
     staleTime: 1000, // Consider data stale after 1 second
-    cacheTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 
   // Extract conversations from messages

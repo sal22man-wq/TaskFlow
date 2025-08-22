@@ -73,10 +73,21 @@ export function ProfileImageUploader({
   };
 
   const handleUploadComplete = (result: any) => {
+    console.log('Upload result:', result);
     if (result.successful && result.successful.length > 0) {
       const uploadURL = result.successful[0].uploadURL;
       console.log('Upload completed, URL:', uploadURL);
-      updateProfileImageMutation.mutate(uploadURL);
+      // Extract the object path from the full URL
+      const urlObj = new URL(uploadURL);
+      const pathParts = urlObj.pathname.split('/');
+      const bucketIndex = pathParts.findIndex(part => part.includes('replit-objstore'));
+      if (bucketIndex >= 0) {
+        const objectPath = pathParts.slice(bucketIndex).join('/');
+        console.log('Extracted object path:', objectPath);
+        updateProfileImageMutation.mutate(uploadURL);
+      } else {
+        updateProfileImageMutation.mutate(uploadURL);
+      }
     } else {
       console.error('Upload failed:', result);
       toast({
