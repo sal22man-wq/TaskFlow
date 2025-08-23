@@ -90,6 +90,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Health check endpoint
+  app.get('/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
+  });
+
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
