@@ -2,8 +2,13 @@ TaskFlow - Complete Task Management System
 ==========================================
 
 QUICK START:
-1. Run: setup-database.bat
+1. Run: quick-setup.bat (recommended)
+   OR
+   Run: setup-database.bat (manual)
 2. Run: start-taskflow.bat
+
+IF PROBLEMS:
+- Run: troubleshoot.bat
 
 REQUIREMENTS:
 - Windows Server 2016+
@@ -17,7 +22,9 @@ ACCESS:
 FILES:
 - TaskFlow.exe: Main application
 - start-taskflow.bat: Start server
-- setup-database.bat: Database setup
+- quick-setup.bat: Automatic setup (recommended)
+- setup-database.bat: Manual database setup
+- troubleshoot.bat: Problem solver
 - client/: Web interface files
 
 SUPPORT:

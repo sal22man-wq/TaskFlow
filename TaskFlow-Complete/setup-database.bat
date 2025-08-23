@@ -26,7 +26,11 @@ echo.
 set /p POSTGRES_PASSWORD=Enter PostgreSQL password: 
 
 echo [INFO] Creating database...
-psql -U postgres -h localhost -c "CREATE DATABASE taskflow_db;" postgresql://postgres:%POSTGRES_PASSWORD%@localhost:5432/postgres 2>nul
+set PGPASSWORD=%POSTGRES_PASSWORD%
+psql -U postgres -h localhost -c "CREATE DATABASE taskflow_db;" 2>nul
+if %errorlevel% neq 0 (
+    echo [WARN] Database might already exist, continuing...
+)
 
 echo [INFO] Updating configuration...
 if exist .env (
@@ -39,7 +43,7 @@ if exist .env (
 )
 
 echo [INFO] Testing connection...
-psql -U postgres -h localhost -d taskflow_db -c "SELECT 1;" postgresql://postgres:%POSTGRES_PASSWORD%@localhost:5432/taskflow_db >nul 2>&1
+psql -U postgres -h localhost -d taskflow_db -c "SELECT 1;" >nul 2>&1
 
 if %errorlevel% equ 0 (
     echo [OK] Database ready
