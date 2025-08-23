@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { TaskCard } from "@/components/tasks/task-card";
+import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
 import { TaskWithAssignees } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,6 +19,8 @@ function TasksContent() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "dueDate">("newest");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTask, setSelectedTask] = useState<TaskWithAssignees | null>(null);
+  const [showTaskDetails, setShowTaskDetails] = useState(false);
   const { t } = useLanguage();
   const { handleError } = useErrorHandler();
 
@@ -287,7 +290,10 @@ function TasksContent() {
                       variant="ghost"
                       size="sm"
                       className="text-gray-400 hover:text-gray-600 p-1 h-auto"
-                      onClick={() => {/* Add task details modal */}}
+                      onClick={() => {
+                        setSelectedTask(task);
+                        setShowTaskDetails(true);
+                      }}
                       data-testid={`button-view-task-${task.id}`}
                     >
                       <ChevronRight className="h-4 w-4" />
@@ -331,6 +337,15 @@ function TasksContent() {
           </div>
         )}
       </div>
+
+      {/* Task Details Modal */}
+      {selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          open={showTaskDetails}
+          onOpenChange={setShowTaskDetails}
+        />
+      )}
     </div>
   );
 }
