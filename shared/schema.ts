@@ -76,6 +76,10 @@ export const tasks = pgTable("tasks", {
   customerEmail: text("customer_email"),
   customerAddress: text("customer_address"),
   time: text("time").notNull(), // estimated time or schedule
+  startTime: text("start_time"), // وقت البداية (9:00)
+  startPeriod: text("start_period"), // AM/PM
+  finishTime: text("finish_time"), // وقت الانتهاء (5:00)
+  finishPeriod: text("finish_period"), // AM/PM
   notes: text("notes"), // additional notes
   finalReport: text("final_report"), // التقرير النهائي للمهمة - يكتبه المكلف بالمهمة فقط
   status: text("status").notNull().default("pending"), // pending, start, complete, cancelled, rescheduled

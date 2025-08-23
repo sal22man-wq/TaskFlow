@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { InsertTask, TeamMember, Customer } from "@shared/schema";
+import { InsertTask, TeamMember, Customer, TaskWithAssignees } from "@shared/schema";
 import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AddCustomerDialog } from "@/components/customers/add-customer-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -18,6 +18,7 @@ import { ChevronDown, ChevronUp, Calendar as CalendarIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, addDays, startOfWeek, endOfWeek, addWeeks } from "date-fns";
 import { cn } from "@/lib/utils";
+import { TimeConflictModal } from "./time-conflict-modal";
 
 interface CreateTaskFormProps {
   onSuccess: () => void;
@@ -42,6 +43,11 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   // Collapsible sections state
   const [isCustomerDetailsOpen, setIsCustomerDetailsOpen] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  
+  // Time conflict modal state
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [conflictingTasks, setConflictingTasks] = useState<Array<{task: TaskWithAssignees; assigneeName: string}>>([]);
+  const [pendingTask, setPendingTask] = useState<InsertTask | null>(null);
 
   // Fetch customers from API
   const { data: customers, isLoading: customersLoading } = useQuery<Customer[]>({
@@ -54,6 +60,77 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
   const { data: teamMembers } = useQuery<TeamMember[]>({
     queryKey: ["/api/team-members"],
   });
+
+  const { data: existingTasks } = useQuery<TaskWithAssignees[]>({
+    queryKey: ["/api/tasks"],
+  });
+
+  // Function to convert time to 24-hour format for comparison
+  const convertTo24Hour = (time: string, period: string) => {
+    if (!time) return null;
+    const [hours, minutes] = time.split(':').map(Number);
+    let hour24 = hours;
+    
+    if (period === 'PM' && hours !== 12) {
+      hour24 += 12;
+    } else if (period === 'AM' && hours === 12) {
+      hour24 = 0;
+    }
+    
+    return hour24 * 60 + (minutes || 0); // Convert to minutes for easy comparison
+  };
+
+  // Function to check for time conflicts
+  const checkTimeConflicts = (newTask: InsertTask) => {
+    if (!existingTasks || !teamMembers) return [];
+    
+    const newStartMinutes = convertTo24Hour(newTask.startTime || '', newTask.startPeriod || 'AM');
+    const newEndMinutes = convertTo24Hour(newTask.finishTime || '', newTask.finishPeriod || 'PM');
+    
+    if (!newStartMinutes || !newEndMinutes) return [];
+
+    const conflicts: Array<{task: TaskWithAssignees; assigneeName: string}> = [];
+    
+    // Check each assigned team member
+    newTask.assigneeIds?.forEach(assigneeId => {
+      const assignee = teamMembers.find(m => m.id === assigneeId);
+      if (!assignee) return;
+      
+      // Check against all existing tasks for this assignee
+      existingTasks.forEach(existingTask => {
+        if (existingTask.status === 'complete' || existingTask.status === 'cancelled') {
+          return; // Skip completed/cancelled tasks
+        }
+        
+        // Check if this existing task is assigned to the same person
+        const isAssignedToSamePerson = existingTask.assignees?.some(a => a.id === assigneeId);
+        if (!isAssignedToSamePerson) return;
+        
+        // Check if it's the same date
+        const existingDate = existingTask.dueDate ? new Date(existingTask.dueDate).toDateString() : '';
+        const newDate = newTask.dueDate ? newTask.dueDate.toDateString() : '';
+        
+        if (existingDate !== newDate) return;
+        
+        const existingStartMinutes = convertTo24Hour(existingTask.startTime || '', existingTask.startPeriod || 'AM');
+        const existingEndMinutes = convertTo24Hour(existingTask.finishTime || '', existingTask.finishPeriod || 'PM');
+        
+        if (!existingStartMinutes || !existingEndMinutes) return;
+        
+        // Check for time overlap
+        const hasOverlap = (newStartMinutes < existingEndMinutes) && (newEndMinutes > existingStartMinutes);
+        
+        if (hasOverlap) {
+          conflicts.push({
+            task: existingTask,
+            assigneeName: assignee.name
+          });
+        }
+      });
+    });
+    
+    return conflicts;
+  };
 
   const createTaskMutation = useMutation({
     mutationFn: async (task: InsertTask) => {
@@ -82,6 +159,8 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       setPriority("medium");
       setAssigneeIds([]);
       setDueDate(undefined);
+      setPendingTask(null);
+      setConflictingTasks([]);
       onSuccess();
     },
     onError: (error: Error) => {
@@ -116,6 +195,10 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       customerEmail: customerEmail.trim() || undefined,
       customerAddress: customerAddress.trim() || undefined,
       time: timeSchedule,
+      startTime: startTime.trim(),
+      startPeriod,
+      finishTime: finishTime.trim(),
+      finishPeriod,
       notes: notes.trim() || undefined,
       priority,
       assigneeIds: assigneeIds.length > 0 ? assigneeIds : undefined,
@@ -124,8 +207,35 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
       progress: 0,
     };
 
+    // Check for time conflicts before creating the task
+    if (assigneeIds.length > 0 && dueDate) {
+      const conflicts = checkTimeConflicts(task);
+      
+      if (conflicts.length > 0) {
+        // Show conflict modal
+        setConflictingTasks(conflicts);
+        setPendingTask(task);
+        setShowConflictModal(true);
+        return;
+      }
+    }
+
     console.log("Creating task with data:", task);
     createTaskMutation.mutate(task);
+  };
+
+  // Handle conflict modal confirmation
+  const handleConflictConfirm = () => {
+    if (pendingTask) {
+      console.log("Creating task despite conflicts:", pendingTask);
+      createTaskMutation.mutate(pendingTask);
+    }
+  };
+
+  // Handle conflict modal cancellation
+  const handleConflictCancel = () => {
+    setPendingTask(null);
+    setConflictingTasks([]);
   };
 
   return (
@@ -446,6 +556,15 @@ export function CreateTaskForm({ onSuccess }: CreateTaskFormProps) {
           </Button>
         </div>
       </form>
+
+      {/* Time Conflict Modal */}
+      <TimeConflictModal
+        open={showConflictModal}
+        onOpenChange={setShowConflictModal}
+        conflictingTasks={conflictingTasks}
+        onConfirm={handleConflictConfirm}
+        onCancel={handleConflictCancel}
+      />
     </motion.div>
   );
 }
