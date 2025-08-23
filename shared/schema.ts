@@ -68,7 +68,7 @@ export const customerRatings = pgTable("customer_ratings", {
 
 export const tasks = pgTable("tasks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  taskNumber: text("task_number").unique(), // رقم المهمة التسلسلي
+  taskNumber: text("task_number"), // رقم المهمة التسلسلي
   title: text("title").notNull(),
   description: text("description").notNull(),
   customerName: text("customer_name").notNull(),

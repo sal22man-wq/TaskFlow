@@ -419,17 +419,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllTasks(): Promise<TaskWithAssignees[]> {
-    const allTasks = await db.select().from(tasks).orderBy(desc(tasks.createdAt));
-    const allMembers = await this.getTeamMembers();
+    try {
+      const allTasks = await db.select().from(tasks).orderBy(desc(tasks.createdAt));
+      const allMembers = await this.getTeamMembers();
 
-    return allTasks.map((task) => ({
-      ...task,
-      assignees: task.assigneeIds
-        ? task.assigneeIds
-            .map((id) => allMembers.find((member) => member.id === id))
-            .filter(Boolean) as TeamMember[]
-        : [],
-    }));
+      return allTasks.map((task) => ({
+        ...task,
+        assignees: task.assigneeIds && Array.isArray(task.assigneeIds)
+          ? task.assigneeIds
+              .map((id) => allMembers.find((member) => member.id === id))
+              .filter(Boolean) as TeamMember[]
+          : [],
+      }));
+    } catch (error) {
+      console.error("Error in getAllTasks:", error);
+      throw error;
+    }
   }
 
   async getTask(id: string): Promise<TaskWithAssignees | undefined> {

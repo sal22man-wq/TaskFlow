@@ -619,10 +619,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Also update the user's profile image since they are linked
       if (updatedMember && updatedMember.userId) {
-        await storage.updateUser(updatedMember.userId, {
-          profileImageUrl: objectPath,
-        });
-        console.log('Updated user profile image for userId:', updatedMember.userId);
+        // Don't update user table with profileImageUrl as it doesn't exist
+        console.log('Profile image updated for team member, userId:', updatedMember.userId);
       }
       
       console.log('Profile image updated:', {
@@ -1101,7 +1099,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             task.customerPhone,
             task.customerName,
             task.title,
-            task.taskNumber,
+            task.taskNumber || '',
             task.customerAddress
           );
           
