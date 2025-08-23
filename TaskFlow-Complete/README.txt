@@ -25,7 +25,13 @@ FILES:
 - quick-setup.bat: Automatic setup (recommended)
 - setup-database.bat: Manual database setup
 - troubleshoot.bat: Problem solver
+- cleanup-old-installations.bat: Remove old versions
+- remove-completely.bat: Complete uninstall
 - client/: Web interface files
+
+CLEANUP TOOLS:
+- cleanup-old-installations.bat: Removes old TaskFlow installations
+- remove-completely.bat: Complete removal including database
 
 SUPPORT:
 Ashraf Al-Wadq IT Solutions
