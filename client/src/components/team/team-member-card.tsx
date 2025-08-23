@@ -40,9 +40,33 @@ export function TeamMemberCard({ member }: TeamMemberCardProps) {
   };
 
   const getAvatarColor = (name: string) => {
-    const colors = ["bg-primary", "bg-secondary", "bg-success", "bg-warning"];
+    const colors = [
+      "bg-blue-500", 
+      "bg-green-500", 
+      "bg-purple-500", 
+      "bg-orange-500",
+      "bg-pink-500",
+      "bg-indigo-500",
+      "bg-teal-500",
+      "bg-rose-500"
+    ];
     const index = name.charCodeAt(0) % colors.length;
     return colors[index];
+  };
+
+  const getCardBorderColor = (memberId: string) => {
+    const colors = [
+      'border-l-blue-500 bg-blue-50/30',
+      'border-l-green-500 bg-green-50/30',
+      'border-l-purple-500 bg-purple-50/30',
+      'border-l-orange-500 bg-orange-50/30',
+      'border-l-pink-500 bg-pink-50/30',
+      'border-l-indigo-500 bg-indigo-50/30',
+      'border-l-teal-500 bg-teal-50/30',
+      'border-l-rose-500 bg-rose-50/30'
+    ];
+    const hash = memberId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    return colors[hash % colors.length];
   };
 
   // Delete member mutation

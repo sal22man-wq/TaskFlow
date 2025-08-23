@@ -33,12 +33,12 @@ export default function Dashboard() {
           {t('dashboard.title')}
         </h2>
         
-        {/* Stats Cards Grid - Responsive */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 desktop-grid">
+        {/* Stats Cards Grid - Compact responsive grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-4 desktop-grid">
           {statsLoading ? (
             <>
               {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-20 sm:h-24 lg:h-28 rounded-lg" />
+                <Skeleton key={i} className="h-16 sm:h-18 lg:h-20 rounded-lg" />
               ))}
             </>
           ) : (

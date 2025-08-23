@@ -57,75 +57,93 @@ const CustomersMap = ({ customers, onCustomerSelect }: { customers: Customer[], 
           يتم عرض {customersWithGPS.length} من العملاء الذين لديهم إحداثيات GPS صحيحة
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {customersWithGPS.map((customer) => (
-            <Card key={customer.id} className="border-l-4 border-l-green-500 bg-white hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 mb-2">{customer.name}</h4>
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <div className="flex items-center">
-                        <Phone className="h-3 w-3 mr-1" />
-                        <span>{customer.phone}</span>
-                      </div>
-                      {customer.email && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {customersWithGPS.map((customer) => {
+            // Generate unique colors for each customer card
+            const getCustomerBorderColor = (customerId: string) => {
+              const colors = [
+                'border-l-emerald-500 bg-emerald-50/40',
+                'border-l-blue-500 bg-blue-50/40', 
+                'border-l-violet-500 bg-violet-50/40',
+                'border-l-amber-500 bg-amber-50/40',
+                'border-l-pink-500 bg-pink-50/40',
+                'border-l-cyan-500 bg-cyan-50/40',
+                'border-l-rose-500 bg-rose-50/40',
+                'border-l-teal-500 bg-teal-50/40'
+              ];
+              const hash = customerId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+              return colors[hash % colors.length];
+            };
+
+            return (
+              <Card key={customer.id} className={`border-l-4 ${getCustomerBorderColor(customer.id)} hover:shadow-md transition-all duration-200 hover:scale-[1.02] bg-white/90 backdrop-blur-sm`}>
+                <CardContent className="p-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-sm text-gray-900 mb-2">{customer.name}</h4>
+                      <div className="space-y-1 text-xs text-gray-600">
                         <div className="flex items-center">
-                          <Mail className="h-3 w-3 mr-1" />
-                          <span className="truncate">{customer.email}</span>
+                          <Phone className="h-3 w-3 mr-1" />
+                          <span>{customer.phone}</span>
                         </div>
-                      )}
-                      {customer.address && (
-                        <div className="flex items-start">
-                          <span className="mr-1 text-xs">📍</span>
-                          <span className="text-xs leading-tight">{customer.address}</span>
-                        </div>
-                      )}
-                      {customer.gpsAddress && (
-                        <div className="flex items-start">
-                          <Navigation className="h-3 w-3 mr-1 text-green-600 mt-0.5" />
-                          <span className="text-xs leading-tight text-green-700">{customer.gpsAddress}</span>
-                        </div>
-                      )}
-                    </div>
+                        {customer.email && (
+                          <div className="flex items-center">
+                            <Mail className="h-3 w-3 mr-1" />
+                            <span className="truncate">{customer.email}</span>
+                          </div>
+                        )}
+                        {customer.address && (
+                          <div className="flex items-start">
+                            <span className="mr-1 text-xs">📍</span>
+                            <span className="text-xs leading-tight line-clamp-2">{customer.address}</span>
+                          </div>
+                        )}
+                        {customer.gpsAddress && (
+                          <div className="flex items-start">
+                            <Navigation className="h-3 w-3 mr-1 text-green-600 mt-0.5" />
+                            <span className="text-xs leading-tight text-green-700 line-clamp-1">{customer.gpsAddress}</span>
+                          </div>
+                        )}
+                      </div>
                   </div>
                 </div>
                 
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <div className="flex justify-between items-center">
-                    <div className="text-xs text-gray-500">
-                      GPS: {parseFloat(customer.gpsLatitude!).toFixed(4)}, {parseFloat(customer.gpsLongitude!).toFixed(4)}
-                    </div>
-                    <div className="flex space-x-1 space-x-reverse">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          const url = `https://www.google.com/maps?q=${customer.gpsLatitude},${customer.gpsLongitude}`;
-                          window.open(url, '_blank');
-                        }}
-                        className="px-2 py-1 h-7"
-                        data-testid={`button-open-maps-${customer.id}`}
-                      >
-                        <Navigation className="h-3 w-3 mr-1" />
-                        <span className="text-xs">خرائط</span>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onCustomerSelect(customer)}
-                        className="px-2 py-1 h-7"
-                        data-testid={`button-details-${customer.id}`}
-                      >
-                        <Eye className="h-3 w-3 mr-1" />
-                        <span className="text-xs">تفاصيل</span>
-                      </Button>
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="flex justify-between items-center">
+                      <div className="text-xs text-gray-500">
+                        GPS: {parseFloat(customer.gpsLatitude!).toFixed(4)}, {parseFloat(customer.gpsLongitude!).toFixed(4)}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const url = `https://www.google.com/maps?q=${customer.gpsLatitude},${customer.gpsLongitude}`;
+                            window.open(url, '_blank');
+                          }}
+                          className="px-2 py-1 h-6 text-xs"
+                          data-testid={`button-open-maps-${customer.id}`}
+                        >
+                          <Navigation className="h-3 w-3 mr-1" />
+                          <span className="text-xs">خرائط</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onCustomerSelect(customer)}
+                          className="px-2 py-1 h-6 text-xs"
+                          data-testid={`button-details-${customer.id}`}
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          <span className="text-xs">تفاصيل</span>
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
         
         {customersWithGPS.length > 0 && (
