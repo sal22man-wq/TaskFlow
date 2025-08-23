@@ -53,16 +53,16 @@ export function SchedulerWidget() {
   };
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10 pb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <CardTitle className="flex items-center gap-3 text-xl font-semibold">
+    <Card className="overflow-hidden shadow-lg">
+      <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
             <div className="bg-primary/20 p-2 rounded-full">
-              <Calendar className="w-6 h-6 text-primary" />
+              <Calendar className="w-5 h-5 text-primary" />
             </div>
             <div>
               <div>{t('dashboard.weeklySchedule')}</div>
-              <div className="text-sm font-normal text-muted-foreground">
+              <div className="text-xs font-normal text-muted-foreground">
                 {scheduledTasks.length} مهمة مجدولة هذا الأسبوع
               </div>
             </div>

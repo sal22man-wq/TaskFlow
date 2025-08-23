@@ -33,12 +33,12 @@ export default function Dashboard() {
           {t('dashboard.title')}
         </h2>
         
-        {/* Stats Cards Grid - Compact responsive grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-4 desktop-grid">
+        {/* Unified Stats & Points Grid - More compact */}
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 mb-4 desktop-grid">
           {statsLoading ? (
             <>
-              {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-16 sm:h-18 lg:h-20 rounded-lg" />
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-14 rounded-lg" />
               ))}
             </>
           ) : (
@@ -71,6 +71,20 @@ export default function Dashboard() {
                 color="error"
                 testId="stat-overdue"
               />
+              <StatsCard
+                title="النقاط الإجمالية"
+                value={0}
+                icon="🏆"
+                color="primary"
+                testId="stat-total-points"
+              />
+              <StatsCard
+                title="أفضل عضو"
+                value={0}
+                icon="⭐"
+                color="secondary"
+                testId="stat-top-performer"
+              />
             </>
           )}
         </div>
@@ -78,18 +92,13 @@ export default function Dashboard() {
         <QuickActions />
       </section>
 
-      {/* Team Points Section */}
-      <section className="px-4">
-        <TeamPointsWidget />
-      </section>
-
-      {/* Scheduler Section */}
-      <section className="px-4">
+      {/* Scheduler Section - Given More Space */}
+      <section className="px-4 mb-6">
         <SchedulerWidget />
       </section>
 
-      {/* Upcoming Schedule */}
-      <section className="px-4">
+      {/* Upcoming Schedule - Expanded */}
+      <section className="px-4 mb-6">
         <UpcomingSchedule />
       </section>
 
