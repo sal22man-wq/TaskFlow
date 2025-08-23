@@ -12,16 +12,12 @@ import { useAuth } from "@/hooks/useAuth";
 
 interface CancelTaskModalProps {
   taskId: string;
-  taskTitle: string;
-  customerName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function CancelTaskModal({
   taskId,
-  taskTitle,
-  customerName,
   open,
   onOpenChange,
 }: CancelTaskModalProps) {

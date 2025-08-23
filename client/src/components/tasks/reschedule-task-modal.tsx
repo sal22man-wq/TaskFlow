@@ -13,18 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface RescheduleTaskModalProps {
   taskId: string;
-  taskTitle: string;
-  currentDueDate: string;
-  rescheduleCount: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function RescheduleTaskModal({
   taskId,
-  taskTitle,
-  currentDueDate,
-  rescheduleCount,
   open,
   onOpenChange,
 }: RescheduleTaskModalProps) {

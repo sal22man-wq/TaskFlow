@@ -5,13 +5,14 @@ import { TaskCard } from "@/components/tasks/task-card";
 import { TaskWithAssignees } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown, AlertCircle, RefreshCw, Search, X } from "lucide-react";
+import { ArrowUpDown, AlertCircle, RefreshCw, Search, X, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
 import { useErrorHandler } from "@/lib/error-handler";
 import { ErrorBoundary, ComponentErrorFallback } from "@/components/error/error-boundary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { format } from "date-fns";
 
 function TasksContent() {
   const [activeFilter, setActiveFilter] = useState("all");
@@ -19,6 +20,54 @@ function TasksContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const { t } = useLanguage();
   const { handleError } = useErrorHandler();
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "complete":
+        return "bg-green-100 text-green-800 border-green-300";
+      case "start":
+        return "bg-blue-100 text-blue-800 border-blue-300";
+      case "cancelled":
+        return "bg-red-100 text-red-800 border-red-300";
+      case "rescheduled":
+        return "bg-purple-100 text-purple-800 border-purple-300";
+      case "pending":
+      default:
+        return "bg-orange-100 text-orange-800 border-orange-300";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "في الانتظار";
+      case "start":
+        return "بدأت";
+      case "complete":
+        return "مكتملة";
+      case "cancelled":
+        return "ملغاة";
+      case "rescheduled":
+        return "مؤجلة";
+      default:
+        return status;
+    }
+  };
+
+  const getTaskBorderColor = (taskId: string) => {
+    const colors = [
+      'border-l-blue-500 bg-blue-50/30',
+      'border-l-green-500 bg-green-50/30', 
+      'border-l-purple-500 bg-purple-50/30',
+      'border-l-orange-500 bg-orange-50/30',
+      'border-l-pink-500 bg-pink-50/30',
+      'border-l-indigo-500 bg-indigo-50/30',
+      'border-l-teal-500 bg-teal-50/30',
+      'border-l-rose-500 bg-rose-50/30'
+    ];
+    const hash = taskId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  };
 
   const { data: tasks, isLoading, error, refetch } = useQuery<TaskWithAssignees[]>({
     queryKey: ["/api/tasks"],
@@ -162,12 +211,91 @@ function TasksContent() {
         {isLoading ? (
           <>
             {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-24 rounded-lg" />
+              <Skeleton key={i} className="h-20 rounded-lg" />
             ))}
           </>
         ) : sortedTasks.length > 0 ? (
           sortedTasks.map((task) => (
-            <TaskCard key={task.id} task={task} />
+            <div
+              key={task.id}
+              className={`task-compact-card border-l-4 ${getTaskBorderColor(task.id)} bg-white/90 backdrop-blur-sm rounded-lg border hover:shadow-md transition-all duration-200 p-3`}
+              data-testid={`task-item-${task.id}`}
+            >
+              <div className="flex items-center justify-between">
+                {/* Task Info Grid */}
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                  {/* Task Title & Status - Takes more space */}
+                  <div className="md:col-span-5">
+                    <div className="flex items-center gap-2 mb-1">
+                      {task.taskNumber && (
+                        <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-semibold">
+                          #{task.taskNumber}
+                        </span>
+                      )}
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(task.status)}`}>
+                        {getStatusLabel(task.status)}
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-sm text-gray-900 line-clamp-1 mb-1">
+                      {task.title}
+                    </h3>
+                    {task.description && (
+                      <p className="text-xs text-gray-600 line-clamp-1">
+                        {task.description.substring(0, 80)}{task.description.length > 80 ? '...' : ''}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Customer Info */}
+                  <div className="md:col-span-3">
+                    <div className="text-xs font-medium text-gray-700 mb-1">العميل</div>
+                    <div className="text-xs text-gray-900 font-medium line-clamp-1">
+                      {task.customerName || 'غير محدد'}
+                    </div>
+                    {task.customerPhone && (
+                      <div className="text-xs text-gray-500 line-clamp-1">
+                        {task.customerPhone}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Assignees & Due Date */}
+                  <div className="md:col-span-3">
+                    <div className="text-xs font-medium text-gray-700 mb-1">المكلف</div>
+                    <div className="text-xs text-gray-900 font-medium line-clamp-1">
+                      {task.assignees && task.assignees.length > 0 ? (
+                        <>
+                          {task.assignees[0].name}
+                          {task.assignees.length > 1 && (
+                            <span className="text-gray-500"> +{task.assignees.length - 1}</span>
+                          )}
+                        </>
+                      ) : (
+                        'غير مُعين'
+                      )}
+                    </div>
+                    {task.dueDate && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        استحقاق: {format(new Date(task.dueDate), "MMM dd")}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="md:col-span-1 flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-400 hover:text-gray-600 p-1 h-auto"
+                      onClick={() => {/* Add task details modal */}}
+                      data-testid={`button-view-task-${task.id}`}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
           ))
         ) : (
           <div className="text-center py-16 text-muted-foreground" data-testid="text-no-filtered-tasks">
