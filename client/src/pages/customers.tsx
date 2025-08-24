@@ -535,7 +535,7 @@ export default function Customers() {
 
           {/* عرض القائمة أو الخريطة */}
           {viewMode === 'list' ? (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {filteredCustomers.length === 0 ? (
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -544,73 +544,93 @@ export default function Customers() {
                   </p>
                 </div>
               ) : (
-              filteredCustomers.map((customer) => (
-                <Card key={customer.id} className="border-l-4 border-l-blue-500">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold mb-2">{customer.name}</h3>
-                        <div className="space-y-1">
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Phone className="h-4 w-4 mr-2" />
-                            <span>{customer.phone}</span>
+              filteredCustomers.map((customer) => {
+                // تحديد لون الحد للعميل بناءً على ID
+                const getCustomerBorderColor = (customerId: string) => {
+                  const colors = [
+                    'border-l-blue-500 bg-blue-50/20',
+                    'border-l-green-500 bg-green-50/20',
+                    'border-l-purple-500 bg-purple-50/20',
+                    'border-l-orange-500 bg-orange-50/20',
+                    'border-l-pink-500 bg-pink-50/20',
+                    'border-l-indigo-500 bg-indigo-50/20',
+                    'border-l-teal-500 bg-teal-50/20',
+                    'border-l-rose-500 bg-rose-50/20'
+                  ];
+                  const hash = customerId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+                  return colors[hash % colors.length];
+                };
+
+                return (
+                  <Card key={customer.id} className={`border-l-4 ${getCustomerBorderColor(customer.id)} hover:shadow-md transition-shadow`}>
+                    <CardContent className="p-2.5">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-semibold mb-1 text-gray-900 truncate">{customer.name}</h3>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              <Phone className="h-3 w-3 mr-1.5 flex-shrink-0" />
+                              <span className="truncate">{customer.phone}</span>
+                            </div>
+                            {customer.email && (
+                              <div className="flex items-center text-xs text-muted-foreground">
+                                <Mail className="h-3 w-3 mr-1.5 flex-shrink-0" />
+                                <span className="truncate">{customer.email}</span>
+                              </div>
+                            )}
+                            {customer.address && (
+                              <div className="flex items-start text-xs text-muted-foreground">
+                                <span className="mr-1.5 flex-shrink-0 mt-0.5">📍</span>
+                                <span className="line-clamp-1">{customer.address}</span>
+                              </div>
+                            )}
+                            {customer.gpsLatitude && customer.gpsLongitude && (
+                              <div className="flex items-center text-xs">
+                                <MapPin className="h-3 w-3 mr-1.5 text-green-600 flex-shrink-0" />
+                                <button
+                                  onClick={() => openInMaps(customer.gpsLatitude!, customer.gpsLongitude!)}
+                                  className="text-blue-600 hover:text-blue-700 underline text-xs truncate"
+                                >
+                                  عرض على الخريطة
+                                </button>
+                              </div>
+                            )}
                           </div>
-                          {customer.email && (
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <Mail className="h-4 w-4 mr-2" />
-                              <span>{customer.email}</span>
-                            </div>
-                          )}
-                          {customer.address && (
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <span className="mr-2">📍</span>
-                              <span>{customer.address}</span>
-                            </div>
-                          )}
-                          {customer.gpsLatitude && customer.gpsLongitude && (
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <MapPin className="h-4 w-4 mr-2 text-green-600" />
-                              <button
-                                onClick={() => openInMaps(customer.gpsLatitude!, customer.gpsLongitude!)}
-                                className="text-blue-600 hover:text-blue-700 underline"
-                              >
-                                عرض على الخريطة
-                              </button>
-                            </div>
-                          )}
+                        </div>
+                        <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => showCustomerDetails(customer)}
+                            className="p-1.5 h-7 w-7"
+                            data-testid={`button-view-customer-${customer.id}`}
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(customer)}
+                            className="p-1.5 h-7 w-7"
+                            data-testid={`button-edit-customer-${customer.id}`}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(customer)}
+                            className="p-1.5 h-7 w-7 text-red-600 hover:text-red-700"
+                            data-testid={`button-delete-customer-${customer.id}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => showCustomerDetails(customer)}
-                          data-testid={`button-view-customer-${customer.id}`}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(customer)}
-                          data-testid={`button-edit-customer-${customer.id}`}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(customer)}
-                          className="text-red-600 hover:text-red-700"
-                          data-testid={`button-delete-customer-${customer.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                );
+              })
               )}
             </div>
           ) : (
