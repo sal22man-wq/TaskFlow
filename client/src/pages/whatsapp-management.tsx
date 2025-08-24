@@ -206,12 +206,20 @@ export default function WhatsAppManagement() {
           <MessageCircle className="h-6 w-6" />
           <h1 className="text-2xl font-bold">إدارة الواتساب</h1>
         </div>
-        <Link href="/admin/whatsapp-settings">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            إعدادات متقدمة
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin/whatsapp-settings">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              إعدادات متقدمة
+            </Button>
+          </Link>
+          <Link href="/admin/whatsapp-broadcast">
+            <Button className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
+              <MessageCircle className="h-4 w-4" />
+              رسائل جماعية
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* حالة الاتصال */}

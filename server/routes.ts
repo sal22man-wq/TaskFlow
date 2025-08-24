@@ -1109,7 +1109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             task.customerName,
             task.title,
             task.taskNumber || '',
-            task.customerAddress
+            task.customerAddress || ''
           );
           
           if (confirmationSent) {
@@ -1955,6 +1955,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error disabling real WhatsApp:", error);
       res.status(500).json({ message: "Failed to disable real WhatsApp" });
+    }
+  });
+
+  // Get users count for broadcast
+  app.get("/api/users/count", requireAuth, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const activeUsers = users.filter(user => user.isActive === undefined || user.isActive === true).length;
+      
+      res.json({
+        totalUsers: users.length,
+        activeUsers: activeUsers,
+      });
+    } catch (error) {
+      console.error("Error getting users count:", error);
+      res.status(500).json({ message: "Failed to get users count" });
+    }
+  });
+
+  // Send broadcast WhatsApp message
+  app.post("/api/whatsapp/broadcast", requireAuth, async (req, res) => {
+    try {
+      const currentUser = await storage.getUser(req.session.userId!);
+      if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'supervisor')) {
+        return res.status(403).json({ message: "Access denied. Admin or Supervisor role required." });
+      }
+
+      const { message } = req.body;
+      
+      if (!message || !message.trim()) {
+        return res.status(400).json({ message: "Message content is required" });
+      }
+
+      // Get all users with phone numbers
+      const users = await storage.getAllUsers();
+      const usersWithPhone = users.filter(user => 
+        user.phone && 
+        user.phone.trim() !== '' && 
+        (user.isActive === undefined || user.isActive === true)
+      );
+
+      if (usersWithPhone.length === 0) {
+        return res.status(400).json({ message: "No users with phone numbers found" });
+      }
+
+      // Send messages
+      const results = {
+        totalUsers: usersWithPhone.length,
+        successCount: 0,
+        failedCount: 0,
+        failedUsers: [] as string[]
+      };
+
+      const whatsappService = (global as any).whatsappService;
+      if (!whatsappService) {
+        return res.status(400).json({ message: "WhatsApp service is not available" });
+      }
+
+      for (const user of usersWithPhone) {
+        try {
+          const phone = user.phone!.replace(/[^\d]/g, ''); // Clean phone number
+          const whatsappNumber = phone.startsWith('966') ? phone : `966${phone}`;
+          
+          if (whatsappService.sendMessage) {
+            await whatsappService.sendMessage(whatsappNumber, message.trim());
+            results.successCount++;
+          } else {
+            throw new Error("sendMessage method not available");
+          }
+          
+          // Log the broadcast message
+          await storage.logUserAction(
+            "whatsapp_broadcast_sent",
+            req.session.userId!,
+            req.session.username!,
+            { 
+              recipientUser: user.username,
+              recipientPhone: user.phone,
+              messageContent: message.trim().substring(0, 100) + (message.trim().length > 100 ? "..." : ""),
+              details: `WhatsApp broadcast message sent to ${user.username} (${user.phone})`
+            },
+            req.ip,
+            req.get('User-Agent')
+          );
+          
+        } catch (error) {
+          console.error(`Failed to send WhatsApp message to ${user.username}:`, error);
+          results.failedCount++;
+          results.failedUsers.push(user.username || user.phone || 'Unknown');
+          
+          // Log the failed broadcast
+          await storage.logUserAction(
+            "whatsapp_broadcast_failed",
+            req.session.userId!,
+            req.session.username!,
+            { 
+              recipientUser: user.username,
+              recipientPhone: user.phone,
+              error: error?.toString(),
+              details: `Failed to send WhatsApp broadcast to ${user.username} (${user.phone}): ${error}`
+            },
+            req.ip,
+            req.get('User-Agent')
+          );
+        }
+      }
+
+      // Log the overall broadcast action
+      await storage.logUserAction(
+        "whatsapp_broadcast_completed",
+        req.session.userId!,
+        req.session.username!,
+        { 
+          totalUsers: results.totalUsers,
+          successCount: results.successCount,
+          failedCount: results.failedCount,
+          messageContent: message.trim().substring(0, 100) + (message.trim().length > 100 ? "..." : ""),
+          details: `WhatsApp broadcast completed: ${results.successCount}/${results.totalUsers} messages sent successfully`
+        },
+        req.ip,
+        req.get('User-Agent')
+      );
+
+      res.json(results);
+    } catch (error) {
+      console.error("Error sending broadcast WhatsApp message:", error);
+      res.status(500).json({ message: "Failed to send broadcast message" });
     }
   });
 
