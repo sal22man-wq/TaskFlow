@@ -73,9 +73,9 @@ export default function Messages() {
   const { data: fetchedConversationMessages = [], refetch: refetchConversation } = useQuery<Message[]>({
     queryKey: ["/api/messages/conversation", selectedConversation?.participantId, selectedConversation?.type],
     enabled: !!selectedConversation,
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
-    staleTime: 3000, // Consider data stale after 3 seconds
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    refetchInterval: 5000,
+    staleTime: 3000,
+    gcTime: 5 * 60 * 1000,
   });
 
   // Extract conversations from messages
@@ -117,14 +117,12 @@ export default function Messages() {
     onSuccess: (data) => {
       setNewMessage("");
       
-      // Refresh conversation data after successful send
       if (selectedConversation) {
         setTimeout(() => {
           refetchConversation();
-        }, 100); // Small delay to ensure server has processed the message
+        }, 100);
       }
       
-      // Invalidate queries to refresh all data
       queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
       if (selectedConversation) {
         queryClient.invalidateQueries({ 
@@ -156,10 +154,8 @@ export default function Messages() {
   // Update conversation messages when data changes
   useEffect(() => {
     if (selectedConversation) {
-      // Always update with fetched messages, even if empty
       setConversationMessages(fetchedConversationMessages);
     } else {
-      // Clear messages only when no conversation is selected
       setConversationMessages([]);
     }
   }, [fetchedConversationMessages, selectedConversation]);
@@ -170,14 +166,12 @@ export default function Messages() {
     let messageData: { receiverId?: string; content: string; messageScope: string };
     
     if (selectedConversation) {
-      // Sending in an existing conversation
       messageData = {
         receiverId: selectedConversation.type === "group" ? undefined : selectedConversation.participantId,
         content: newMessage.trim(),
         messageScope: selectedConversation.type,
       };
     } else {
-      // Creating new conversation
       if (messageScope === "private" && !selectedReceiver) {
         toast({
           title: "خطأ",
@@ -194,7 +188,6 @@ export default function Messages() {
       };
     }
     
-    // Create optimistic message for immediate display
     if (selectedConversation) {
       const optimisticMessage: Message = {
         id: `temp-${Date.now()}`,
@@ -214,7 +207,6 @@ export default function Messages() {
       };
       
       setConversationMessages(prev => {
-        // Check if message already exists to avoid duplicates
         const exists = prev.some(msg => msg.content === messageData.content && 
           (msg.id.startsWith('temp-') || msg.senderId === user?.id) && 
           Math.abs(new Date(msg.createdAt).getTime() - Date.now()) < 5000
@@ -263,114 +255,162 @@ export default function Messages() {
   }
 
   return (
-    <div className="flex flex-col h-screen md:h-[calc(100vh-2rem)] md:container md:mx-auto md:p-4 md:max-w-6xl" dir="rtl">
-      {/* Header - Mobile and Desktop */}
-      <div className="flex items-center gap-3 p-4 md:p-0 md:mb-4 border-b md:border-0 bg-background md:bg-transparent">
-        {selectedConversation && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={backToConversations}
-            className="md:hidden"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        )}
-        <MessageCircle className="h-6 w-6 text-primary" />
-        <h1 className="text-xl font-bold">
-          {selectedConversation ? selectedConversation.participantName : "الرسائل"}
-        </h1>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex md:grid md:grid-cols-12 md:gap-4 overflow-hidden">
-        {/* Conversations List */}
-        <div className={`${showConversations ? 'flex' : 'hidden'} md:flex md:col-span-4 flex-col w-full md:w-auto`}>
-          <Card className="h-full flex flex-col">
-            <CardHeader className="pb-3 flex-shrink-0">
-              <CardTitle className="text-lg">المحادثات</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 flex-1 flex flex-col">
-              <ScrollArea className="flex-1">
-                {conversations.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8 px-4">
-                    <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>لا توجد محادثات بعد</p>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    {conversations.map((conversation) => (
-                      <div
-                        key={conversation.id}
-                        className={`p-4 hover:bg-muted/50 cursor-pointer border-b transition-colors ${
-                          selectedConversation?.id === conversation.id ? 'bg-primary/10 border-primary/20' : ''
-                        }`}
-                        onClick={() => openConversation(conversation)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium ${
-                            conversation.type === 'group' ? 'bg-blue-500' : 'bg-green-500'
+    <div className="h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex" dir="rtl">
+      {/* Main Container - Messenger Style */}
+      <div className="w-full max-w-7xl mx-auto bg-white shadow-2xl rounded-xl overflow-hidden flex h-full max-h-screen">
+        
+        {/* Conversations Sidebar */}
+        <div className={`${showConversations ? 'flex' : 'hidden lg:flex'} w-full lg:w-80 flex-col border-r border-gray-200 bg-white`}>
+          {/* Sidebar Header */}
+          <div className="p-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                <MessageCircle className="h-6 w-6" />
+              </div>
+              <div className="flex-1">
+                <h1 className="text-lg font-bold">المحادثات</h1>
+                <p className="text-xs text-white/80">{user?.username || 'المستخدم'}</p>
+              </div>
+              {selectedConversation && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={backToConversations}
+                  className="lg:hidden text-white hover:bg-white/20"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {/* Conversations List */}
+          <div className="flex-1 overflow-hidden bg-gray-50">
+            <ScrollArea className="h-full">
+              {conversations.length === 0 ? (
+                <div className="text-center text-gray-500 py-16 px-4">
+                  <MessageCircle className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">لا توجد محادثات</h3>
+                  <p className="text-sm">ابدأ محادثة جديدة الآن</p>
+                </div>
+              ) : (
+                <div className="p-2">
+                  {conversations.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      className={`p-3 rounded-xl cursor-pointer transition-all duration-200 mb-1 ${
+                        selectedConversation?.id === conversation.id 
+                          ? 'bg-gradient-to-r from-blue-100 to-indigo-100 shadow-md border-r-4 border-blue-500' 
+                          : 'hover:bg-white hover:shadow-sm'
+                      }`}
+                      onClick={() => openConversation(conversation)}
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Avatar with online indicator */}
+                        <div className="relative">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg ${
+                            conversation.type === 'group' 
+                              ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' 
+                              : 'bg-gradient-to-br from-blue-400 to-blue-600'
                           }`}>
-                            {conversation.type === 'group' ? <Users className="h-5 w-5" /> : conversation.avatar}
+                            {conversation.type === 'group' ? (
+                              <Users className="h-6 w-6" />
+                            ) : (
+                              conversation.participantName.charAt(0).toUpperCase()
+                            )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <h3 className="font-medium truncate text-sm">
-                                {conversation.participantName}
-                              </h3>
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs text-muted-foreground">
-                                  {formatMessageTime(conversation.lastMessageTime)}
-                                </span>
-                                {conversation.unreadCount > 0 && (
-                                  <Badge variant="destructive" className="text-xs px-1 min-w-[20px] h-5">
-                                    {conversation.unreadCount}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            <p className="text-xs text-muted-foreground truncate">
+                          {/* Online indicator */}
+                          {conversation.type === 'private' && (
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white shadow-sm"></div>
+                          )}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h3 className="font-bold text-gray-800 text-sm truncate">
+                              {conversation.participantName}
+                            </h3>
+                            <span className="text-xs text-gray-500 font-medium">
+                              {formatMessageTime(conversation.lastMessageTime)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-gray-600 line-clamp-1 flex-1">
                               {conversation.lastMessage}
                             </p>
+                            {conversation.unreadCount > 0 && (
+                              <div className="ml-2 w-6 h-6 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full flex items-center justify-center shadow-lg">
+                                <span className="text-xs font-bold">
+                                  {conversation.unreadCount > 9 ? '9+' : conversation.unreadCount}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
         </div>
 
-        {/* Chat Area */}
-        <div className={`${!showConversations ? 'flex' : 'hidden'} md:flex md:col-span-8 flex-col w-full md:w-auto`}>
+        {/* Chat Area - Messenger Style */}
+        <div className={`${!showConversations ? 'flex' : 'hidden lg:flex'} flex-1 flex-col bg-gradient-to-b from-gray-50 to-white`}>
           {selectedConversation ? (
-            <Card className="h-full flex flex-col">
-              <CardHeader className="pb-3 border-b">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-medium ${
-                      selectedConversation.type === 'group' ? 'bg-blue-500' : 'bg-green-500'
+            <>
+              {/* Chat Header */}
+              <div className="p-4 bg-white border-b border-gray-200 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={backToConversations}
+                    className="lg:hidden"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                  <div className="relative">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md ${
+                      selectedConversation.type === 'group' 
+                        ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' 
+                        : 'bg-gradient-to-br from-blue-400 to-blue-600'
                     }`}>
-                      {selectedConversation.type === 'group' ? <Users className="h-4 w-4" /> : selectedConversation.avatar}
+                      {selectedConversation.type === 'group' ? (
+                        <Users className="h-5 w-5" />
+                      ) : (
+                        selectedConversation.participantName.charAt(0).toUpperCase()
+                      )}
                     </div>
-                    {selectedConversation.participantName}
-                  </CardTitle>
-                  <Badge variant={selectedConversation.type === 'group' ? 'default' : 'secondary'}>
+                    {selectedConversation.type === 'private' && (
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="font-bold text-gray-800">{selectedConversation.participantName}</h2>
+                    <p className="text-xs text-gray-500">
+                      {selectedConversation.type === 'group' ? 'محادثة جماعية' : 'متصل الآن'}
+                    </p>
+                  </div>
+                  <Badge 
+                    variant={selectedConversation.type === 'group' ? 'default' : 'secondary'}
+                    className="px-3 py-1"
+                  >
                     {selectedConversation.type === 'group' ? 'جماعية' : 'خاصة'}
                   </Badge>
                 </div>
-              </CardHeader>
+              </div>
               
               {/* Messages Area */}
-              <CardContent className="flex-1 p-0 flex flex-col min-h-0">
-                <ScrollArea className="flex-1 p-4 min-h-0">
-                  <div className="space-y-3">
+              <div className="flex-1 overflow-hidden bg-gradient-to-b from-gray-50/50 to-white">
+                <ScrollArea className="h-full p-4">
+                  <div className="space-y-4">
                     {conversationMessages.length === 0 ? (
-                      <div className="text-center text-muted-foreground py-8">
-                        <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                        <p>ابدأ محادثتك الآن</p>
+                      <div className="text-center text-gray-500 py-16">
+                        <MessageCircle className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                        <h3 className="text-lg font-medium text-gray-700 mb-2">ابدأ محادثتك</h3>
+                        <p className="text-sm">اكتب رسالتك الأولى لبدء المحادثة</p>
                       </div>
                     ) : (
                       conversationMessages.map((message, index) => (
@@ -378,25 +418,23 @@ export default function Messages() {
                           key={message.id || `temp-${index}`}
                           className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
                         >
-                          <div className={`max-w-[70%] rounded-lg p-3 ${
+                          <div className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
                             message.senderId === user?.id 
-                              ? 'bg-primary text-primary-foreground' 
-                              : 'bg-muted'
+                              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white' 
+                              : 'bg-white border border-gray-200 text-gray-800'
                           }`}>
-                            {message.senderId !== user?.id && (
-                              <div className="flex items-center gap-2 mb-1">
+                            {message.senderId !== user?.id && selectedConversation.type === 'group' && (
+                              <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-blue-600">
                                 <User className="h-3 w-3" />
-                                <span className="text-xs font-medium">
-                                  {message.sender?.name || message.sender?.username || "مجهول"}
-                                </span>
+                                <span>{message.sender?.name || message.sender?.username || "مجهول"}</span>
                               </div>
                             )}
-                            <p className="text-sm">{message.content}</p>
-                            <div className={`flex items-center justify-end gap-1 mt-1 ${
-                              message.senderId === user?.id ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                            <p className="text-sm leading-relaxed mb-1">{message.content}</p>
+                            <div className={`flex items-center justify-end gap-1 text-xs ${
+                              message.senderId === user?.id ? 'text-white/70' : 'text-gray-500'
                             }`}>
                               <Clock className="h-3 w-3" />
-                              <span className="text-xs">
+                              <span>
                                 {message.createdAt ? format(new Date(message.createdAt), "HH:mm") : "الآن"}
                               </span>
                             </div>
@@ -407,131 +445,106 @@ export default function Messages() {
                     <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
-                
-                {/* Message Input */}
-                <div className="border-t p-4 flex-shrink-0">
-                  <div className="flex gap-2 items-end">
+              </div>
+
+              {/* Message Input */}
+              <div className="p-4 bg-white border-t border-gray-200">
+                <div className="flex gap-3 items-end">
+                  <div className="flex-1">
                     <Textarea
-                      placeholder="اكتب رسالتك هنا..."
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
+                      placeholder="اكتب رسالتك هنا..."
+                      className="min-h-[44px] max-h-32 resize-none border-gray-300 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
                           handleSendMessage();
                         }
                       }}
-                      rows={2}
-                      className="flex-1 resize-none min-h-[2.5rem] max-h-24"
                     />
-                    <Button
-                      onClick={handleSendMessage}
-                      disabled={sendMessageMutation.isPending || !newMessage.trim()}
-                      size="icon"
-                      className="flex-shrink-0"
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="flex flex-col h-full">
-              {/* Send New Message */}
-              <Card className="flex-1 flex flex-col">
-                <CardHeader className="flex-shrink-0">
-                  <CardTitle className="flex items-center gap-2">
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!newMessage.trim() || sendMessageMutation.isPending}
+                    className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg"
+                  >
                     <Send className="h-5 w-5" />
-                    محادثة جديدة
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 flex-1 flex flex-col justify-center">
-                  {/* Message Type Selection */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      نوع الرسالة
-                    </label>
-                    <Select value={messageScope} onValueChange={(value) => {
-                      setMessageScope(value);
-                      if (value === "group") {
-                        setSelectedReceiver("");
-                      }
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر نوع الرسالة" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="private">رسالة خاصة</SelectItem>
-                        <SelectItem value="group">رسالة جماعية</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Receiver Selection - Only for private messages */}
-                  {messageScope === "private" && (
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">
-                        المستلم
-                      </label>
-                      <Select value={selectedReceiver} onValueChange={setSelectedReceiver}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر عضو الفريق" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : (
+            /* New Message Interface */
+            <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
+              <div className="text-center max-w-md px-6">
+                <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <MessageCircle className="h-12 w-12 text-blue-500" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">مرحباً بك في المحادثات</h2>
+                <p className="text-gray-600 mb-8">اختر محادثة من القائمة الجانبية أو ابدأ محادثة جديدة</p>
+                
+                <Card className="p-6 bg-white shadow-lg border-0">
+                  <CardHeader className="p-0 mb-4">
+                    <CardTitle className="text-lg text-right">رسالة جديدة</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0 space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">نوع الرسالة</label>
+                      <Select value={messageScope} onValueChange={setMessageScope}>
+                        <SelectTrigger className="w-full rounded-xl">
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {teamMembers.map((member) => (
-                            <SelectItem key={member.id} value={member.id}>
-                              <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-                                  {member.avatar || member.name.charAt(0)}
-                                </div>
-                                {member.name}
-                              </div>
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="private">رسالة خاصة</SelectItem>
+                          <SelectItem value="group">رسالة جماعية</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                  )}
-
-                  {/* Group message info */}
-                  {messageScope === "group" && (
-                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-primary" />
-                        <span className="text-sm text-primary">سيتم إرسال هذه الرسالة لجميع أعضاء الفريق</span>
+                    
+                    {messageScope === "private" && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">المستلم</label>
+                        <Select value={selectedReceiver} onValueChange={setSelectedReceiver}>
+                          <SelectTrigger className="w-full rounded-xl">
+                            <SelectValue placeholder="اختر عضو الفريق" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {teamMembers.map((member) => (
+                              <SelectItem key={member.id} value={member.id}>
+                                {member.name || member.email}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
+                    )}
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">الرسالة</label>
+                      <Textarea
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        placeholder={messageScope === "group" ? "اكتب رسالتك للجميع..." : "اكتب رسالتك..."}
+                        className="min-h-[100px] rounded-xl"
+                      />
                     </div>
-                  )}
-
-                  <div className="flex-1">
-                    <label className="text-sm font-medium mb-2 block">
-                      الرسالة
-                    </label>
-                    <Textarea
-                      placeholder="اكتب رسالتك هنا..."
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      rows={6}
-                      className="min-h-32"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                    />
-                  </div>
-
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={sendMessageMutation.isPending}
-                    className="w-full mt-auto"
-                  >
-                    {sendMessageMutation.isPending ? "جاري الإرسال..." : "إرسال الرسالة"}
-                  </Button>
-                </CardContent>
-              </Card>
+                    
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!newMessage.trim() || (messageScope === "private" && !selectedReceiver) || sendMessageMutation.isPending}
+                      className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-xl py-3"
+                    >
+                      {sendMessageMutation.isPending ? "جاري الإرسال..." : (
+                        <>
+                          <Send className="h-4 w-4 ml-2" />
+                          إرسال الرسالة
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
         </div>
