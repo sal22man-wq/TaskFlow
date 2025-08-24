@@ -27,16 +27,16 @@ function TasksContent() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "complete":
-        return "bg-green-100 text-green-800 border-green-300";
+        return "bg-green-500 text-white border-green-600"; // أخضر ممتلئ للمهام المكتملة
       case "start":
-        return "bg-blue-100 text-blue-800 border-blue-300";
+        return "bg-yellow-500 text-white border-yellow-600"; // أصفر ممتلئ للمهام التي بدأت
       case "cancelled":
-        return "bg-red-100 text-red-800 border-red-300";
+        return "bg-red-500 text-white border-red-600";
       case "rescheduled":
-        return "bg-purple-100 text-purple-800 border-purple-300";
+        return "bg-purple-500 text-white border-purple-600";
       case "pending":
       default:
-        return "bg-orange-100 text-orange-800 border-orange-300";
+        return "bg-red-500 text-white border-red-600"; // أحمر ممتلئ للمهام في الانتظار
     }
   };
 
@@ -57,19 +57,20 @@ function TasksContent() {
     }
   };
 
-  const getTaskBorderColor = (taskId: string) => {
-    const colors = [
-      'border-l-blue-500 bg-blue-50/30',
-      'border-l-green-500 bg-green-50/30', 
-      'border-l-purple-500 bg-purple-50/30',
-      'border-l-orange-500 bg-orange-50/30',
-      'border-l-pink-500 bg-pink-50/30',
-      'border-l-indigo-500 bg-indigo-50/30',
-      'border-l-teal-500 bg-teal-50/30',
-      'border-l-rose-500 bg-rose-50/30'
-    ];
-    const hash = taskId.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-    return colors[hash % colors.length];
+  const getTaskBackgroundColor = (status: string) => {
+    switch (status) {
+      case "complete":
+        return "bg-green-100 border-l-green-500"; // خلفية خضراء فاتحة للمهام المكتملة
+      case "start":
+        return "bg-yellow-100 border-l-yellow-500"; // خلفية صفراء فاتحة للمهام التي بدأت
+      case "cancelled":
+        return "bg-red-100 border-l-red-500";
+      case "rescheduled":
+        return "bg-purple-100 border-l-purple-500";
+      case "pending":
+      default:
+        return "bg-orange-100 border-l-red-500"; // خلفية برتقالية فاتحة مع حافة حمراء للمهام في الانتظار
+    }
   };
 
   const { data: tasks, isLoading, error, refetch } = useQuery<TaskWithAssignees[]>({
@@ -221,7 +222,7 @@ function TasksContent() {
           sortedTasks.map((task) => (
             <div
               key={task.id}
-              className={`task-compact-card border-l-4 ${getTaskBorderColor(task.id)} bg-white/90 backdrop-blur-sm rounded-lg border hover:shadow-md transition-all duration-200 p-3`}
+              className={`task-compact-card border-l-4 ${getTaskBackgroundColor(task.status)} backdrop-blur-sm rounded-lg border hover:shadow-md transition-all duration-200 p-3`}
               data-testid={`task-item-${task.id}`}
             >
               <div className="flex items-center justify-between">

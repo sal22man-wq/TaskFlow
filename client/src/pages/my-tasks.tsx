@@ -51,17 +51,30 @@ export default function MyTasksPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "complete": return "text-green-600 bg-green-50 px-2 py-1 rounded-full text-xs font-medium";
-      case "start": return "text-blue-600 bg-blue-50 px-2 py-1 rounded-full text-xs font-medium";
-      case "pending": return "text-orange-600 bg-orange-50 px-2 py-1 rounded-full text-xs font-medium";
+      case "complete": return "text-white bg-green-500 px-2 py-1 rounded-full text-xs font-medium"; // أخضر ممتلئ للمهام المكتملة
+      case "start": return "text-white bg-yellow-500 px-2 py-1 rounded-full text-xs font-medium"; // أصفر ممتلئ للمهام التي بدأت
+      case "pending": return "text-white bg-red-500 px-2 py-1 rounded-full text-xs font-medium"; // أحمر ممتلئ للمهام في الانتظار
+      case "cancelled": return "text-white bg-red-600 px-2 py-1 rounded-full text-xs font-medium";
+      case "rescheduled": return "text-white bg-purple-500 px-2 py-1 rounded-full text-xs font-medium";
       default: return "text-gray-600 bg-gray-50 px-2 py-1 rounded-full text-xs font-medium";
+    }
+  };
+
+  const getTaskBackgroundColor = (status: string) => {
+    switch (status) {
+      case "complete": return "bg-green-50 border-l-green-500"; // خلفية خضراء للمهام المكتملة
+      case "start": return "bg-yellow-50 border-l-yellow-500"; // خلفية صفراء للمهام التي بدأت
+      case "cancelled": return "bg-red-50 border-l-red-500";
+      case "rescheduled": return "bg-purple-50 border-l-purple-500";
+      case "pending": 
+      default: return "bg-orange-50 border-l-red-500"; // خلفية برتقالية للمهام في الانتظار
     }
   };
 
   const TaskCard = ({ task, showAssignees = true }: { task: TaskWithAssignees; showAssignees?: boolean }) => (
     <Card 
       key={task.id} 
-      className="cursor-pointer hover:shadow-md transition-shadow"
+      className={`cursor-pointer hover:shadow-md transition-shadow border-l-4 ${getTaskBackgroundColor(task.status)}`}
       onClick={() => setSelectedTask(task)}
       data-testid={`card-my-task-${task.id}`}
     >
