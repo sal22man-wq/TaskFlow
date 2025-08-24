@@ -27,11 +27,11 @@ export function TaskCard({ task }: TaskCardProps) {
       case "complete":
         return "bg-green-500 text-white border-green-600"; // أخضر ممتلئ للمهام المكتملة
       case "start":
-        return "bg-yellow-500 text-white border-yellow-600"; // أصفر ممتلئ للمهام التي بدأت
+        return "bg-purple-500 text-white border-purple-600"; // بنفسجي ممتلئ للمهام التي بدأت
       case "cancelled":
         return "bg-red-500 text-white border-red-600";
       case "rescheduled":
-        return "bg-purple-500 text-white border-purple-600";
+        return "bg-indigo-500 text-white border-indigo-600"; // تغيير المؤجلة إلى النيلي لتجنب التداخل
       case "pending":
       default:
         return "bg-red-500 text-white border-red-600"; // أحمر ممتلئ للمهام في الانتظار
@@ -61,11 +61,11 @@ export function TaskCard({ task }: TaskCardProps) {
       case "complete":
         return "border-l-green-500 bg-green-50/50"; // خلفية خضراء فاتحة للمهام المكتملة
       case "start":
-        return "border-l-yellow-500 bg-yellow-50/50"; // خلفية صفراء فاتحة للمهام التي بدأت
+        return "border-l-purple-500 bg-purple-50/50"; // خلفية بنفسجية فاتحة للمهام التي بدأت
       case "cancelled":
         return "border-l-red-500 bg-red-50/50";
       case "rescheduled":
-        return "border-l-purple-500 bg-purple-50/50";
+        return "border-l-indigo-500 bg-indigo-50/50"; // تغيير المؤجلة إلى النيلي لتجنب التداخل
       case "pending":
       default:
         return "border-l-red-500 bg-orange-50/50"; // خلفية برتقالية فاتحة للمهام في الانتظار
