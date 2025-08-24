@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Broadcast - تصحيح الإرسال الجماعي</title>
+    <meta charset="utf-8">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px;
+            direction: rtl;
+        }
+        .debug-section { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            margin: 15px 0; 
+            border-radius: 5px; 
+            border: 1px solid #ddd;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { 
+            background: #007bff; 
+            color: white; 
+            padding: 8px 16px; 
+            border: none; 
+            border-radius: 4px; 
+            margin: 5px; 
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .broadcast-btn { background: #28a745; }
+        .broadcast-btn:hover { background: #218838; }
+        textarea { 
+            width: 100%; 
+            height: 80px; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px;
+            resize: vertical;
+        }
+        pre { 
+            background: #f8f9fa; 
+            padding: 10px; 
+            border-radius: 4px; 
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 تصحيح نظام الإرسال الجماعي</h1>
+    
+    <div class="debug-section">
+        <h3>1. اختبار الاتصال</h3>
+        <button onclick="testConnection()">اختبار الاتصال</button>
+        <div id="connection-result"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>2. تسجيل الدخول</h3>
+        <button onclick="testLogin()">تسجيل الدخول كمدير</button>
+        <div id="login-result"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>3. اختبار الإحصائيات</h3>
+        <button onclick="testStats()">جلب إحصائيات المستخدمين</button>
+        <div id="stats-result"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>4. اختبار الإرسال الجماعي</h3>
+        <textarea id="testMessage" placeholder="اكتب رسالة تجريبية...">السلام عليكم
+هذه رسالة تجريبية من نظام إدارة المهام
+شركة اشراق الودق لتكنولوجيا المعلومات</textarea>
+        <br>
+        <button class="broadcast-btn" onclick="testBroadcast()">إرسال رسالة جماعية</button>
+        <div id="broadcast-result"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>📋 سجل التصحيح</h3>
+        <button onclick="clearLog()">مسح السجل</button>
+        <pre id="debug-log"></pre>
+    </div>
+
+    <script>
+        let sessionCookie = '';
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('debug-log');
+            const color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
+            logElement.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.className = `debug-section ${type}`;
+            element.innerHTML = message;
+        }
+        
+        async function testConnection() {
+            log('اختبار الاتصال مع الخادم...');
+            try {
+                const response = await fetch('/api/ping');
+                if (response.ok) {
+                    showResult('connection-result', '✅ الاتصال ناجح - الخادم يعمل بشكل طبيعي', 'success');
+                    log('الاتصال ناجح', 'success');
+                } else {
+                    showResult('connection-result', `❌ خطأ في الاتصال - رمز الاستجابة: ${response.status}`, 'error');
+                    log(`خطأ في الاتصال: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult('connection-result', `❌ فشل الاتصال: ${error.message}`, 'error');
+                log(`فشل الاتصال: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLogin() {
+            log('محاولة تسجيل الدخول...');
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    }),
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showResult('login-result', `✅ تم تسجيل الدخول بنجاح\nالمستخدم: ${result.user.username}\nالدور: ${result.user.role}`, 'success');
+                    log('تم تسجيل الدخول بنجاح', 'success');
+                } else {
+                    const error = await response.text();
+                    showResult('login-result', `❌ فشل تسجيل الدخول: ${error}`, 'error');
+                    log(`فشل تسجيل الدخول: ${error}`, 'error');
+                }
+            } catch (error) {
+                showResult('login-result', `❌ خطأ في تسجيل الدخول: ${error.message}`, 'error');
+                log(`خطأ في تسجيل الدخول: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testStats() {
+            log('محاولة جلب الإحصائيات...');
+            try {
+                const response = await fetch('/api/users/count', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const stats = await response.json();
+                    showResult('stats-result', 
+                        `✅ تم جلب الإحصائيات بنجاح\n` +
+                        `إجمالي المستخدمين: ${stats.totalUsers}\n` +
+                        `المستخدمين النشطين: ${stats.activeUsers}`, 
+                        'success'
+                    );
+                    log(`إحصائيات المستخدمين: ${stats.totalUsers} إجمالي، ${stats.activeUsers} نشط`, 'success');
+                } else {
+                    const error = await response.text();
+                    showResult('stats-result', `❌ فشل جلب الإحصائيات: ${error}`, 'error');
+                    log(`فشل جلب الإحصائيات: ${error}`, 'error');
+                }
+            } catch (error) {
+                showResult('stats-result', `❌ خطأ في جلب الإحصائيات: ${error.message}`, 'error');
+                log(`خطأ في جلب الإحصائيات: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testBroadcast() {
+            const message = document.getElementById('testMessage').value.trim();
+            if (!message) {
+                showResult('broadcast-result', '❌ يرجى كتابة رسالة للاختبار', 'error');
+                return;
+            }
+            
+            log('إرسال رسالة جماعية...');
+            try {
+                const response = await fetch('/api/whatsapp/broadcast', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message }),
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showResult('broadcast-result', 
+                        `✅ تم الإرسال الجماعي بنجاح!\n` +
+                        `إجمالي المستخدمين: ${result.totalUsers}\n` +
+                        `تم الإرسال بنجاح: ${result.successCount}\n` +
+                        `فشل الإرسال: ${result.failedCount}\n` +
+                        (result.failedCount > 0 ? `المستخدمين المتأثرين: ${result.failedUsers.join(', ')}` : ''),
+                        'success'
+                    );
+                    log(`الإرسال الجماعي: ${result.successCount} نجح، ${result.failedCount} فشل`, 'success');
+                } else {
+                    const error = await response.text();
+                    showResult('broadcast-result', `❌ فشل الإرسال الجماعي: ${error}`, 'error');
+                    log(`فشل الإرسال الجماعي: ${error}`, 'error');
+                }
+            } catch (error) {
+                showResult('broadcast-result', `❌ خطأ في الإرسال الجماعي: ${error.message}`, 'error');
+                log(`خطأ في الإرسال الجماعي: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearLog() {
+            document.getElementById('debug-log').innerHTML = '';
+            log('تم مسح سجل التصحيح');
+        }
+        
+        // تشغيل اختبار الاتصال عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('تم تحميل صفحة التصحيح');
+            testConnection();
+        });
+    </script>
+</body>
+</html>

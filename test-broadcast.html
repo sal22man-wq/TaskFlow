@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test WhatsApp Broadcast</title>
+    <meta charset="utf-8">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px;
+            direction: rtl;
+        }
+        .container { 
+            background: #f5f5f5; 
+            padding: 20px; 
+            border-radius: 10px; 
+        }
+        textarea { 
+            width: 100%; 
+            height: 120px; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            font-size: 14px;
+        }
+        button { 
+            background: #25d366; 
+            color: white; 
+            padding: 12px 24px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { 
+            background: #128c7e; 
+        }
+        button:disabled { 
+            background: #ccc; 
+            cursor: not-allowed; 
+        }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+        }
+        .success { 
+            background: #d4edda; 
+            color: #155724; 
+            border: 1px solid #c3e6cb; 
+        }
+        .error { 
+            background: #f8d7da; 
+            color: #721c24; 
+            border: 1px solid #f5c6cb; 
+        }
+        .info { 
+            background: #d1ecf1; 
+            color: #0c5460; 
+            border: 1px solid #bee5eb; 
+        }
+        .result { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 10px 0; 
+            border: 1px solid #ddd;
+        }
+        .stat-box {
+            display: inline-block;
+            background: white;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #25d366;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 اختبار إرسال رسائل واتساب جماعية</h1>
+        
+        <div id="status-section">
+            <h3>📊 إحصائيات المستخدمين</h3>
+            <div id="user-stats">
+                <div class="info">جاري تحميل الإحصائيات...</div>
+            </div>
+        </div>
+        
+        <div id="message-section">
+            <h3>✍️ كتابة الرسالة</h3>
+            <textarea id="message" placeholder="اكتب نص الرسالة التي تريد إرسالها لجميع المستخدمين...
+
+مثال:
+السلام عليكم ورحمة الله وبركاته
+
+نود إعلامكم بأن النظام الجديد لإدارة المهام أصبح متاحاً الآن.
+
+يمكنكم تسجيل الدخول والبدء في استخدام النظام.
+
+شكراً لكم
+فريق العمل"></textarea>
+            
+            <div style="text-align: center; margin: 20px 0;">
+                <button onclick="testMessage()" id="testBtn">🧪 اختبار الرسالة</button>
+                <button onclick="sendBroadcast()" id="sendBtn">📤 إرسال للجميع</button>
+                <button onclick="refreshStats()" id="refreshBtn">🔄 تحديث الإحصائيات</button>
+            </div>
+        </div>
+        
+        <div id="results-section">
+            <h3>📋 نتائج الإرسال</h3>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentSessionId = '';
+        
+        // تسجيل الدخول تلقائياً
+        async function login() {
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    }),
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    showStatus('تم تسجيل الدخول بنجاح', 'success');
+                    loadUserStats();
+                } else {
+                    showStatus('فشل في تسجيل الدخول', 'error');
+                }
+            } catch (error) {
+                showStatus('خطأ في تسجيل الدخول: ' + error.message, 'error');
+            }
+        }
+        
+        // تحميل إحصائيات المستخدمين
+        async function loadUserStats() {
+            try {
+                const response = await fetch('/api/users/count', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('user-stats').innerHTML = `
+                        <div class="stat-box">
+                            <div class="stat-number">${data.totalUsers}</div>
+                            <div class="stat-label">إجمالي المستخدمين</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-number">${data.activeUsers}</div>
+                            <div class="stat-label">المستخدمين النشطين</div>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('user-stats').innerHTML = '<div class="error">فشل في تحميل الإحصائيات</div>';
+                }
+            } catch (error) {
+                document.getElementById('user-stats').innerHTML = '<div class="error">خطأ في تحميل الإحصائيات: ' + error.message + '</div>';
+            }
+        }
+        
+        // إرسال رسالة جماعية
+        async function sendBroadcast() {
+            const message = document.getElementById('message').value.trim();
+            if (!message) {
+                showStatus('يرجى كتابة نص الرسالة أولاً', 'error');
+                return;
+            }
+            
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.textContent = '📤 جاري الإرسال...';
+            
+            try {
+                const response = await fetch('/api/whatsapp/broadcast', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message }),
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showBroadcastResult(result);
+                    showStatus('تم إرسال الرسائل بنجاح', 'success');
+                } else {
+                    const error = await response.json();
+                    showStatus('فشل في إرسال الرسائل: ' + error.message, 'error');
+                }
+            } catch (error) {
+                showStatus('خطأ في إرسال الرسائل: ' + error.message, 'error');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '📤 إرسال للجميع';
+            }
+        }
+        
+        // اختبار الرسالة
+        async function testMessage() {
+            const message = document.getElementById('message').value.trim();
+            if (!message) {
+                showStatus('يرجى كتابة نص الرسالة أولاً', 'error');
+                return;
+            }
+            
+            showStatus('معاينة الرسالة:\n\n' + message, 'info');
+        }
+        
+        // تحديث الإحصائيات
+        function refreshStats() {
+            loadUserStats();
+            showStatus('تم تحديث الإحصائيات', 'info');
+        }
+        
+        // عرض حالة النظام
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'status ' + type;
+            statusDiv.textContent = message;
+            statusDiv.style.whiteSpace = 'pre-wrap';
+            
+            document.body.appendChild(statusDiv);
+            
+            setTimeout(() => {
+                if (statusDiv.parentNode) {
+                    statusDiv.parentNode.removeChild(statusDiv);
+                }
+            }, 5000);
+        }
+        
+        // عرض نتائج الإرسال الجماعي
+        function showBroadcastResult(result) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="result">
+                    <h4>📊 نتائج الإرسال الجماعي</h4>
+                    <div class="stat-box">
+                        <div class="stat-number">${result.totalUsers}</div>
+                        <div class="stat-label">إجمالي المستخدمين</div>
+                    </div>
+                    <div class="stat-box" style="color: #28a745;">
+                        <div class="stat-number">${result.successCount}</div>
+                        <div class="stat-label">تم الإرسال بنجاح</div>
+                    </div>
+                    <div class="stat-box" style="color: #dc3545;">
+                        <div class="stat-number">${result.failedCount}</div>
+                        <div class="stat-label">فشل في الإرسال</div>
+                    </div>
+                    ${result.failedCount > 0 ? `
+                        <div style="margin-top: 10px;">
+                            <strong>المستخدمين الذين لم تصلهم الرسالة:</strong><br>
+                            ${result.failedUsers.join(', ')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            login();
+        });
+    </script>
+</body>
+</html>

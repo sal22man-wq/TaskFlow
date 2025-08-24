@@ -73,8 +73,8 @@ export default function Messages() {
   const { data: fetchedConversationMessages = [], refetch: refetchConversation } = useQuery<Message[]>({
     queryKey: ["/api/messages/conversation", selectedConversation?.participantId, selectedConversation?.type],
     enabled: !!selectedConversation,
-    refetchInterval: 3000, // Auto-refresh every 3 seconds
-    staleTime: 1000, // Consider data stale after 1 second
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    staleTime: 3000, // Consider data stale after 3 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 
