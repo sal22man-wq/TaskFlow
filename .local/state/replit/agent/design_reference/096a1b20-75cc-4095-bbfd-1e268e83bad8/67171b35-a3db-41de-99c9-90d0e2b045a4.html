@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow - Team Task Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'roboto': ['Roboto', 'sans-serif']
+                    },
+                    colors: {
+                        primary: '#1976D2',
+                        'primary-dark': '#1565C0',
+                        secondary: '#00796B',
+                        success: '#4CAF50',
+                        warning: '#FF9800',
+                        error: '#F44336',
+                        surface: '#FFFFFF',
+                        background: '#F5F5F5',
+                        'on-surface': '#212121',
+                        'surface-variant': '#E0E0E0'
+                    },
+                    spacing: {
+                        '18': '4.5rem',
+                        '88': '22rem'
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="font-roboto bg-background text-on-surface">
+    <!-- @COMPONENT: AppContainer -->
+    <div class="min-h-screen flex flex-col max-w-md mx-auto bg-surface shadow-xl">
+        
+        <!-- @COMPONENT: TopAppBar -->
+        <header class="bg-primary text-white px-4 py-3 shadow-md">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-tasks text-xl"></i>
+                    <h1 class="text-lg font-medium">TaskFlow</h1>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button class="p-2 rounded-full hover:bg-primary-dark transition-colors">
+                        <i class="fas fa-bell text-lg"></i>
+                    </button>
+                    <button class="p-2 rounded-full hover:bg-primary-dark transition-colors">
+                        <i class="fas fa-user-circle text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+        <!-- @END_COMPONENT: TopAppBar -->
+
+        <!-- @COMPONENT: MainContent -->
+        <main class="flex-1 overflow-y-auto pb-20">
+            
+            <!-- @COMPONENT: DashboardSection -->
+            <section class="p-4">
+                <h2 class="text-xl font-medium mb-4 text-on-surface">Dashboard Overview</h2>
+                
+                <!-- Stats Cards Grid -->
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <!-- @COMPONENT: StatCard -->
+                    <div class="bg-surface rounded-lg p-4 shadow-sm border border-surface-variant">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Active Tasks</p>
+                                <p class="text-2xl font-bold text-primary" data-bind="stats.activeTasks">12</p>
+                            </div>
+                            <i class="fas fa-clipboard-list text-primary text-xl"></i>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: StatCard -->
+
+                    <!-- @COMPONENT: StatCard -->
+                    <div class="bg-surface rounded-lg p-4 shadow-sm border border-surface-variant">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Team Members</p>
+                                <p class="text-2xl font-bold text-secondary" data-bind="stats.teamMembers">8</p>
+                            </div>
+                            <i class="fas fa-users text-secondary text-xl"></i>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: StatCard -->
+
+                    <!-- @COMPONENT: StatCard -->
+                    <div class="bg-surface rounded-lg p-4 shadow-sm border border-surface-variant">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Completed</p>
+                                <p class="text-2xl font-bold text-success" data-bind="stats.completed">24</p>
+                            </div>
+                            <i class="fas fa-check-circle text-success text-xl"></i>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: StatCard -->
+
+                    <!-- @COMPONENT: StatCard -->
+                    <div class="bg-surface rounded-lg p-4 shadow-sm border border-surface-variant">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Overdue</p>
+                                <p class="text-2xl font-bold text-error" data-bind="stats.overdue">3</p>
+                            </div>
+                            <i class="fas fa-exclamation-triangle text-error text-xl"></i>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: StatCard -->
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-3">Quick Actions</h3>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button class="bg-primary text-white p-4 rounded-lg shadow-sm flex flex-col items-center space-y-2 hover:bg-primary-dark transition-colors" data-event="click:createTask">
+                            <i class="fas fa-plus text-lg"></i>
+                            <span class="text-sm font-medium">New Task</span>
+                        </button>
+                        <button class="bg-secondary text-white p-4 rounded-lg shadow-sm flex flex-col items-center space-y-2 hover:bg-opacity-90 transition-opacity" data-event="click:manageTeam">
+                            <i class="fas fa-user-plus text-lg"></i>
+                            <span class="text-sm font-medium">Add Member</span>
+                        </button>
+                        <button class="bg-warning text-white p-4 rounded-lg shadow-sm flex flex-col items-center space-y-2 hover:bg-opacity-90 transition-opacity" data-event="click:viewSchedule">
+                            <i class="fas fa-calendar text-lg"></i>
+                            <span class="text-sm font-medium">Schedule</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+            <!-- @END_COMPONENT: DashboardSection -->
+
+            <!-- @COMPONENT: TaskListSection -->
+            <section class="px-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium">Recent Tasks</h3>
+                    <button class="text-primary text-sm font-medium" data-event="click:viewAllTasks">View All</button>
+                </div>
+
+                <!-- Task Filter Chips -->
+                <div class="flex space-x-2 mb-4 overflow-x-auto pb-2">
+                    <button class="bg-primary text-white px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap" data-filter="all">All</button>
+                    <button class="bg-surface-variant text-on-surface px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap" data-filter="started">Started</button>
+                    <button class="bg-surface-variant text-on-surface px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap" data-filter="pending">Pending</button>
+                    <button class="bg-surface-variant text-on-surface px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap" data-filter="completed">Completed</button>
+                </div>
+
+                <!-- Task List -->
+                <div class="space-y-3">
+                    <!-- @MAP: tasks.map(task => ( -->
+                    <!-- @COMPONENT: TaskCard -->
+                    <div class="bg-surface rounded-lg p-4 shadow-sm border border-surface-variant" data-mock="true">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <h4 class="font-medium text-base text-on-surface" data-bind="task.title">Update mobile app design</h4>
+                                <p class="text-sm text-gray-600 mt-1" data-bind="task.description">Revise the user interface based on latest feedback from user testing sessions</p>
+                            </div>
+                            <span class="bg-warning text-white px-2 py-1 rounded text-xs font-medium ml-3" data-bind="task.status">In Progress</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between text-sm text-gray-600">
+                            <div class="flex items-center space-x-4">
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-user text-xs"></i>
+                                    <span data-bind="task.assignee">Sarah Chen</span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-calendar text-xs"></i>
+                                    <span data-bind="task.dueDate">Dec 15</span>
+                                </div>
+                            </div>
+                            <button class="text-primary hover:text-primary-dark" data-event="click:viewTaskDetails" data-task-id="task.id">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: TaskCard -->
+
+                    <!-- @COMPONENT: TaskCard -->
+                    <div class="bg-surface rounded-lg p-4 shadow-sm border border-surface-variant" data-mock="true">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <h4 class="font-medium text-base text-on-surface" data-bind="task.title">Database optimization</h4>
+                                <p class="text-sm text-gray-600 mt-1" data-bind="task.description">Improve query performance for the user dashboard and reporting modules</p>
+                            </div>
+                            <span class="bg-error text-white px-2 py-1 rounded text-xs font-medium ml-3" data-bind="task.status">Overdue</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between text-sm text-gray-600">
+                            <div class="flex items-center space-x-4">
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-user text-xs"></i>
+                                    <span data-bind="task.assignee">Mike Johnson</span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-calendar text-xs"></i>
+                                    <span data-bind="task.dueDate">Dec 10</span>
+                                </div>
+                            </div>
+                            <button class="text-primary hover:text-primary-dark" data-event="click:viewTaskDetails" data-task-id="task.id">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: TaskCard -->
+
+                    <!-- @COMPONENT: TaskCard -->
+                    <div class="bg-surface rounded-lg p-4 shadow-sm border border-surface-variant" data-mock="true">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <h4 class="font-medium text-base text-on-surface" data-bind="task.title">User testing session</h4>
+                                <p class="text-sm text-gray-600 mt-1" data-bind="task.description">Conduct usability testing with 5 participants for the new checkout flow</p>
+                            </div>
+                            <span class="bg-success text-white px-2 py-1 rounded text-xs font-medium ml-3" data-bind="task.status">Completed</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between text-sm text-gray-600">
+                            <div class="flex items-center space-x-4">
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-user text-xs"></i>
+                                    <span data-bind="task.assignee">Emma Davis</span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-calendar text-xs"></i>
+                                    <span data-bind="task.dueDate">Dec 12</span>
+                                </div>
+                            </div>
+                            <button class="text-primary hover:text-primary-dark" data-event="click:viewTaskDetails" data-task-id="task.id">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: TaskCard -->
+                    <!-- @END_MAP )) -->
+                </div>
+            </section>
+            <!-- @END_COMPONENT: TaskListSection -->
+
+            <!-- @COMPONENT: TeamSection -->
+            <section class="p-4 mt-6">
+                <h3 class="text-lg font-medium mb-4">Team Members</h3>
+                <div class="space-y-3">
+                    <!-- @MAP: teamMembers.map(member => ( -->
+                    <!-- @COMPONENT: TeamMemberCard -->
+                    <div class="bg-surface rounded-lg p-4 shadow-sm border border-surface-variant" data-mock="true">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center font-medium" data-bind="member.initials">SC</div>
+                            <div class="flex-1">
+                                <h4 class="font-medium text-base" data-bind="member.name">Sarah Chen</h4>
+                                <p class="text-sm text-gray-600" data-bind="member.role">UI/UX Designer</p>
+                                <div class="flex items-center space-x-4 mt-1">
+                                    <span class="text-xs text-gray-500" data-bind="member.activeTasks">3 active tasks</span>
+                                    <div class="flex items-center space-x-1">
+                                        <div class="w-2 h-2 bg-success rounded-full"></div>
+                                        <span class="text-xs text-gray-500">Available</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="text-primary hover:text-primary-dark" data-event="click:viewMemberProfile" data-member-id="member.id">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: TeamMemberCard -->
+
+                    <!-- @COMPONENT: TeamMemberCard -->
+                    <div class="bg-surface rounded-lg p-4 shadow-sm border border-surface-variant" data-mock="true">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-secondary text-white rounded-full flex items-center justify-center font-medium" data-bind="member.initials">MJ</div>
+                            <div class="flex-1">
+                                <h4 class="font-medium text-base" data-bind="member.name">Mike Johnson</h4>
+                                <p class="text-sm text-gray-600" data-bind="member.role">Backend Developer</p>
+                                <div class="flex items-center space-x-4 mt-1">
+                                    <span class="text-xs text-gray-500" data-bind="member.activeTasks">2 active tasks</span>
+                                    <div class="flex items-center space-x-1">
+                                        <div class="w-2 h-2 bg-warning rounded-full"></div>
+                                        <span class="text-xs text-gray-500">Busy</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="text-primary hover:text-primary-dark" data-event="click:viewMemberProfile" data-member-id="member.id">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: TeamMemberCard -->
+                    <!-- @END_MAP )) -->
+                </div>
+            </section>
+            <!-- @END_COMPONENT: TeamSection -->
+
+        </main>
+        <!-- @END_COMPONENT: MainContent -->
+
+        <!-- @COMPONENT: BottomNavigation -->
+        <nav class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-surface border-t border-surface-variant">
+            <div class="grid grid-cols-4 h-16">
+                <button class="flex flex-col items-center justify-center space-y-1 text-primary" data-event="click:navigateToDashboard">
+                    <i class="fas fa-home text-lg"></i>
+                    <span class="text-xs font-medium">Dashboard</span>
+                </button>
+                <button class="flex flex-col items-center justify-center space-y-1 text-gray-400 hover:text-on-surface transition-colors" data-event="click:navigateToTasks">
+                    <i class="fas fa-tasks text-lg"></i>
+                    <span class="text-xs font-medium">Tasks</span>
+                </button>
+                <button class="flex flex-col items-center justify-center space-y-1 text-gray-400 hover:text-on-surface transition-colors" data-event="click:navigateToTeam">
+                    <i class="fas fa-users text-lg"></i>
+                    <span class="text-xs font-medium">Team</span>
+                </button>
+                <button class="flex flex-col items-center justify-center space-y-1 text-gray-400 hover:text-on-surface transition-colors" data-event="click:navigateToProfile">
+                    <i class="fas fa-user text-lg"></i>
+                    <span class="text-xs font-medium">Profile</span>
+                </button>
+            </div>
+        </nav>
+        <!-- @END_COMPONENT: BottomNavigation -->
+
+        <!-- @COMPONENT: FloatingActionButton -->
+        <button class="fixed bottom-20 right-4 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary-dark transition-colors z-10" data-event="click:quickCreateTask" data-implementation="Should open task creation bottom sheet">
+            <i class="fas fa-plus text-xl"></i>
+        </button>
+        <!-- @END_COMPONENT: FloatingActionButton -->
+
+    </div>
+    <!-- @END_COMPONENT: AppContainer -->
+
+    <!-- @COMPONENT: TaskDetailModal (Hidden by default) -->
+    <div id="taskDetailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden" data-implementation="Show/hide based on modal state">
+        <div class="flex items-end justify-center min-h-screen">
+            <div class="bg-surface rounded-t-xl w-full max-w-md max-h-88 overflow-y-auto">
+                <div class="sticky top-0 bg-surface border-b border-surface-variant p-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-medium">Task Details</h3>
+                        <button class="p-2 hover:bg-surface-variant rounded-full" data-event="click:closeModal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-4 space-y-6">
+                    <div>
+                        <h4 class="font-medium text-lg mb-2" data-bind="selectedTask.title" data-mock="true">Update mobile app design</h4>
+                        <p class="text-gray-600" data-bind="selectedTask.description" data-mock="true">Revise the user interface based on latest feedback from user testing sessions. Focus on improving navigation flow and accessibility features.</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm font-medium text-gray-600">Status</label>
+                            <select class="w-full mt-1 p-3 border border-surface-variant rounded-lg focus:border-primary focus:outline-none" data-bind="selectedTask.status">
+                                <option>To be completed</option>
+                                <option selected>In Progress</option>
+                                <option>Completed</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-600">Priority</label>
+                            <select class="w-full mt-1 p-3 border border-surface-variant rounded-lg focus:border-primary focus:outline-none" data-bind="selectedTask.priority">
+                                <option>Low</option>
+                                <option selected>Medium</option>
+                                <option>High</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="text-sm font-medium text-gray-600">Assigned to</label>
+                        <div class="flex items-center space-x-3 mt-2">
+                            <div class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-medium" data-mock="true">SC</div>
+                            <div>
+                                <p class="font-medium" data-bind="selectedTask.assignee.name" data-mock="true">Sarah Chen</p>
+                                <p class="text-sm text-gray-600" data-bind="selectedTask.assignee.role" data-mock="true">UI/UX Designer</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="text-sm font-medium text-gray-600">Due Date</label>
+                        <input type="date" class="w-full mt-1 p-3 border border-surface-variant rounded-lg focus:border-primary focus:outline-none" data-bind="selectedTask.dueDate" value="2024-12-15" data-mock="true">
+                    </div>
+                    
+                    <div>
+                        <label class="text-sm font-medium text-gray-600">Progress</label>
+                        <div class="mt-2">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Progress</span>
+                                <span data-bind="selectedTask.progress" data-mock="true">65%</span>
+                            </div>
+                            <div class="w-full bg-surface-variant rounded-full h-2">
+                                <div class="bg-primary h-2 rounded-full" style="width: 65%" data-bind-style="width: selectedTask.progress"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <button class="flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary-dark transition-colors" data-event="click:saveTaskChanges">
+                            Save Changes
+                        </button>
+                        <button class="px-6 bg-surface-variant text-on-surface py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors" data-event="click:closeModal">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: TaskDetailModal -->
+
+    <script>
+        // Basic UI interactions for demonstration
+        (function() {
+            // TODO: Implement state management, API calls, and business logic
+            
+            // Modal functionality
+            const modal = document.getElementById('taskDetailModal');
+            const openModalButtons = document.querySelectorAll('[data-event*="viewTaskDetails"]');
+            const closeModalButtons = document.querySelectorAll('[data-event*="closeModal"]');
+            
+            openModalButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    modal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                });
+            });
+            
+            closeModalButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                });
+            });
+            
+            // Close modal when clicking outside
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                }
+            });
+            
+            // Filter chips interaction
+            const filterButtons = document.querySelectorAll('[data-filter]');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remove active state from all buttons
+                    filterButtons.forEach(btn => {
+                        btn.className = btn.className.replace('bg-primary text-white', 'bg-surface-variant text-on-surface');
+                    });
+                    // Add active state to clicked button
+                    button.className = button.className.replace('bg-surface-variant text-on-surface', 'bg-primary text-white');
+                });
+            });
+            
+            // Bottom navigation
+            const navButtons = document.querySelectorAll('nav button');
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remove active state from all nav buttons
+                    navButtons.forEach(btn => {
+                        btn.className = btn.className.replace('text-primary', 'text-gray-400');
+                    });
+                    // Add active state to clicked button
+                    button.className = button.className.replace('text-gray-400', 'text-primary');
+                });
+            });
+            
+            // Ripple effect for buttons (basic implementation)
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const ripple = document.createElement('span');
+                    const rect = this.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+                    
+                    ripple.style.cssText = `
+                        position: absolute;
+                        width: ${size}px;
+                        height: ${size}px;
+                        left: ${x}px;
+                        top: ${y}px;
+                        background: rgba(255, 255, 255, 0.3);
+                        border-radius: 50%;
+                        transform: scale(0);
+                        animation: ripple 0.3s ease-out;
+                        pointer-events: none;
+                    `;
+                    
+                    this.style.position = 'relative';
+                    this.style.overflow = 'hidden';
+                    this.appendChild(ripple);
+                    
+                    setTimeout(() => {
+                        ripple.remove();
+                    }, 300);
+                });
+            });
+            
+            // Add ripple animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes ripple {
+                    to {
+                        transform: scale(2);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+        })();
+    </script>
+</body>
+</html>
