@@ -625,3 +625,70 @@ main {
     transform: translateY(0);
   }
 }
+
+/* Compact UI Styles for Smaller Interface */
+.compact-ui {
+  font-size: 0.875rem; /* 14px base */
+}
+
+.compact-card {
+  @apply p-2 rounded-lg border;
+  min-height: 2.5rem;
+}
+
+.compact-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(75px, 1fr));
+  gap: 0.25rem;
+}
+
+.compact-stats .stat-card {
+  min-height: 2rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.compact-stats .stat-card p:first-child {
+  font-size: 0.625rem; /* 10px */
+  line-height: 1.2;
+}
+
+.compact-stats .stat-card p:last-child {
+  font-size: 0.75rem; /* 12px */
+  font-weight: 600;
+}
+
+.compact-member-card {
+  @apply p-2 rounded border;
+  min-height: 2.5rem;
+}
+
+.compact-member-card .avatar {
+  @apply w-6 h-6 text-xs;
+}
+
+.compact-section {
+  @apply p-2 mb-2 rounded-lg;
+}
+
+.compact-title {
+  @apply text-sm font-medium mb-1;
+}
+
+.compact-btn {
+  @apply px-2 py-1 text-xs h-6 rounded;
+}
+
+.compact-spacing {
+  @apply space-y-1 gap-1;
+}
+
+/* Mobile compact adjustments */
+@media (max-width: 640px) {
+  .compact-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .compact-card {
+    padding: 0.375rem;
+  }
+}

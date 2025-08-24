@@ -26,15 +26,15 @@ export default function Dashboard() {
   const topTeamMembers = teamMembers?.slice(0, 2) || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Dashboard Overview */}
-      <section className="p-4">
-        <h2 className="text-xl font-medium mb-4 text-on-surface" data-testid="text-dashboard-title">
+      <section className="p-3">
+        <h2 className="text-lg font-medium mb-2 text-on-surface" data-testid="text-dashboard-title">
           {t('dashboard.title')}
         </h2>
         
-        {/* Unified Stats & Points Grid - More compact */}
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 mb-4 desktop-grid">
+        {/* Unified Stats & Points Grid - Ultra compact */}
+        <div className="grid grid-cols-3 lg:grid-cols-6 gap-1 mb-3 desktop-grid">
           {statsLoading ? (
             <>
               {[...Array(6)].map((_, i) => (
@@ -92,32 +92,32 @@ export default function Dashboard() {
         <QuickActions />
       </section>
 
-      {/* Scheduler Section - Given More Space */}
-      <section className="px-4 mb-6">
+      {/* Scheduler Section - Compact */}
+      <section className="px-3 mb-3">
         <SchedulerWidget />
       </section>
 
-      {/* Upcoming Schedule - Expanded */}
-      <section className="px-4 mb-6">
+      {/* Upcoming Schedule - Compact */}
+      <section className="px-3 mb-3">
         <UpcomingSchedule />
       </section>
 
-      {/* Team Members */}
-      <section className="p-4 mt-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium" data-testid="text-team-members-title">{t('team.title')}</h3>
+      {/* Team Members - Compact */}
+      <section className="p-3 mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-base font-medium" data-testid="text-team-members-title">{t('team.title')}</h3>
           <Link href="/team">
-            <Button variant="ghost" size="sm" className="text-primary" data-testid="link-view-all-team">
+            <Button variant="ghost" size="sm" className="text-primary text-xs h-7" data-testid="link-view-all-team">
               {t('common.viewAll')}
             </Button>
           </Link>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {teamLoading ? (
             <>
               {[...Array(2)].map((_, i) => (
-                <Skeleton key={i} className="h-20 rounded-lg" />
+                <Skeleton key={i} className="h-14 rounded-lg" />
               ))}
             </>
           ) : topTeamMembers.length > 0 ? (
@@ -125,7 +125,7 @@ export default function Dashboard() {
               <TeamMemberCard key={member.id} member={member} />
             ))
           ) : (
-            <div className="text-center py-8 text-muted-foreground" data-testid="text-no-team-members">
+            <div className="text-center py-4 text-muted-foreground text-sm" data-testid="text-no-team-members">
 {t('msg.noTeamMembers')}
             </div>
           )}

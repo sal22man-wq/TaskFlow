@@ -107,49 +107,46 @@ export function TeamMemberCard({ member }: TeamMemberCardProps) {
   const isAdmin = user && typeof user === 'object' && user !== null && 'role' in user ? (user as any).role === 'admin' : false;
 
   return (
-    <div className="bg-surface rounded-lg p-4 shadow-sm border border-surface-variant/50" data-testid={`team-member-card-${member.id}`}>
-      <div className="flex items-center space-x-3">
-        <div className={`w-12 h-12 ${getAvatarColor(member.name)} text-white rounded-full flex items-center justify-center font-medium`}>
+    <div className="bg-surface rounded-lg p-2 shadow-sm border border-surface-variant/50" data-testid={`team-member-card-${member.id}`}>
+      <div className="flex items-center space-x-2">
+        <div className={`w-8 h-8 ${getAvatarColor(member.name)} text-white rounded-full flex items-center justify-center font-medium text-sm`}>
           {member.avatar || member.name.split(' ').map(n => n[0]).join('')}
         </div>
-        <div className="flex-1">
-          <h4 className="font-medium text-base" data-testid={`member-name-${member.id}`}>
+        <div className="flex-1 min-w-0">
+          <h4 className="font-medium text-sm truncate" data-testid={`member-name-${member.id}`}>
             {member.name}
           </h4>
-          <p className="text-sm text-muted-foreground" data-testid={`member-role-${member.id}`}>
-            {member.role}
-          </p>
-          <div className="flex items-center space-x-4 mt-1">
-            <span className="text-xs text-muted-foreground" data-testid={`member-active-tasks-${member.id}`}>
-              {member.activeTasks} مهمة نشطة
-            </span>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground truncate" data-testid={`member-role-${member.id}`}>
+              {member.role}
+            </p>
             <div className="flex items-center space-x-1">
-              <div className={`w-2 h-2 ${getStatusColor(member.status)} rounded-full`}></div>
+              <div className={`w-1.5 h-1.5 ${getStatusColor(member.status)} rounded-full`}></div>
               <span className="text-xs text-muted-foreground" data-testid={`member-status-${member.id}`}>
                 {getStatusLabel(member.status)}
               </span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {isAdmin && (
             <Button
               variant="ghost"
               size="sm"
-              className="text-destructive hover:text-destructive-dark p-2 h-auto"
+              className="text-destructive hover:text-destructive-dark p-1 h-6 w-6"
               onClick={() => setShowDeleteDialog(true)}
               data-testid={`button-delete-member-${member.id}`}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3 w-3" />
             </Button>
           )}
           <Button
             variant="ghost"
             size="sm"
-            className="text-primary hover:text-primary-dark p-0 h-auto"
+            className="text-primary hover:text-primary-dark p-1 h-6 w-6"
             data-testid={`button-member-details-${member.id}`}
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3 w-3" />
           </Button>
         </div>
       </div>

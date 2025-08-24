@@ -15,15 +15,15 @@ export function StatsCard({ title, value, icon, color, testId }: StatsCardProps)
   };
 
   return (
-    <div className={`stat-card ${colorClasses[color]} border rounded-lg p-3 hover:shadow-md transition-all duration-200 hover:scale-[1.02] backdrop-blur-sm`} data-testid={testId}>
-      <div className="flex items-center justify-between h-full">
+    <div className={`stat-card ${colorClasses[color]} border rounded-lg p-2 hover:shadow-md transition-all duration-200 backdrop-blur-sm`} data-testid={testId}>
+      <div className="flex items-center justify-between h-full min-h-[2.5rem]">
         <div className="flex-1">
           <p className="text-xs font-medium opacity-80 line-clamp-1" data-testid={`${testId}-title`}>{title}</p>
-          <p className="text-lg sm:text-xl font-bold leading-tight mt-1" data-testid={`${testId}-value`}>
+          <p className="text-sm sm:text-lg font-bold leading-tight mt-0.5" data-testid={`${testId}-value`}>
             {value}
           </p>
         </div>
-        <div className="text-lg sm:text-xl opacity-70 ml-2" data-testid={`${testId}-icon`}>
+        <div className="text-sm sm:text-lg opacity-70 ml-1" data-testid={`${testId}-icon`}>
           {icon}
         </div>
       </div>
