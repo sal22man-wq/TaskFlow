@@ -31,4 +31,5 @@ RUN mkdir -p whatsapp-sessions uploads logs
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+# نشغّل migrations أولاً ثم السيرفر
+CMD ["sh", "-c", "npm run db:push && npm start"]
