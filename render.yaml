@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: taskflow
+    env: node
+    plan: free
+    region: frankfurt  # غيرها إذا تريد سيرفر بمكان آخر
+    buildCommand: "npm install && npm run build"
+    startCommand: "npm start"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: taskflow-db
+          property: connectionString
+    postDeployCommand: "npm run db:push"
+
+databases:
+  - name: taskflow-db
+    plan: free
+    region: frankfurt
