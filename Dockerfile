@@ -31,5 +31,5 @@ RUN mkdir -p whatsapp-sessions uploads logs
 
 EXPOSE 3000
 
-# نشغّل migrations عبر npx drizzle-kit push، بعدها نبدأ السيرفر
-CMD ["sh", "-c", "npx drizzle-kit push && npm start"]
+# نشغّل migrations باستخدام drizzle.config.ts، بعدها نبدأ السيرفر
+CMD ["sh", "-c", "npx drizzle-kit push --config=drizzle.config.ts && npm start"]
