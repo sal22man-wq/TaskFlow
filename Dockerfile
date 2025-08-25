@@ -1,38 +1,47 @@
-# استخدام Node.js الإصدار 18 كقاعدة
-FROM node:18-alpine
+# ========================
+# Stage 1: Build
+# ========================
+FROM node:18-alpine AS builder
 
-# تحديد مجلد العمل
+# تعيين مجلد العمل
 WORKDIR /app
 
-# نسخ ملفات package
+# نسخ package.json + lock
 COPY package*.json ./
 
-# تنصيب المكتبات
-RUN npm ci --only=production
+# ننصب كل البكجات (dependencies + devDependencies)
+RUN npm install
 
 # نسخ باقي الملفات
 COPY . .
 
-# إنشاء مجلدات للبيانات
-RUN mkdir -p whatsapp-sessions uploads logs
-
-# بناء التطبيق
+# تشغيل build (يسوي dist/)
 RUN npm run build
 
-# إنشاء مستخدم غير root للأمان
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+# ========================
+# Stage 2: Production
+# ========================
+FROM node:18-alpine
 
-# تغيير ملكية الملفات
-RUN chown -R nextjs:nodejs /app
-USER nextjs
+WORKDIR /app
 
-# كشف البورت
-EXPOSE 5000
+# نسخ فقط ملفات البكجات
+COPY package*.json ./
 
-# إضافة health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node healthcheck.js
+# نصب فقط production dependencies
+RUN npm install --only=production
 
-# تشغيل التطبيق
+# نسخ الملفات المبنية من الستيج الأول
+COPY --from=builder /app/dist ./dist
+
+# نسخ أي ملفات ثابتة تحتاجها (مثلاً public/uploads/...)
+COPY --from=builder /app/public ./public
+
+# إنشاء مجلدات مستخدمة
+RUN mkdir -p whatsapp-sessions uploads logs
+
+# البورت
+EXPOSE 3000
+
+# أمر التشغيل
 CMD ["npm", "start"]
