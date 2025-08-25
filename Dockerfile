@@ -31,5 +31,5 @@ RUN mkdir -p whatsapp-sessions uploads logs
 
 EXPOSE 3000
 
-# نشغّل migrations أولاً ثم السيرفر
-CMD ["sh", "-c", "npm run db:push && npm start"]
+# نشغّل migrations عبر npx drizzle-kit push، بعدها نبدأ السيرفر
+CMD ["sh", "-c", "npx drizzle-kit push && npm start"]
