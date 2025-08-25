@@ -1,0 +1,8 @@
+{
+  "schema": "./server/db.ts",
+  "out": "./drizzle",
+  "driver": "pg",
+  "dbCredentials": {
+    "connectionString": "${DATABASE_URL}"
+  }
+}
