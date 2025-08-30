@@ -99,6 +99,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Setup initial users endpoint for production deployment
+  app.post('/api/setup-users', async (req, res) => {
+    try {
+      const { secretKey } = req.body;
+      
+      // Simple security check - use a secret key
+      if (secretKey !== 'wdq-setup-2025') {
+        return res.status(403).json({ message: "Invalid secret key" });
+      }
+
+      const usersToCreate = [
+        {
+          username: "admin",
+          password: "123456",
+          role: "admin",
+          isApproved: "approved",
+          isActive: "true",
+          firstName: "مدير",
+          lastName: "النظام",
+          email: "admin@company.com"
+        },
+        {
+          username: "supervisor",
+          password: "123456",
+          role: "supervisor",
+          isApproved: "approved",
+          isActive: "true",
+          firstName: "مشرف",
+          lastName: "النظام",
+          email: "supervisor@company.com"
+        },
+        {
+          username: "user1",
+          password: "123456",
+          role: "user",
+          isApproved: "approved",
+          isActive: "true",
+          firstName: "مستخدم",
+          lastName: "عادي",
+          email: "user1@company.com"
+        }
+      ];
+
+      const createdUsers = [];
+      const existingUsers = [];
+
+      for (const userData of usersToCreate) {
+        const existingUser = await storage.getUserByUsername(userData.username);
+        
+        if (existingUser) {
+          existingUsers.push(userData.username);
+          continue;
+        }
+        
+        await storage.createUser(userData);
+        createdUsers.push(userData.username);
+      }
+
+      res.json({
+        message: "تم إعداد المستخدمين بنجاح",
+        createdUsers,
+        existingUsers,
+        instructions: "المستخدمين المتاحين: admin/123456, supervisor/123456, user1/123456"
+      });
+
+    } catch (error) {
+      console.error("Error setting up users:", error);
+      res.status(500).json({ message: "فشل في إعداد المستخدمين" });
+    }
+  });
+
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
