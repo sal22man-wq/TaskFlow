@@ -1,7 +1,8 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTeamMemberSchema, insertTaskSchema, updateTaskSchema, insertCustomerSchema, insertUserSchema, insertMessageSchema, insertNotificationSchema, insertSystemLogSchema } from "@shared/schema";
+import { insertTeamMemberSchema, insertTaskSchema, updateTaskSchema, insertCustomerSchema, insertUserSchema, insertMessageSchema, insertNotificationSchema, insertSystemLogSchema, users } from "@shared/schema";
+import { db } from "./db";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import session from "express-session";
@@ -167,6 +168,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error setting up users:", error);
       res.status(500).json({ message: "فشل في إعداد المستخدمين" });
+    }
+  });
+
+  // Emergency admin creation endpoint
+  app.post('/api/create-emergency-admin', async (req, res) => {
+    try {
+      const { secretKey } = req.body;
+      
+      // Security check with special emergency key
+      if (secretKey !== 'emergency-admin-wdq-2025') {
+        return res.status(403).json({ message: "Invalid emergency secret key" });
+      }
+
+      // Check if admin already exists
+      const existingAdmin = await storage.getUserByUsername("administrator");
+      if (existingAdmin) {
+        return res.status(409).json({ 
+          message: "المدير موجود بالفعل",
+          credentials: "المستخدم: administrator | كلمة المرور: wdq@#$"
+        });
+      }
+
+      // Create emergency admin
+      const hashedPassword = await bcrypt.hash("wdq@#$", 10);
+      const adminData = {
+        username: "administrator",
+        password: hashedPassword,
+        role: "admin",
+        isApproved: "approved",
+        isActive: "true",
+        firstName: "مدير",
+        lastName: "النظام",
+        email: "administrator@company.com"
+      };
+      
+      const [admin] = await db
+        .insert(users)
+        .values(adminData)
+        .returning();
+      
+      // Create team member
+      await storage.createTeamMember({
+        userId: admin.id,
+        name: "مدير النظام",
+        role: "مدير النظام",
+        email: "administrator@company.com",
+        status: 'available',
+        avatar: "AD",
+      });
+
+      res.json({
+        message: "تم إنشاء المدير الطارئ بنجاح",
+        credentials: "المستخدم: administrator | كلمة المرور: wdq@#$",
+        instructions: "يمكنك الآن تسجيل الدخول باستخدام هذه البيانات"
+      });
+
+    } catch (error) {
+      console.error("Error creating emergency admin:", error);
+      res.status(500).json({ message: "فشل في إنشاء المدير الطارئ" });
     }
   });
 

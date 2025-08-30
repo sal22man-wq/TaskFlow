@@ -124,6 +124,11 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   role: true,
   isApproved: true,
+  isActive: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+  phone: true,
 });
 
 export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({

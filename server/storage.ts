@@ -141,31 +141,71 @@ export class DatabaseStorage implements IStorage {
 
   private async initializeData() {
     try {
+      console.log("🔄 Checking for admin user...");
       // Create admin user if doesn't exist
       const adminExists = await this.getUserByUsername("administrator");
       if (!adminExists) {
+        console.log("👤 Creating admin user...");
         await this.createAdminUser();
+        console.log("✅ Admin user created successfully!");
+      } else {
+        console.log("✅ Admin user already exists");
       }
 
       // Create default team members if none exist
       const existingMembers = await this.getTeamMembers();
       if (existingMembers.length === 0) {
+        console.log("👥 Creating default team members...");
         await this.createDefaultMembers();
+        console.log("✅ Default team members created!");
+      } else {
+        console.log("✅ Team members already exist");
       }
     } catch (error) {
-      console.error("Error initializing data:", error);
+      console.error("❌ Error initializing data:", error);
     }
   }
 
   private async createAdminUser(): Promise<User> {
-    const hashedPassword = await bcrypt.hash("wdq@#$", 10);
-    
-    return await this.createUser({
-      username: "administrator",
-      password: hashedPassword,
-      role: "admin",
-      isApproved: "approved"
-    });
+    try {
+      console.log("🔐 Hashing admin password...");
+      const hashedPassword = await bcrypt.hash("wdq@#$", 10);
+      
+      console.log("📝 Creating admin user record...");
+      // Create user directly without createUser to avoid team member conflicts
+      const userData = {
+        username: "administrator",
+        password: hashedPassword,
+        role: "admin",
+        isApproved: "approved",
+        isActive: "true",
+        firstName: "مدير",
+        lastName: "النظام",
+        email: "administrator@company.com"
+      };
+      
+      const [user] = await db
+        .insert(users)
+        .values(userData)
+        .returning();
+      
+      console.log("👥 Creating admin team member...");
+      // Create team member with unique email
+      await this.createTeamMember({
+        userId: user.id,
+        name: "مدير النظام",
+        role: "مدير النظام",
+        email: "administrator@company.com",
+        status: 'available',
+        avatar: "AD",
+      });
+      
+      console.log("✅ Admin user and team member created successfully!");
+      return user;
+    } catch (error) {
+      console.error("❌ Error creating admin user:", error);
+      throw error;
+    }
   }
 
   private async createDefaultMembers() {
@@ -225,20 +265,22 @@ export class DatabaseStorage implements IStorage {
       .values(userData)
       .returning();
     
-    // Create corresponding team member for this user
-    const teamMemberRole = 
-      insertUser.role === 'admin' ? 'مدير النظام' : 
-      insertUser.role === 'supervisor' ? 'مشرف' : 
-      'عضو فريق';
-      
-    await this.createTeamMember({
-      userId: user.id,
-      name: insertUser.username,
-      role: teamMemberRole,
-      email: `${insertUser.username}@company.com`,
-      status: 'available',
-      avatar: insertUser.username.charAt(0).toUpperCase(),
-    });
+    // Create corresponding team member for this user (skip for admin created in initializeData)
+    if (insertUser.username !== "administrator") {
+      const teamMemberRole = 
+        insertUser.role === 'admin' ? 'مدير النظام' : 
+        insertUser.role === 'supervisor' ? 'مشرف' : 
+        'عضو فريق';
+        
+      await this.createTeamMember({
+        userId: user.id,
+        name: insertUser.firstName && insertUser.lastName ? `${insertUser.firstName} ${insertUser.lastName}` : insertUser.username,
+        role: teamMemberRole,
+        email: insertUser.email || `${insertUser.username}@company.com`,
+        status: 'available',
+        avatar: insertUser.username.charAt(0).toUpperCase(),
+      });
+    }
     
     return user;
   }
