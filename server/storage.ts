@@ -141,10 +141,42 @@ export class DatabaseStorage implements IStorage {
 
   private async initializeData() {
     try {
-      // Create admin user if doesn't exist
-      const adminExists = await this.getUserByUsername("administrator");
+      // Check if essential users exist and create them if needed
+      const adminExists = await this.getUserByUsername("admin");
+      const supervisorExists = await this.getUserByUsername("supervisor");
+      const user1Exists = await this.getUserByUsername("user1");
+      
       if (!adminExists) {
-        await this.createAdminUser();
+        const hashedPassword = await bcrypt.hash("123456", 10);
+        await this.createUser({
+          username: "admin",
+          password: hashedPassword,
+          role: "admin",
+          isApproved: "approved"
+        });
+        console.log("✅ تم إنشاء المدير: admin/123456");
+      }
+
+      if (!supervisorExists) {
+        const hashedPassword = await bcrypt.hash("123456", 10);
+        await this.createUser({
+          username: "supervisor", 
+          password: hashedPassword,
+          role: "supervisor",
+          isApproved: "approved"
+        });
+        console.log("✅ تم إنشاء المشرف: supervisor/123456");
+      }
+
+      if (!user1Exists) {
+        const hashedPassword = await bcrypt.hash("123456", 10);
+        await this.createUser({
+          username: "user1",
+          password: hashedPassword, 
+          role: "user",
+          isApproved: "approved"
+        });
+        console.log("✅ تم إنشاء المستخدم: user1/123456");
       }
 
       // Create default team members if none exist
@@ -157,16 +189,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  private async createAdminUser(): Promise<User> {
-    const hashedPassword = await bcrypt.hash("wdq@#$", 10);
-    
-    return await this.createUser({
-      username: "administrator",
-      password: hashedPassword,
-      role: "admin",
-      isApproved: "approved"
-    });
-  }
+  // Removed old createAdminUser method - now using initializeData
 
   private async createDefaultMembers() {
     const defaultMembers = [
