@@ -1962,7 +1962,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/count", requireAuth, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
-      const activeUsers = users.filter(user => user.isActive === undefined || user.isActive === true).length;
+      const activeUsers = users.filter(user => user.isActive === undefined || user.isActive === "true").length;
       
       res.json({
         totalUsers: users.length,
@@ -1993,7 +1993,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const usersWithPhone = users.filter(user => 
         user.phone && 
         user.phone.trim() !== '' && 
-        (user.isActive === undefined || user.isActive === true)
+        (user.isActive === undefined || user.isActive === "true")
       );
 
       if (usersWithPhone.length === 0) {
