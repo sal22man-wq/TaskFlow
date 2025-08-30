@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء مدير طارئ - TaskFlow</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .emergency-btn {
+            background: #f44336;
+        }
+        .emergency-btn:hover {
+            background: #da190b;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .credentials {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 إنشاء مدير طارئ - TaskFlow</h1>
+        
+        <div class="warning">
+            <strong>⚠️ تحذير:</strong> استخدم هذه الأداة فقط إذا كنت لا تستطيع تسجيل الدخول للتطبيق
+        </div>
+
+        <div class="section">
+            <h3>🔗 رابط التطبيق المنشور</h3>
+            <input type="text" id="appUrl" placeholder="أدخل رابط تطبيقك (مثل: https://yourapp.replit.app)" />
+        </div>
+
+        <div class="section">
+            <h3>📝 الطرق المتاحة</h3>
+            
+            <h4>الطريقة الأولى: إعداد المستخدمين الأساسي</h4>
+            <button onclick="setupUsers()">إنشاء مستخدمين أساسيين</button>
+            <p>سيتم إنشاء: admin/123456, supervisor/123456, user1/123456</p>
+            
+            <h4>الطريقة الثانية: المدير الطارئ</h4>
+            <button class="emergency-btn" onclick="createEmergencyAdmin()">إنشاء مدير طارئ</button>
+            <p>سيتم إنشاء: administrator/wdq@#$</p>
+        </div>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        async function setupUsers() {
+            const appUrl = document.getElementById('appUrl').value.trim();
+            if (!appUrl) {
+                showResult('يرجى إدخال رابط التطبيق أولاً', 'error');
+                return;
+            }
+
+            try {
+                showResult('جاري إنشاء المستخدمين...', 'success');
+                
+                const response = await fetch(`${appUrl}/api/setup-users`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        secretKey: 'wdq-setup-2025'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`
+                        <div>✅ ${data.message}</div>
+                        <div class="credentials">
+                            ${data.instructions}
+                        </div>
+                        <div>المستخدمين المنشأين: ${data.createdUsers?.join(', ') || 'لا يوجد'}</div>
+                        <div>المستخدمين الموجودين: ${data.existingUsers?.join(', ') || 'لا يوجد'}</div>
+                    `, 'success');
+                } else {
+                    showResult(`❌ خطأ: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ خطأ في الاتصال: ${error.message}`, 'error');
+            }
+        }
+
+        async function createEmergencyAdmin() {
+            const appUrl = document.getElementById('appUrl').value.trim();
+            if (!appUrl) {
+                showResult('يرجى إدخال رابط التطبيق أولاً', 'error');
+                return;
+            }
+
+            try {
+                showResult('جاري إنشاء المدير الطارئ...', 'success');
+                
+                const response = await fetch(`${appUrl}/api/create-emergency-admin`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        secretKey: 'emergency-admin-wdq-2025'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`
+                        <div>✅ ${data.message}</div>
+                        <div class="credentials">
+                            ${data.credentials}
+                        </div>
+                        <div>💡 ${data.instructions}</div>
+                    `, 'success');
+                } else {
+                    showResult(`❌ ${data.message}`, 'error');
+                    if (data.credentials) {
+                        showResult(`
+                            <div class="credentials">
+                                ${data.credentials}
+                            </div>
+                        `, 'success');
+                    }
+                }
+            } catch (error) {
+                showResult(`❌ خطأ في الاتصال: ${error.message}`, 'error');
+            }
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+
+        // Auto-detect current URL if running on same domain
+        window.onload = function() {
+            if (window.location.hostname.includes('replit')) {
+                document.getElementById('appUrl').value = window.location.origin;
+            }
+        }
+    </script>
+</body>
+</html>
