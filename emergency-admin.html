@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>🚨 إنشاء مدير طارئ</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .box {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      text-align: center;
+      width: 400px;
+    }
+    button {
+      padding: 12px 25px;
+      border: none;
+      background: #f44336;
+      color: white;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #d32f2f;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      display: none;
+    }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 15px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>🚨 إنشاء مدير طارئ</h2>
+    <input type="text" id="appUrl" placeholder="أدخل رابط التطبيق (مثلاً https://yourapp.replit.app)">
+    <button onclick="createAdmin()">إنشاء مدير طارئ</button>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    async function createAdmin() {
+      const appUrl = document.getElementById('appUrl').value.trim();
+      const resultDiv = document.getElementById('result');
+      if (!appUrl) {
+        resultDiv.innerHTML = "❌ يرجى إدخال رابط التطبيق";
+        resultDiv.className = "error";
+        resultDiv.style.display = "block";
+        return;
+      }
+      try {
+        resultDiv.innerHTML = "⏳ جاري الإنشاء...";
+        resultDiv.className = "success";
+        resultDiv.style.display = "block";
+
+        const response = await fetch(`${appUrl}/api/create-emergency-admin`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ secretKey: "emergency-admin-wdq-2025" })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          resultDiv.innerHTML = `✅ ${data.message}<br><b>${data.credentials}</b>`;
+        } else {
+          resultDiv.innerHTML = `❌ ${data.message}`;
+          resultDiv.className = "error";
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `❌ خطأ في الاتصال: ${err.message}`;
+        resultDiv.className = "error";
+      }
+    }
+  </script>
+</body>
+</html>
